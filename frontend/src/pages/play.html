@@ -1,0 +1,50 @@
+<section class="max-w-5xl mx-auto mt-20 text-pink-100 space-y-12">
+    <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full text-center space-y-4">
+        <h2 class="text-4xl font-extrabold bg-gradient-to-r from-[#00ffd5] via-[#ff00c8] to-[#7f00ff] bg-clip-text text-transparent tracking-wider drop-shadow-lg" data-i18n="play.title">
+        pong 3D
+        </h2>
+        <p class="text-pink-200" data-i18n="play.subtitle">Choisis un mode de jeu</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!--1 vs 1-->
+        <a  href="/play/local"
+            class="group bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transition-transform hover:scale-105 duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            aria-label="1 vs 1">
+            <div class="w-12 h-12 mb-4 opacity-90 group-hover:opacity-100 transition">
+                <img src="/assets/pong.png" class="w-12 h-12 mb-4" alt="logo pong">
+            </div>
+            <p class="text-xl font-bold text-pink-300" data-i18n="play.mode.1v1.title">1 vs 1 (local)</p>
+            <p class="text-sm text-pink-200/80 mt-1 text-center" data-i18n="play.mode.1v1.desc">
+                Deux joueurs au clavier, meme ecran.
+            </p>
+        </a>
+        <!--vs ia-->
+        <a  href="/play/ia"
+            class="group bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transition-transform hover:scale-105 duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            aria-label="Jouer vs ia">
+            
+            <div class="w-12 h-12 mb-4 opacity-90 group-hover:opacity-100 transition">
+                <img src="/assets/ia.svg" class="w-12 h-12 mb-4" alt="logo ia">
+            </div>
+            <p class="text-xl font-bold text-pink-300" data-i18n="play.mode.ai.title">Jouer vs IA</p>
+            <p class="text-sm text-pink-200/80 mt-1 text-center" data-i18n="play.mode.ai.desc">
+                Affronte une IA
+            </p>
+        </a>
+
+        <!--Tournoi-->
+        <a  href="/tournament"
+            class="group bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transition-transform hover:scale-105 duration-300 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            aria-label="Tournoi">
+        
+            <div class="w-12 h-12 mb-4 opacity-90 group-hover:opacity-100 transition">
+                <img src="/assets/dashboard/trophy.svg" class="w-12 h-12 mb-4" alt="trophy">
+            </div>
+            <p class="text-xl font-bold text-pink-300" data-i18n="play.mode.tournament.title">Tournoi</p>
+            <p class="text-sm text-pink-200/80 mt-1 text-center" data-i18n="play.mode.tournament.desc">
+                Organise un bracket et enchaine les matchs
+            </p>
+        </a>
+    </div>
+</section>

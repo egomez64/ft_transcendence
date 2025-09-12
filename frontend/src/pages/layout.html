@@ -1,0 +1,81 @@
+<body class="relative min-h-screen bg-gradient-to-b from-[#ff0080] via-[#9900ff] to-[#330033] text-white overflow-hidden">
+
+  <!-- FOND SYNTHWAVE FIXE PAR IMG -->
+  <div class="fixed inset-0 z-[-10] pointer-events-none overflow-hidden opacity-100">
+    <!-- Soleil -->
+    <video autoplay muted loop playsinline
+    class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-full z-0 opacity-90 object-cover pointer-events-none">
+      <source src="/assets/test3.webm" type="video/webm" />
+        Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="flex justify-between items-center bg-black/20 backdrop-blur-sm border-b border-pink-500/20 text-pink-100 px-6 py-4 shadow-[0_0_15px_#00ffd5] z-30 relative rounded-b-xl">
+  
+    <!-- Logo à gauche -->
+    <div class="animate-pulse-neon">
+      <img src="/assets/42_logo.svg" alt="Logo école" class="h-14 w-auto" />
+    </div>
+
+    <!-- Centre : titre + liens -->
+    <div class="flex flex-col items-center space-y-2">
+      <h1 class="text-4xl font-extrabold bg-gradient-to-r from-[#00ffd5] via-[#ff00c8] to-[#7f00ff] bg-clip-text text-transparent tracking-wider drop-shadow-lg">
+        ft_transcendence
+      </h1>
+      <nav class="flex justify-center space-x-12 text-pink-200 text-lg font-medium">
+        <a href="/home" class="hover:text-white transition" data-i18n="nav.home">Accueil</a>
+        <a href="/play" class="hover:text-white transition" data-i18n="nav.play">Jouer</a>
+        <a href="/dashboard" class="hover:text-white transition" data-i18n="nav.dashboard">Dashboard</a>
+        <a href="/friends" class="hover:text-white transition" data-i18n="nav.friends">Amis</a>
+      </nav>
+    </div>
+
+    <!-- Boutons à droite -->
+    <div class="space-y-2 flex flex-col items-end">
+    <!-- Auth menu -->
+    <div id="authMenu" class="relative">
+      <div class="flex items-center gap-2">
+    <!-- pseudo (masqué quand déconnecté) -->
+     <span id="authUsername"
+          class="hidden text-pink-100/90 text-sm font-semibold drop-shadow
+                 whitespace-nowrap max-w-[14ch] overflow-hidden text-ellipsis">
+      </span>
+      <a id="authBtn" href="/login" aria-haspopup="menu" aria-expanded="false">
+        <div class="w-10 h-10 rounded-full bg-pink-600 hover:bg-pink-700 flex items-center justify-center text-white text-xl shadow-lg transition">
+          <img src="/assets/login.png" alt="Compte" class="h-6 w-6" />
+        </div>
+      </a>
+
+      <button id="lang-btn" class="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center shadow-lg text-white text-xl"
+        aria-haspopup="menu" aria-expanded="false" aria-label="Language">
+        <span aria-hidden="true">🌐</span>
+        <span class="sr-only" data-i18n="nav.lang.label">Langue</span>
+      </button>
+      <div id="lang-menu" class="hidden absolute right-0 top-full mt-2 w-40 z-50 rounded-xl overflow-hidden
+           bg-black/80 backdrop-blur border border-pink-500/30 shadow-[0_0_20px_#ff00c8]">
+        <button class="hover:bg-pink-600 py-2 w-full transition-all" data-lang="fr">🇫🇷 <span data-i18n="nav.lang.fr">Francais</span></button>
+        <button class="hover:bg-pink-600 py-2 w-full transition-all" data-lang="en">🇬🇧 <span data-i18n="nav.lang.en">English</span></button>
+        <button class="hover:bg-pink-600 py-2 w-full transition-all" data-lang="es">🇪🇸 <span data-i18n="nav.lang.es">Espagnol</span></button>
+      </div>
+    </div>
+
+      <!-- Dropdown (visible uniquement si connecté) -->
+      <div id="authDropdown"
+          class="hidden absolute right-0 mt-2 w-40 z-50 rounded-xl overflow-hidden bg-black/80 backdrop-blur border border-pink-500/30 shadow-[0_0_20px_#ff00c8]">
+        <a id="profilsLink" href="/profils"
+          class="block px-4 py-3 text-pink-100 hover:bg-pink-600/60 transition" data-i18n="nav.profile">⚙️ Profil</a>
+        <button id="logoutBtn"
+          class="w-full text-left px-4 py-3 text-pink-100 hover:bg-pink-600/60 transition" data-i18n="nav.logout">🚪 Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENU -->
+  <main id="app" class="relative z-0 min-h-screen text-pink-100 px-8 pt-16 pb-32"></main>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 bg-black text-pink-400 p-6 text-center text-sm mt-16 border-t border-pink-400/20">
+    &copy; 2025 - ft_transcendence. Tous droits réservés.
+  </footer>
+</body>
