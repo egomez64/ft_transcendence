@@ -1,0 +1,11 @@
+pour la databases et supprimer des users
+
+
+docker exec -it ft_backend sqlite3 /app/data/app.sqlite
+
+.tables
+.schema users
+SELECT * FROM users;
+DELETE FROM users;
+DELETE FROM users WHERE Email='';
+.exit
