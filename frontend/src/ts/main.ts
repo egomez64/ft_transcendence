@@ -7,6 +7,7 @@ import { mountRegisterHandlers } from "./register";
 import { mountLoginHandlers } from "./login";
 import { mountDashboard, laodDashboard, paintDashboardUsername } from "./dashboard";
 import { mountProfileHandlers } from "./profile";
+import { initPongPage } from "./pong";
 import {
   setupAuthMenu,
   closeAuthDropdown,
@@ -73,6 +74,7 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   play:       {file: 'play.html', mount: initPlayPage, protected: false},
   profils:    {file: 'profile.html', mount: mountProfileHandlers, protected: true},
   friends:    {file: 'friends.html', mount: initFriendsPage, protected: false},
+  pong:       {file: 'pong.html', mount: initPongPage, protected: false},
 };
 
 function normalizePage(rawHash: string): string {
