@@ -239,6 +239,8 @@
 
 // src/pages/dashboard.ts
 
+import { applyTranslations, t } from "../i18n";
+
 // ---- Types & helpers ----
 type Stats = { wins: number; losses: number; played: number; winRate: number };
 
@@ -250,28 +252,39 @@ function getAuth(): null | { id: number; username: string; email: string } {
 // ---- Views ----
 function statsView() {
   return `
-    <div class="bg-black/30 p-6 rounded-xl shadow-neon space-y-6">
-      <h3 class="text-2xl font-bold text-pink-200">Statistiques</h3>
-      <div id="stats-state" class="text-pink-300">Chargement…</div>
-      <div id="stats-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center hidden">
-        <div class="p-4 rounded-xl bg-black/40 border border-pink-500/30">
-          <div class="text-sm opacity-80">Victoires</div>
-          <div id="st-wins" class="text-3xl font-extrabold">—</div>
-        </div>
-        <div class="p-4 rounded-xl bg-black/40 border border-pink-500/30">
-          <div class="text-sm opacity-80">Défaites</div>
-          <div id="st-losses" class="text-3xl font-extrabold">—</div>
-        </div>
-        <div class="p-4 rounded-xl bg-black/40 border border-pink-500/30">
-          <div class="text-sm opacity-80">Joués</div>
-          <div id="st-played" class="text-3xl font-extrabold">—</div>
-        </div>
-        <div class="p-4 rounded-xl bg-black/40 border border-pink-500/30">
-          <div class="text-sm opacity-80">Win Rate</div>
-          <div id="st-winrate" class="text-3xl font-extrabold">—</div>
-        </div>
-      </div>
-    </div>
+<div id="stats-state" class="text-pink-200 mb-4"></div>
+<div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/controller.svg" alt="Partie jouées" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pink-300 " data-i18n="dashboard.stats.played">Parties jouées</p>
+                     <p id="st-played" class="text-3xl font-extrabold mt-2 text-white">0</p>
+                 </div>
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/trophy.svg" alt="Victoires" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.wins" >Victoires</p>
+                     <p id="st-wins" class="text-3xl font-extrabold mt-2 text-white">74</p>
+                 </div>
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/broken-heart.svg" alt="Broken heart" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.losses">Loose</p>
+                     <p id="st-losses" class="text-3xl font-extrabold mt-2 text-white">54</p>             
+                 </div>
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/bar-chart.svg" alt="Win rate" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.winrate" >Win rate</p>
+                     <p id="st-winrate" class="text-3xl font-extrabold mt-2 text-white">57.8%</p>
+                 </div>
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/flamme.png" alt="Win rate" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.streak">Win streak</p>
+                     <p class="text-3xl font-extrabold mt-2 text-white">3</p>
+                 </div>
+                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
+                     <img src="assets/dashboard/medal.png" alt="Win rate" class="w-10 h-10 mb-4" />
+                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.rank">Rank</p>
+                     <p class="text-3xl font-extrabold mt-2 text-white">1</p>
+                 </div>
+             </div>
   `;
 }
 
@@ -296,19 +309,20 @@ async function loadStats(userId: number) {
   const state = document.getElementById("stats-state")!;
   const grid  = document.getElementById("stats-grid")!;
 
-  const showRetry = (msg: string) => {
-    state.innerHTML = `${msg} <button id="retry" class="underline">Réessayer</button>`;
+  const showRetry = (msgKey: string, vars?: Record<string, any>) => {
+    state.innerHTML = `${t(msgKey, vars)} <button id="retry" class="underline" data-i18n="common.retry">Reessayer</button>`
+    applyTranslations(state);
     grid.classList.add("hidden");
     document.getElementById("retry")?.addEventListener("click", () => loadStats(userId));
   };
 
   try {
-    state.textContent = "Chargement…";
+    state.textContent = t('common.loading');
     grid.classList.add("hidden");
 
     // (1) Validation basique de l’id
     if (!Number.isFinite(Number(userId))) {
-      showRetry("❌ ID utilisateur invalide. Veuillez vous reconnecter.");
+      showRetry("dashboard.invalid_user_id");
       return;
     }
 
@@ -318,19 +332,14 @@ async function loadStats(userId: number) {
 
     // (3) HTTP non-OK → essayer d’afficher un message backend
     if (!res.ok) {
-      let detail = "";
+      let key = res.status === 401 ? 'auth.must_login'
+              : res.status === 404 ? 'users.not_found'
+              : 'common.server_error';
       try {
-        const errBody = await res.json();
-        detail = errBody?.message || errBody?.error || "";
-      } catch {
-        // pas de JSON → ignorer
-      }
-      console.debug("[Stats] HTTP error", res.status, detail || "(no body)", "url:", url);
-      const label =
-        res.status === 401 ? "Non autorisé" :
-        res.status === 404 ? "Utilisateur introuvable" :
-        "Erreur serveur";
-      showRetry(`❌ ${label}${detail ? ` — ${detail}` : ""}.`);
+        const body = await res.json();
+        key = body?.error_key || key;
+      } catch {}
+      showRetry(key);
       return;
     }
 
@@ -339,8 +348,7 @@ async function loadStats(userId: number) {
     try {
       s = await res.json();
     } catch (e) {
-      console.debug("[Stats] JSON parse error", e);
-      showRetry("❌ Réponse invalide du serveur.");
+      showRetry('dashboard.invalid_response');
       return;
     }
 
@@ -361,8 +369,7 @@ async function loadStats(userId: number) {
     state.textContent = "";
     grid.classList.remove("hidden");
   } catch (e: any) {
-    console.debug("[Stats] Network error", e);
-    showRetry("❌ Problème réseau (proxy / CORS / backend indisponible).");
+    showRetry('common.network_error');
   }
 }
 
@@ -373,7 +380,7 @@ function setActiveTab(name: "stats"|"history"|"ranking") {
     name === "stats"   ? statsView() :
     name === "history" ? historyView() :
                          rankingView();
-
+    applyTranslations(content);
     if (name === "stats") {
     const raw = localStorage.getItem("auth");
     let user: any = null;

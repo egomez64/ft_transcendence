@@ -1,14 +1,25 @@
+import { makeSetMsg } from "./utils";
+import { initI18n, setLang, applyTranslations } from "../i18n";
+
 export function mountLoginHandlers() {
+  if (handleOAuthRedirectFromGoogle()) return;
   if (localStorage.getItem('auth')) {
-    // déjà connecté -> pas de formulaire
+    // déjà connecté   pas de formulaire
     location.replace('#dashboard');
     return;
   }
   const form = document.getElementById('loginForm') as HTMLFormElement | null;
   if (!form) return;
-  const msg = document.getElementById('loginMsg') as HTMLParagraphElement | null;
+  const setMsg = makeSetMsg('#loginMsg');
   const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
 
+  const googleBtn = document.getElementById('googleLoginBtn');
+  if (googleBtn) {
+      googleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = 'http://localhost:3000/api/auth/google';
+      });
+    }
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     btn && (btn.disabled = true);
@@ -20,7 +31,7 @@ export function mountLoginHandlers() {
     };
 
     if (!payload.username || !payload.password) {
-      msg && (msg.textContent = 'Champs requis.');
+      setMsg('login.required_fields', 'err');
       btn && (btn.disabled = false);
       return;
     }
@@ -33,17 +44,19 @@ export function mountLoginHandlers() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
-        msg && (msg.textContent = body.error || `Erreur ${res.status}`);
+        setMsg(body?.error || `Erreur ${res.status}`, 'err');
         btn && (btn.disabled = false);
         return;
       }
       localStorage.setItem('auth', JSON.stringify(body.user));
-      // NOUVEAU signale au layout que l’état a changé
       window.dispatchEvent(new CustomEvent('auth:changed'));
-      msg && (msg.textContent = 'Connexion réussie !');
-      setTimeout(() => { location.hash = '#dashboard'; }, 600);
+      setMsg('login.succes', 'ok');
+      setTimeout(() => { 
+        history.pushState({}, '', '/dashboard');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, 600);
     } catch (err: any) {
-      msg && (msg.textContent = err?.message || 'Erreur réseau');
+      setMsg(err?.message || 'common.network_error', 'err');
       btn && (btn.disabled = false);
     }
   }, { once: true });
@@ -69,7 +82,8 @@ function  handleOAuthRedirectFromGoogle(): boolean {
       const user = { id, username, email };
       localStorage.setItem('auth', JSON.stringify(user));
       clearQuery();
-      window.location.hash = '#dashboard';
+      history.pushState({}, '', '/dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
       return true;
     }
   }
@@ -84,7 +98,7 @@ export function initLoginPage() {
     googleBtn.addEventListener('click', (e) => {
       e.preventDefault();
       // on navvigue on fetch opar pour preserver le state
-      window.location.href = 'http://localhost:300/api/auth/google';
+      window.location.href = 'http://localhost:3000/api/auth/google';
     });
   }
 
@@ -94,7 +108,8 @@ export function initLoginPage() {
     try {
       const user = JSON.parse(saved);
       if (user?.id) {
-        window.location.hash = '#dashboard';
+        history.pushState({}, '', '/dashboard');
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }
     } catch {}
   }

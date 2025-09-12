@@ -1,4 +1,5 @@
 const db = require('./db');
+const { replyError } = require('./i18n_errors');
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -20,7 +21,7 @@ function validateAlias(alias) {
   if (a.length < 2 || a.length > 24) {
     return {
       ok: false,
-      errors: ['Alias must be between 2 and 24 characters.']
+      errors: ['alias.length']
     };
   }
 
@@ -31,10 +32,10 @@ function validateUsername(username) {
   const errors = [];
   const u = String(username || '').trim();
 
-  if (!u) errors.push('Username is required.');
+  if (!u) errors.push('username.required');
   // 3–20 caractères, alphanum + . _ - (mêmes règles que profil)
   if (!/^[a-zA-Z0-9._-]{3,20}$/.test(u)) {
-    errors.push('Username must be 3–20 chars, letters/numbers/._- only.');
+    errors.push('username.format');
   }
   return { ok: errors.length === 0, value: u, errors };
 }
@@ -43,18 +44,18 @@ async function usersRoutes(fastify) {
   // PUT /api/users/:id  -> met à jour username/alias/avatar_url
   fastify.put('/:id', async (request, reply) => {
     const id = Number(request.params.id);
-    if (!id) return reply.code(400).send({ error: 'Invalid user id' });
+    if (!id) return replyError(reply, 'INVALID_USER_ID');
 
     const { username, alias, avatar_url } = request.body || {};
 
     // validations simples
     const user = validateUsername(username);
     if (!user.ok)
-      return reply.code(400).send({ error: 'Invalid username', details: user.errors });
+      return reply.code(400).send({ ok:false, error_key: 'auth.invalid_username', details: user.errors });
 
     const ali = validateAlias(alias);
     if (!ali.ok)
-      return reply.code(400).send({ error: 'Invalid alias', details: ali.errors });
+      return reply.code(400).send({ ok: false, error_key: 'users.invalid_alias', details: ali.errors });
 
 
     const newUsername = user.value;
@@ -63,7 +64,7 @@ async function usersRoutes(fastify) {
 
     // optionnel : vérifier que l’utilisateur existe
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
-    if (!existing) return reply.code(404).send({ error: 'User not found' });
+    if (!existing) return replyError(reply, 'USER_NOT_FOUND');
 
     try {
       await dbRun(
@@ -103,9 +104,11 @@ async function usersRoutes(fastify) {
           const field = m.includes('users.username') ? 'username'
                     : m.includes('users.alias')    ? 'alias'
                     : 'unique';
-          return reply.code(409).send({ error: `This ${field} is already taken.` });
+          if (field === 'username') return reply.code(409).send({ ok:false, error_key: 'profile.username_taken'});
+          if (field === 'alias') return reply.code(409).send({ ok:false, error_key: 'profile.alias_taken' });
+          return reply.code(409).send({ ok:false, error_key: 'users.unique_conflict', params: {field}});
         }
-        return reply.code(500).send({ error: 'Internal server error' });
+        return replyError(reply, 'UNKNOWN');
       }
   });
 }

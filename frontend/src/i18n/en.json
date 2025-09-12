@@ -1,0 +1,154 @@
+{
+	"home": {
+		"text": "Introducing a complete website with a beautiful modern design",
+		"button": "Play now"
+	},
+	"login": {
+		"title": "Login",
+		"with_google": "Continue with google",
+		"username_or_email": "Usename or email",
+		"password": "Password",
+		"no_account": "don't have an account ?",
+		"submit": "Log in",
+		"register": "register",
+		"required_fields" : "Required fields",
+		"succes": "Signed in!",
+		"invalid_credentials": "Invalid credentials."
+	},
+	"register": {
+		"register": "Register",
+		"succes": "Account created!"
+	},
+	"dashboard": {
+		"stat": "statistics",
+		"history": "historical",
+		"rank": "ranking",
+		"welcome": "Welcome, {name}",
+		"invalid_user_id": "Invalid user ID. Please sign in again.",
+		"invalid_response": "Invalid server response.",
+		"stats": {
+			"played": "Games played",
+			"wins": "Wins",
+			"losses": "Losses",
+			"winrate": "Win rate",
+			"streak": "Win streak",
+			"rank": "Rank"
+		}
+	},
+	"friends": {
+		"friends": "Friends",
+		"add": "Add",
+		"empty": "No friends yet.",
+		"enter_handle": "Enter Username or Alias.",
+		"added": "<{name}> has been added to your friends.",
+		"already": "You already follow <{name}>.",
+		"removed": "<{name}> removed from your friends.",
+		"friends_list": "Your friends list",
+		"load_error": "Unable to load friends list.",
+		"remove" : "remove",
+		"not_found" : "user not found",
+		"invalid_friend_id": "Invalid friend ID.",
+		"missing_friend_param": "The « friend » parameter is missing.",
+		"invalid_handle": "Invalid username.",
+		"cannot_add_self": "You cannot add yourself.",
+		"user_not_found": "user not found.",
+		"friend_not_found": "Friend not found.",
+		"not_friends" : "You are not following this user",
+		"add_error": "Unable to add this friend",
+		"remove_error": "Couldn't remove this friend"
+	},
+	"nav": {
+		"home": "Home",
+		"play": "Play",
+		"dashboard": "Dashboard",
+		"friends": "Friends",
+		"profile": "Profile",
+		"logout": "Logout",
+		"lang": {
+			"label": "Language",
+			"fr": "Francais",
+			"en": "English",
+			"es": "Español"
+		}
+	},
+	"common" : {
+		"network_error": "Network error. Check your connection.",
+		"server_error" : "An error has occurred. Please try again.",
+		"loading": "Loading...",
+		"retry": "Retry"
+	},
+	"profile": {
+		"saving": "Backup in progress...",
+		"saved": "Profile saved!",
+		"update_error": "Error while updating.",
+		"username_taken": "This username is already taken.",
+		"alias_taken": "This alias is already taken.",
+		"avatar" : {
+			"invalid_scheme" : "Invalid URL: Use https://",
+			"checking": "Checking the image…",
+			"updated": "Avatar updated.",
+			"fetch_error": "Unable to load image at this URL.",
+			"invalid_url": "The avatar URL is invalid."
+		}
+	},
+	"auth" : {
+		"must_login": "You must be logged in.",
+		"missing_fields": "Email, username and password are required.",
+		"invalid_username": "Invalid username.",
+		"invalid_email": "Invalid email.",
+		"weak_password": "Password too weak.",
+		"user_exists": "Username already exists.",
+		"email_used": "Email already used.",
+		"register_succes": "User registered successfully!",
+		"missing_credentials": "Username and password are required."
+	},
+	"password": {
+		"type": "Password must be a string.",
+		"min": "Password must be at least 8 characters.",
+		"max": "Password must be at most 72 characters.",
+		"lower": "Password must include a lowercase letter.",
+		"upper": "Password must include an uppercase letter.",
+		"digit": "Password must include a digit.",
+		"symbol": "Password must include a symbol.",
+		"no_space": "Password must not contain spaces.",
+		"no_username": "Password must not contain the username.",
+		"no_email_local": "Password must not contain parts of the email."
+	},
+	"username": {
+	    "required": "Username is required.",
+    	"format": "3–20 characters, letters/numbers/._- only."
+	},
+	"email": {
+		"required": "Email is required.",
+		"format": "Invalid email format."
+	},
+	"mfa": {
+		"code_required": "Code is required.",
+		"setup_required": "2FA setup required.",
+		"invalid_code": "Invalid code.",
+		"expired": "MFA session expired.",
+		"invalid": "Invalid MFA session.",
+		"not_enabled": "2FA is not enabled."
+	},
+	"oauth": {
+	    "callback_failed": "OAuth callback failed."
+	},
+	"users": {
+		"invalid_user_id": "Invalid user id.",
+		"invalid_alias": "Invalid alias.",
+		"unique_conflict": "This {field} is already taken.",
+		"not_found": "User not found."
+	},
+	"alias": {
+		"length": "Alias must be between 2 and 24 characters."
+	},
+	"play": {
+		"title": "Pong 3D",
+		"subtitle": "Choose a game mode",
+		"mode": {
+			"1v1": {"title": "1 vs 1 (local)", "desc": "Two players on the same keyboard."},
+			"ai": {"title": "Play vs AI", "desc": "Face a progressive AI."},
+			"tournament": {"title": "Tournament", "desc": "Create a bracket and chain matches."}
+		}
+	}
+}

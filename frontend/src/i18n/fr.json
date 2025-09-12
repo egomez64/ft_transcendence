@@ -1,0 +1,154 @@
+{
+	"home": {
+		"text": "Présentation d'un site web complet avec un magnifique design moderne",
+		"button": "Jouer maintenant"
+	},
+	"login": {
+		"title": "Connexion",
+		"with_google": "Se connecter avec google",
+		"username_or_email": "Nom d'utilisateur ou email",
+		"password": "Mot de passe",
+		"no_account": "vous n'avez pas de compte ?",
+		"submit": "Se connecter",
+		"register": "S'inscrire",
+		"required_fields" : "Champs requis.",
+		"succes": "Connecté !",
+		"invalid_credentials": "Identifiants invalides"
+	},
+	"register": {
+		"register": "Inscription",
+		"succes": "Compte créé !"
+	},
+	"dashboard": {
+		"stat": "statistiques",
+		"history": "historique",
+		"rank": "classement",
+		"welcome": "Bienvenue, {name}",
+		"invalid_user_id": "ID utilisateur invalide. Veuillez vous reconnecter.",
+		"invalid_response": "Réponse invalide du serveur.",
+		"stats": {
+			"played": "Parties jouées",
+			"wins": "Victoires",
+			"losses": "Défaites",
+			"winrate": "Taux de victoire",
+			"streak": "Série de victoires",
+			"rank": "Rang"
+		}
+	},
+	"friends": {
+		"friends": "Amis",
+		"add": "Ajouter",
+		"empty": "Aucun amis pour l'instant.",
+		"enter_handle": "Entrez un pseudo ou un Alias.",
+		"added": "<{name}> a été ajouté à vos amis.",
+		"already": "Vous suivez déjà <{name}>.",
+		"removed": "<{name}> a été retiré de votre liste d'amis.",
+		"friends_list": "Votre liste d'amis",
+		"load_error": "Impossible de charger la liste des amis.",
+		"remove" : "retirer",
+		"not_found" : "utilisateur introuvable",
+		"invalid_friend_id": "Identifiant d'ami invalide.",
+		"missing_friend_param": "Le paramètre « ami » est manquant.",
+		"invalid_handle": "Identifiant invalide.",
+		"cannot_add_self": "Vous ne pouvez pas vous ajouter vous-même.",
+		"user_not_found": "utilisateur introuvable.",
+		"friend_not_found": "Ami introuvable.",
+		"not_friends" : "Vous ne suivez pas cet utilisateur",
+		"add_error": "Impossible d'ajouter cet amis",
+		"remove_error": "Impossible de retirer cet ami."
+	},
+	"nav": {
+		"home": "Acceuil",
+		"play": "jouer",
+		"dashboard": "tableau de bord",
+		"friends": "amis",
+		"profile": "profil",
+		"logout": "déconnexion",
+		"lang": {
+			"label": "Langue",
+			"fr": "Francais",
+			"en": "English",
+			"es": "Español"
+		}
+	},
+	"common" : {
+		"network_error": "Problème réseau. Vérifiez votre connexion.",
+		"server_error" : "Une erreur est survenue. Réessayez.",
+		"loading": "Chargement...",
+		"retry": "Réessayer"
+	},
+	"profile": {
+		"saving": "Sauvegarde en cours...",
+		"saved": "Profil sauvegardé !",
+		"update_error": "Erreur lors de la mise à jour.",
+		"username_taken": "Ce nom d'utilisateur est déjà pris.",
+		"alias_taken": "Cet alias est déjà pris.",
+		"avatar" : {
+			"invalid_scheme" : "URL invalide : utilise https://",
+			"checking": "Vérification de l’image…",
+			"updated": "Avatar mis à jour.",
+			"fetch_error": "Impossible de charger l'image à cette URL.",
+			"invalid_url": "L'URL d'avatar n'est pas valide."
+		}
+	},
+	"auth" : {
+		"must_login": "Vous devez être connecté.",
+		"missing_fields": "Email, nom d'utilisateur et mot de passe sont requis",
+		"invalid_username": "Nom d'utilisateur invalide.",
+		"invalid_email": "Email invalide.",
+		"weak_password": "Mot de passe trop faible.",
+		"user_exists": "Ce nom d'utilisateur est déjà pris.",
+		"email_used": "Cet email est déjà utilisé.",
+		"register_succes": "Compte créé avec succès !",
+		"missing_credentials": "Nom d'utilisateur et mot de passe requis."
+	},
+	"password": {
+		"type": "Le mot de passe doit être une chaîne de caractères.",
+		"min": "Le mot de passe doit contenir au moins 8 caractères.",
+		"max": "Le mot de passe doit contenir au plus 72 caractères.",
+		"lower": "Le mot de passe doit inclure une lettre minuscule.",
+		"upper": "Le mot de passe doit inclure une lettre majuscule.",
+		"digit": "Le mot de passe doit inclure un chiffre.",
+		"symbol": "Le mot de passe doit inclure un symbole.",
+		"no_space": "Le mot de passe ne doit pas contenir d’espace.",
+		"no_username": "Le mot de passe ne doit pas contenir le nom d’utilisateur.",
+		"no_email_local": "Le mot de passe ne doit pas contenir la partie locale de l’email."
+	},
+	"username" : {
+		"required": "Le nom d’utilisateur est requis.",
+		"format": "3–20 caractères, lettres/chiffres/._- uniquement."
+	},
+	"email": {
+		"required": "L’email est requis.",
+		"format": "Format d’email invalide."	
+	},
+	"mfa": {
+		"code_required": "Le code est requis.",
+		"setup_required": "Configuration 2FA requise.",
+		"invalid_code": "Code invalide.",
+		"expired": "La session MFA a expiré.",
+		"invalid": "Session MFA invalide.",
+		"not_enabled": "La 2FA n'est pas activée."
+	},
+	"oauth": {
+	    "callback_failed": "La connexion OAuth a échoué."
+	},
+	"users": {
+		"invalid_user_id": "Identifiant utilisateur invalide.",
+		"invalid_alias": "Alias invalide.",
+		"unique_conflict": "Ce {field} est déjà pris.",
+		"not_found": "Utilisateur introuvable."
+	},
+	"alias": {
+		"length": "L'alias doit contenir entre 2 et 24 caractères."
+	},
+	"play": {
+		"title": "Pong 3D",
+		"subtitle": "Choisis un mode de jeu",
+		"mode": {
+			"1v1": {"title": "1 vs 1 (local)", "desc": "Deux joueurs au clavier, même écran."},
+			"ai": {"title": "Joueur vs IA", "desc": "Affronte une IA"},
+			"tournament": {"title": "Tournoi", "desc": "Organise un bracket et enchaîne les matchs."}
+		}
+	}
+}

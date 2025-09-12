@@ -20,7 +20,10 @@ db.run(`
     alias TEXT UNIQUE,
     avatar_url TEXT,
     wins INTEGER NOT NULL DEFAULT 0,
-    losses INTEGER NOT NULL DEFAULT 0
+    losses INTEGER NOT NULL DEFAULT 0,
+    twofa_code_hash TEXT,
+    twofa_code_expires INTEGER,
+    twofa_last_sent INTEGER
   )
 `, (err) => {
   if (err) {

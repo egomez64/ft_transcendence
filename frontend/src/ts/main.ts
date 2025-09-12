@@ -1,13 +1,12 @@
 
 import "../style.css";
 import "../output.css";
-import { initFriendPage } from "./friends";
+import { initFriendsPage } from "./friends";
 import { initLoginPage } from "./login";
 import { mountRegisterHandlers } from "./register";
 import { mountLoginHandlers } from "./login";
 import { mountDashboard, laodDashboard, paintDashboardUsername } from "./dashboard";
 import { mountProfileHandlers } from "./profile";
-import { initPongPage } from "./pong";
 import {
   setupAuthMenu,
   closeAuthDropdown,
@@ -16,19 +15,52 @@ import {
   isAuthed,
   setupLangDropdown,
 } from "./layout";
+import { applyTranslations, setLang, initI18n } from '../i18n';
+import { initPlayPage } from "./play";
+
+function routeFromLocation(): string {
+  const p = window.location.pathname || '/';
+  if (p === '/' || p === '/home') return 'home';
+  return p.replace(/^\/+/, '');
+}
+
+function navigate(path: string, replace = false) {
+  const url = path.startsWith('/') ? path : `/${path}`;
+  if (replace) history.replaceState({}, '', url);
+  else history.pushState({}, '', url);
+  loadPage();
+}
+
+document.addEventListener('click', (e) => {
+  const a = (e.target as HTMLElement)?.closest('a[href]');
+  if (!a) return;
+
+  const href = (a as HTMLAnchorElement).getAttribute('href') || '';
+  if (!href.startsWith('/')) return;
+  e.preventDefault();
+  navigate(href);
+})
+
+async function waitFor(sel: string, tries = 10): Promise<boolean> {
+  return await new Promise((resolve) => {
+    const check = () => {
+      if (document.querySelector(sel)) return resolve(true);
+      if (tries-- <= 0) return resolve(false);
+      requestAnimationFrame(check);
+    };
+    check();
+  });
+}
+
 
 const protectedPages = new Set(['dashboard', 'play']);
 const authOnlyForbidden = new Set(['login', 'register']);
 
 async function loadLayout() {
+  if (document.getElementById('authMenu')) return;
   const layoutResp = await fetch('./src/pages/layout.html');
   const layoutHtml = await layoutResp.text();
   document.body.innerHTML = layoutHtml;
-}
-
-function getPageFromHash(): string {
-  const raw = location.hash.slice(1);
-  return raw.replace('.html', '') || 'home';
 }
 
 //protected si besoins d'etre connecter
@@ -38,10 +70,9 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   login:      {file: 'login.html', mount: mountLoginHandlers, protected: false},
   register:   {file: 'register.html', mount: mountRegisterHandlers, protected: false },
   dashboard:  {file: 'dashboard.html', mount: () => { mountDashboard(); laodDashboard?.(); paintDashboardUsername(); }, protected: true},
-  //play:       {file: 'play.html', mount: mountPlayHandlers, protected: true},
+  play:       {file: 'play.html', mount: initPlayPage, protected: false},
   profils:    {file: 'profile.html', mount: mountProfileHandlers, protected: true},
-  friends:    {file: 'friends.html', mount: initFriendPage, protected: true},
-  pong:       {file: 'pong.html', mount: initPongPage, protected: false}, //set to true when finished
+  friends:    {file: 'friends.html', mount: initFriendsPage, protected: false},
 };
 
 function normalizePage(rawHash: string): string {
@@ -52,47 +83,46 @@ function normalizePage(rawHash: string): string {
 }
 
 export async function loadPage() {
-  const page = normalizePage(location.hash);
-  
-  if (page === 'logout') {
-    localStorage.removeItem('auth');
-    setupAuthMenu();
-    location.hash = '#login';
-    return;
-  }
-
-  const def = PAGE_MAP[page] ?? PAGE_MAP.home;
-
+  const key = routeFromLocation();
+  const def = PAGE_MAP[key] ?? PAGE_MAP.home;
   if (def.protected && !isAuthed()) {
-    location.replace('#login');
+    navigate('/login', true);
     return;
-  }
-
-  let pageHtml = '';
-  try {
-    const res = await fetch(`/src/pages/${def.file}`, { cache: 'no-cache'});
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} on ${def.file}`);
-    }
-    pageHtml = await res.text();
-  } catch(err) {
-    console.error('[loadPage] fetch error:', err);
-    pageHtml = `
-      <section class="max-w-xl mx-auto mt-24 bg-black/60 text-pink-100 rounded-xl p-6 border border-pink-500/30">
-        <h2 class="text-2xl mb-2">Oups</h2>
-        <p>Impossible de charger <code>${def.file}</code>.</p>
-      </section>`;
   }
 
   const app = document.getElementById('app');
-  if (app) app.innerHTML = pageHtml;
+  const isSSR = app?.getAttribute('data-ssr') === '1';
 
-  try {
-    def.mount?.();
-  } catch (err) {
-    console.error('[loadPage] mount error on', page, err);
+  if (!isSSR) {
+    let html = '';
+    try {
+      const res = await fetch(`/src/pages/${def.file}`, { cache: 'no-cache' });
+      html = await res.text(); 
+    } catch {
+      html = `<section class="max-w-xl mx-auto mt-24 bg-black/60 text-pink-100 rounded-xl p-6 border border-pink-500/30">
+        <h2 class="text-2xl mb-2">Oups</h2>
+        <p>Impossible de charger <code>${def.file}</code>.</p>
+      </section>`;
+    }
+    if (app) {
+      app.innerHTML = html;
+      applyTranslations(app);
+    }
+  } else {
+    app?.removeAttribute('data-ssr');
+    if (app) applyTranslations(app);
   }
+  const keyElMap: Record<string, string>= {
+    friends: '#friendSearchForm',
+  };
+  const keyEl = keyElMap[key];
+  if (keyEl) {
+    await waitFor(keyEl);
+  }
+  await Promise.resolve();
+  await new Promise(requestAnimationFrame);
 
+  try { def.mount?.(); } catch (e) { console.error('[mount]', key, e); }
   setupAuthMenu();
 }
 
@@ -105,20 +135,21 @@ document.addEventListener('click', (e) => {
   localStorage.removeItem('auth');
   closeAuthDropdown();
   setupAuthMenu();
-  location.hash = '#login';
+  navigate('/login', true);
 });
 
-window.addEventListener('hashchange', () => {
+window.addEventListener('popstate', () => {
   setupAuthMenu();
   loadPage();
-  initCurrentRouteIfNeeded();
-});
+  const app = document.getElementById("app")!;
+  applyTranslations(app);
+})
 
 window.addEventListener('DOMContentLoaded', async () => {
   await loadLayout();
+  await initI18n();
   setupLangDropdown();
   await loadPage();
-  initCurrentRouteIfNeeded();
 });
 
 // réagit aux changements d’auth (login/logout) pour rafraîchir UI + dashboard
@@ -132,15 +163,3 @@ window.addEventListener('auth:changed', () => {
     mountDashboard();
   }
 });
-
-function initCurrentRouteIfNeeded() {
-  const hash = window.location.hash || '#login';
-  
-  if (hash === '#login' || hash.startsWith('#login')) {
-    initLoginPage();
-  }
-}
-
-if (window.location.pathname.endsWith("pong.html")) {
-    initPongPage();
-}

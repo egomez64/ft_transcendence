@@ -1,3 +1,5 @@
+import { makeSetMsg } from "./utils";
+
 //politique avatar
 const AVATAR = {
   FALLBACK: '/assets/login.png',
@@ -14,9 +16,10 @@ function pageIsHttps() {
 }
 
 function setMsg(el: HTMLElement | null, text: string, ok = false) {
-  if (!el) return;
-  el.textContent = text;
-  el.setAttribute('style', `color:${ok ? '#a7f3d0' : '#fbcfe8'}`);
+  const target = (el as HTMLElement | null ) ?? document.querySelector<HTMLElement>('#profileMsg');
+  const _set = makeSetMsg(target || '#profileMsg');
+  const type = ok === true ? 'ok' : ok === false ? 'err' : 'info';
+  _set(text, type);
 }
 
 function markError(input: HTMLInputElement | null, on: boolean) {
@@ -110,7 +113,11 @@ export function mountProfileHandlers() {
 
   let user: any = null;
   try { user = JSON.parse(localStorage.getItem('auth') || 'null'); } catch {}
-  if (!user) { location.replace('#login'); return; }
+  if (!user) { 
+    history.replaceState({}, '', '/login');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    return;
+  }
 
   //email lecture seule
   if (emailIn) { emailIn.value = user.email ?? ''; emailIn.disabled = true; }
@@ -137,7 +144,7 @@ export function mountProfileHandlers() {
     if (!parsed) {
       if (avatarPreview) avatarPreview.src = AVATAR.FALLBACK;
       markError(avatarUrlIn, true);
-      setMsg(msg, "URL invalide (utilise http(s)://..)", false);
+      setMsg(msg, "profile.avatar.invalid_scheme", false);
       return;
     }
 
@@ -150,18 +157,18 @@ export function mountProfileHandlers() {
     }
 
     //test reel
-    setMsg(msg, "Verification de l'image...", true);
+    setMsg(msg, "profile.avatar.checking", true);
     markError(avatarUrlIn, false);
 
     const ok = await testImage(parsed.href, 5000);
     if (ok) {
       if (avatarPreview) avatarPreview.src = parsed.href;
       markError(avatarUrlIn, false);
-      setMsg(msg, "Avatar mis a jour", true);
+      setMsg(msg, "profile.avatar.updated", true);
     } else {
       if (avatarPreview) avatarPreview.src = AVATAR.FALLBACK;
       markError(avatarUrlIn, true);
-      setMsg(msg, "Impossible de charger l'image a cette URL.", false);
+      setMsg(msg, "profile.avatar.fetch_error", false);
     }
   }
 
@@ -181,7 +188,7 @@ export function mountProfileHandlers() {
       const allow = parsed && isAllowedUrl(parsed as URL);
       if (!parsed || allow !== true || !(await testImage(parsed.href, 3000))) {
         markError(avatarUrlIn, true);
-        setMsg(msg, "L'URL d'avatar n'est pas valide", false);
+        setMsg(msg, "profile.avatar.invalid_url", false);
         avatarUrlIn?.focus();
         return;
       }
@@ -194,7 +201,7 @@ export function mountProfileHandlers() {
       alias:    (aliasIn?.value || '').trim() || null,
       avatar_url: newAvatar || null,
     };
-    setMsg(msg, "Sauvegarde...");
+    setMsg(msg, "profile.saving");
 
     //appel API
     try {
@@ -218,13 +225,13 @@ export function mountProfileHandlers() {
           const err = (data?.error || '').toLowerCase();
           if (err.includes('username')) {
             markError(usernameIn, true);
-            setMsg(msg, 'Ce nom d’utilisateur est déjà pris.', false);
+            setMsg(msg, 'profile.username_taken', false);
             usernameIn?.focus();
             return;
           }
           if (err.includes('alias')) {
             markError(aliasIn, true);
-            setMsg(msg, 'Cet alias est déjà pris.', false);
+            setMsg(msg, 'profile.alias_taken', false);
             aliasIn?.focus();
             return;
           }
@@ -245,7 +252,7 @@ export function mountProfileHandlers() {
           return;
         }
 
-        setMsg(msg, data?.error || 'Erreur lors de la mise à jour.', false);
+        setMsg(msg, data?.error || 'profile.update_error', false);
         return;
       }
 
@@ -262,11 +269,11 @@ export function mountProfileHandlers() {
     localStorage.setItem('auth', JSON.stringify(next));
 
     //feedback global event
-    setMsg(msg, '✅ Sauvegardé !', true);
+    setMsg(msg, 'profile.saved', true);
     window.dispatchEvent(new CustomEvent('auth:changed'));
     }
     catch (err) {
-      setMsg(msg, 'Erreur reseau.', false);
+      setMsg(msg, 'common.network_error', false);
     }
   });
   
