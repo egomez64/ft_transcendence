@@ -1,5 +1,3 @@
-import { initI18n, setLang, lang, applyTranslations } from '../i18n';
-
 function setupAuthMenu() {
   const btn = document.getElementById('authBtn') as HTMLAnchorElement | null;
   const menu = document.getElementById('authDropdown') as HTMLDivElement | null;
@@ -16,10 +14,10 @@ function setupAuthMenu() {
 
   if (!authed) {
     closeAuthDropdown();
-    btn.setAttribute('href', '/login')
+    btn.setAttribute('href', '#login');
     btn.title = 'Connexion';
   } else {
-    btn.setAttribute('href', '/');
+    btn.setAttribute('href', '#');
     btn.title = 'Menu du compte';
 
     //CLICK BTN PROFIL
@@ -45,8 +43,7 @@ function setupAuthMenu() {
     if (profils) {
       profils.onclick = () => {
         closeAuthDropdown();
-        history.pushState({}, '', '/profils');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        location.hash = '#profils';
       };
     }
 
@@ -57,8 +54,7 @@ function setupAuthMenu() {
         localStorage.removeItem('auth');
         closeAuthDropdown();
         setupAuthMenu();
-        history.replaceState({}, '', '/login');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        location.hash = '#login';
       };
     }
 
@@ -104,7 +100,6 @@ function setupLangDropdown() {
 
     d.btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      e.preventDefault();
 
 			if (authMenu) authMenu.classList.add("hidden");
 			if (authBtn) authBtn.setAttribute("aria-expanded", "false");
@@ -116,17 +111,7 @@ function setupLangDropdown() {
         d.btn?.setAttribute("aria-expanded", "true");
       }
     });
-
-  d.menu.querySelectorAll<HTMLElement>('[data-lang]').forEach(el => {
-    el.addEventListener('click', async () => {
-      const code = el.getAttribute('data-lang')!;
-      await setLang(code);
-      const label = el.textContent?.trim();
-      d.btn?.querySelector('[data-current-lang]')?.replaceChildren(document.createTextNode(label || code.toUpperCase()));
-      closeAll();
-    });
   });
-});
 
   document.addEventListener("click", closeAll);
   document.addEventListener("keydown", (e) => {
@@ -168,10 +153,6 @@ function isAuthed(): boolean {
     return false;
   }
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-  initI18n();
-});
 
 export {
   setupAuthMenu,

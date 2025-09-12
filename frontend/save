@@ -53,9 +53,9 @@
         ft_transcendence
       </h1>
       <nav class="flex justify-center space-x-10 text-pink-200 text-lg">
-        <a href="/home" class="hover:text-white transition">Accueil</a>
-        <a href="/login" class="hover:text-white transition">Connexion</a>
-        <a href="/register" class="hover:text-white transition">Inscription</a>
+        <a href="#home" class="hover:text-white transition">Accueil</a>
+        <a href="#login" class="hover:text-white transition">Connexion</a>
+        <a href="#register" class="hover:text-white transition">Inscription</a>
       </nav>
     </header>
   

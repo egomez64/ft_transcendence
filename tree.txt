@@ -1003,24 +1003,6 @@
 │   │   │   │   └── types
 │   │   │   │       ├── index.d.ts
 │   │   │   │       └── index.test-d.ts
-│   │   │   ├── cookie
-│   │   │   │   ├── benchmark
-│   │   │   │   │   ├── cookie.js
-│   │   │   │   │   ├── cookie-multi.js
-│   │   │   │   │   ├── signer.js
-│   │   │   │   │   └── signer-multi.js
-│   │   │   │   ├── eslint.config.js
-│   │   │   │   ├── LICENSE
-│   │   │   │   ├── package.json
-│   │   │   │   ├── plugin.js
-│   │   │   │   ├── README.md
-│   │   │   │   ├── signer.js
-│   │   │   │   ├── test
-│   │   │   │   │   ├── cookie.test.js
-│   │   │   │   │   └── signer.test.js
-│   │   │   │   └── types
-│   │   │   │       ├── plugin.d.ts
-│   │   │   │       └── plugin.test-d.ts
 │   │   │   ├── cors
 │   │   │   │   ├── bench.js
 │   │   │   │   ├── benchmark
@@ -1128,33 +1110,6 @@
 │   │   │   │   │   ├── type.test.js
 │   │   │   │   │   ├── unique-items.test.js
 │   │   │   │   │   └── utils.js
-│   │   │   │   └── types
-│   │   │   │       ├── index.d.ts
-│   │   │   │       └── index.test-d.ts
-│   │   │   ├── oauth2
-│   │   │   │   ├── eslint.config.js
-│   │   │   │   ├── examples
-│   │   │   │   │   ├── apple.js
-│   │   │   │   │   ├── discord.js
-│   │   │   │   │   ├── discovery.js
-│   │   │   │   │   ├── epic-games.js
-│   │   │   │   │   ├── facebook.js
-│   │   │   │   │   ├── github.js
-│   │   │   │   │   ├── google.js
-│   │   │   │   │   ├── google-with-pkce.js
-│   │   │   │   │   ├── linkedin.js
-│   │   │   │   │   ├── spotify.js
-│   │   │   │   │   ├── userinfo.js
-│   │   │   │   │   ├── vatsim-dev.js
-│   │   │   │   │   ├── vatsim.js
-│   │   │   │   │   ├── vkontakte.js
-│   │   │   │   │   └── yandex.js
-│   │   │   │   ├── index.js
-│   │   │   │   ├── LICENSE
-│   │   │   │   ├── package.json
-│   │   │   │   ├── README.md
-│   │   │   │   ├── test
-│   │   │   │   │   └── index.test.js
 │   │   │   │   └── types
 │   │   │   │       ├── index.d.ts
 │   │   │   │       └── index.test-d.ts
@@ -1947,125 +1902,6 @@
 │   │   │   ├── package.json
 │   │   │   ├── polyfills.js
 │   │   │   └── README.md
-│   │   ├── @hapi
-│   │   │   ├── boom
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   └── index.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   ├── bourne
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   └── index.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   ├── hoek
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── applyToDefaults.d.ts
-│   │   │   │   │   ├── applyToDefaults.js
-│   │   │   │   │   ├── assert.d.ts
-│   │   │   │   │   ├── assertError.d.ts
-│   │   │   │   │   ├── assertError.js
-│   │   │   │   │   ├── assert.js
-│   │   │   │   │   ├── bench.d.ts
-│   │   │   │   │   ├── bench.js
-│   │   │   │   │   ├── block.d.ts
-│   │   │   │   │   ├── block.js
-│   │   │   │   │   ├── clone.d.ts
-│   │   │   │   │   ├── clone.js
-│   │   │   │   │   ├── contain.d.ts
-│   │   │   │   │   ├── contain.js
-│   │   │   │   │   ├── deepEqual.d.ts
-│   │   │   │   │   ├── deepEqual.js
-│   │   │   │   │   ├── escapeHeaderAttribute.d.ts
-│   │   │   │   │   ├── escapeHeaderAttribute.js
-│   │   │   │   │   ├── escapeHtml.d.ts
-│   │   │   │   │   ├── escapeHtml.js
-│   │   │   │   │   ├── escapeJson.d.ts
-│   │   │   │   │   ├── escapeJson.js
-│   │   │   │   │   ├── escapeRegex.d.ts
-│   │   │   │   │   ├── escapeRegex.js
-│   │   │   │   │   ├── flatten.d.ts
-│   │   │   │   │   ├── flatten.js
-│   │   │   │   │   ├── ignore.d.ts
-│   │   │   │   │   ├── ignore.js
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   ├── index.js
-│   │   │   │   │   ├── index.mjs
-│   │   │   │   │   ├── intersect.d.ts
-│   │   │   │   │   ├── intersect.js
-│   │   │   │   │   ├── isPromise.d.ts
-│   │   │   │   │   ├── isPromise.js
-│   │   │   │   │   ├── merge.d.ts
-│   │   │   │   │   ├── merge.js
-│   │   │   │   │   ├── once.d.ts
-│   │   │   │   │   ├── once.js
-│   │   │   │   │   ├── reach.d.ts
-│   │   │   │   │   ├── reach.js
-│   │   │   │   │   ├── reachTemplate.d.ts
-│   │   │   │   │   ├── reachTemplate.js
-│   │   │   │   │   ├── stringify.d.ts
-│   │   │   │   │   ├── stringify.js
-│   │   │   │   │   ├── types.js
-│   │   │   │   │   ├── utils.js
-│   │   │   │   │   ├── wait.d.ts
-│   │   │   │   │   └── wait.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   ├── topo
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   └── index.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── node_modules
-│   │   │   │   │   └── @hapi
-│   │   │   │   │       └── hoek
-│   │   │   │   │           ├── lib
-│   │   │   │   │           │   ├── applyToDefaults.js
-│   │   │   │   │           │   ├── assert.js
-│   │   │   │   │           │   ├── bench.js
-│   │   │   │   │           │   ├── block.js
-│   │   │   │   │           │   ├── clone.js
-│   │   │   │   │           │   ├── contain.js
-│   │   │   │   │           │   ├── deepEqual.js
-│   │   │   │   │           │   ├── error.js
-│   │   │   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │   │   │           │   ├── escapeHtml.js
-│   │   │   │   │           │   ├── escapeJson.js
-│   │   │   │   │           │   ├── escapeRegex.js
-│   │   │   │   │           │   ├── flatten.js
-│   │   │   │   │           │   ├── ignore.js
-│   │   │   │   │           │   ├── index.d.ts
-│   │   │   │   │           │   ├── index.js
-│   │   │   │   │           │   ├── intersect.js
-│   │   │   │   │           │   ├── isPromise.js
-│   │   │   │   │           │   ├── merge.js
-│   │   │   │   │           │   ├── once.js
-│   │   │   │   │           │   ├── reach.js
-│   │   │   │   │           │   ├── reachTemplate.js
-│   │   │   │   │           │   ├── stringify.js
-│   │   │   │   │           │   ├── types.js
-│   │   │   │   │           │   ├── utils.js
-│   │   │   │   │           │   └── wait.js
-│   │   │   │   │           ├── LICENSE.md
-│   │   │   │   │           ├── package.json
-│   │   │   │   │           └── README.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   └── wreck
-│   │   │       ├── lib
-│   │   │       │   ├── index.d.ts
-│   │   │       │   ├── index.js
-│   │   │       │   ├── payload.js
-│   │   │       │   ├── recorder.js
-│   │   │       │   └── tap.js
-│   │   │       ├── LICENSE.md
-│   │   │       ├── package.json
-│   │   │       └── README.md
 │   │   ├── has-unicode
 │   │   │   ├── index.js
 │   │   │   ├── LICENSE
@@ -2257,79 +2093,6 @@
 │   │   │   ├── package.json
 │   │   │   ├── README.md
 │   │   │   └── test.js
-│   │   ├── joi
-│   │   │   ├── dist
-│   │   │   │   └── joi-browser.min.js
-│   │   │   ├── lib
-│   │   │   │   ├── annotate.js
-│   │   │   │   ├── base.js
-│   │   │   │   ├── cache.js
-│   │   │   │   ├── common.js
-│   │   │   │   ├── compile.js
-│   │   │   │   ├── errors.js
-│   │   │   │   ├── extend.js
-│   │   │   │   ├── index.d.ts
-│   │   │   │   ├── index.js
-│   │   │   │   ├── manifest.js
-│   │   │   │   ├── messages.js
-│   │   │   │   ├── modify.js
-│   │   │   │   ├── ref.js
-│   │   │   │   ├── schemas.js
-│   │   │   │   ├── state.js
-│   │   │   │   ├── template.js
-│   │   │   │   ├── trace.js
-│   │   │   │   ├── types
-│   │   │   │   │   ├── alternatives.js
-│   │   │   │   │   ├── any.js
-│   │   │   │   │   ├── array.js
-│   │   │   │   │   ├── binary.js
-│   │   │   │   │   ├── boolean.js
-│   │   │   │   │   ├── date.js
-│   │   │   │   │   ├── function.js
-│   │   │   │   │   ├── keys.js
-│   │   │   │   │   ├── link.js
-│   │   │   │   │   ├── number.js
-│   │   │   │   │   ├── object.js
-│   │   │   │   │   ├── string.js
-│   │   │   │   │   └── symbol.js
-│   │   │   │   ├── validator.js
-│   │   │   │   └── values.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── node_modules
-│   │   │   │   └── @hapi
-│   │   │   │       └── hoek
-│   │   │   │           ├── lib
-│   │   │   │           │   ├── applyToDefaults.js
-│   │   │   │           │   ├── assert.js
-│   │   │   │           │   ├── bench.js
-│   │   │   │           │   ├── block.js
-│   │   │   │           │   ├── clone.js
-│   │   │   │           │   ├── contain.js
-│   │   │   │           │   ├── deepEqual.js
-│   │   │   │           │   ├── error.js
-│   │   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │   │           │   ├── escapeHtml.js
-│   │   │   │           │   ├── escapeJson.js
-│   │   │   │           │   ├── escapeRegex.js
-│   │   │   │           │   ├── flatten.js
-│   │   │   │           │   ├── ignore.js
-│   │   │   │           │   ├── index.d.ts
-│   │   │   │           │   ├── index.js
-│   │   │   │           │   ├── intersect.js
-│   │   │   │           │   ├── isPromise.js
-│   │   │   │           │   ├── merge.js
-│   │   │   │           │   ├── once.js
-│   │   │   │           │   ├── reach.js
-│   │   │   │           │   ├── reachTemplate.js
-│   │   │   │           │   ├── stringify.js
-│   │   │   │           │   ├── types.js
-│   │   │   │           │   ├── utils.js
-│   │   │   │           │   └── wait.js
-│   │   │   │           ├── LICENSE.md
-│   │   │   │           ├── package.json
-│   │   │   │           └── README.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
 │   │   ├── jsbn
 │   │   │   ├── CHANGELOG.md
 │   │   │   ├── example.html
@@ -3641,68 +3404,6 @@
 │   │   │   ├── LICENSE
 │   │   │   ├── package.json
 │   │   │   └── README.md
-│   │   ├── @sideway
-│   │   │   ├── address
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── decode.js
-│   │   │   │   │   ├── domain.js
-│   │   │   │   │   ├── email.js
-│   │   │   │   │   ├── errors.js
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   ├── index.js
-│   │   │   │   │   ├── ip.js
-│   │   │   │   │   ├── tlds.js
-│   │   │   │   │   └── uri.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── node_modules
-│   │   │   │   │   └── @hapi
-│   │   │   │   │       └── hoek
-│   │   │   │   │           ├── lib
-│   │   │   │   │           │   ├── applyToDefaults.js
-│   │   │   │   │           │   ├── assert.js
-│   │   │   │   │           │   ├── bench.js
-│   │   │   │   │           │   ├── block.js
-│   │   │   │   │           │   ├── clone.js
-│   │   │   │   │           │   ├── contain.js
-│   │   │   │   │           │   ├── deepEqual.js
-│   │   │   │   │           │   ├── error.js
-│   │   │   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │   │   │           │   ├── escapeHtml.js
-│   │   │   │   │           │   ├── escapeJson.js
-│   │   │   │   │           │   ├── escapeRegex.js
-│   │   │   │   │           │   ├── flatten.js
-│   │   │   │   │           │   ├── ignore.js
-│   │   │   │   │           │   ├── index.d.ts
-│   │   │   │   │           │   ├── index.js
-│   │   │   │   │           │   ├── intersect.js
-│   │   │   │   │           │   ├── isPromise.js
-│   │   │   │   │           │   ├── merge.js
-│   │   │   │   │           │   ├── once.js
-│   │   │   │   │           │   ├── reach.js
-│   │   │   │   │           │   ├── reachTemplate.js
-│   │   │   │   │           │   ├── stringify.js
-│   │   │   │   │           │   ├── types.js
-│   │   │   │   │           │   ├── utils.js
-│   │   │   │   │           │   └── wait.js
-│   │   │   │   │           ├── LICENSE.md
-│   │   │   │   │           ├── package.json
-│   │   │   │   │           └── README.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   ├── formula
-│   │   │   │   ├── lib
-│   │   │   │   │   ├── index.d.ts
-│   │   │   │   │   └── index.js
-│   │   │   │   ├── LICENSE.md
-│   │   │   │   ├── package.json
-│   │   │   │   └── README.md
-│   │   │   └── pinpoint
-│   │   │       ├── lib
-│   │   │       │   ├── index.d.ts
-│   │   │       │   └── index.js
-│   │   │       ├── LICENSE.md
-│   │   │       ├── package.json
-│   │   │       └── README.md
 │   │   ├── signal-exit
 │   │   │   ├── index.js
 │   │   │   ├── LICENSE.txt
@@ -3719,23 +3420,6 @@
 │   │   ├── simple-get
 │   │   │   ├── index.js
 │   │   │   ├── LICENSE
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   ├── simple-oauth2
-│   │   │   ├── index.js
-│   │   │   ├── lib
-│   │   │   │   ├── access-token.js
-│   │   │   │   ├── access-token-parser.js
-│   │   │   │   ├── authorization-code-grant-type.js
-│   │   │   │   ├── client
-│   │   │   │   │   ├── client.js
-│   │   │   │   │   ├── credentials-encoding.js
-│   │   │   │   │   ├── index.js
-│   │   │   │   │   └── request-options.js
-│   │   │   │   ├── client-credentials-grant-type.js
-│   │   │   │   ├── config.js
-│   │   │   │   ├── grant-type-params.js
-│   │   │   │   └── resource-owner-password-grant-type.js
 │   │   │   ├── package.json
 │   │   │   └── README.md
 │   │   ├── smart-buffer
@@ -6269,7 +5953,7 @@
 │   │   │   └── sync.js
 │   │   ├── postcss-load-config
 │   │   │   ├── LICENSE
-│   │   │   ├── package.jsonfrontend
+│   │   │   ├── package.json
 │   │   │   ├── README.md
 │   │   │   └── src
 │   │   │       ├── index.d.ts
@@ -6309,7 +5993,7 @@
 │   │   │   │   │   ├── string.js
 │   │   │   │   │   ├── tag.js
 │   │   │   │   │   ├── types.js
-│   │   │   │   │   └── universal.jsfrontend
+│   │   │   │   │   └── universal.js
 │   │   │   │   ├── sortAscending.js
 │   │   │   │   ├── tokenize.js
 │   │   │   │   ├── tokenTypes.js
@@ -7769,17 +7453,10 @@
 │   │       ├── test.mp4
 │   │       └── test.png
 │   ├── save
-│   ├── server.ts 
 │   ├── src
 │   │   ├── output.css
-│   │   ├── i18n.ts
-│   │   ├── i18n
-│   │   │   ├── en.json
-│   │   │   ├── es.json
-│   │   │   ├── fr.json
 │   │   ├── pages
 │   │   │   ├── dashboard.html
-│   │   │   ├── friends.html
 │   │   │   ├── home.html
 │   │   │   ├── layout.html
 │   │   │   ├── login.html
@@ -7788,8 +7465,6 @@
 │   │   ├── style.css
 │   │   └── ts
 │   │       ├── dashboard.ts
-│   │       ├── friends.ts
-│   │       ├── layout.ts
 │   │       ├── login.ts
 │   │       ├── main.ts
 │   │       ├── profile.ts
@@ -7799,371 +7474,6 @@
 │   ├── vite.config.ts
 │   └── vite-env.d.ts
 ├── Makefile
-├── node_modules
-│   ├── cookie
-│   │   ├── dist
-│   │   │   ├── index.d.ts
-│   │   │   ├── index.js
-│   │   │   └── index.js.map
-│   │   ├── LICENSE
-│   │   ├── package.json
-│   │   └── README.md
-│   ├── debug
-│   │   ├── LICENSE
-│   │   ├── package.json
-│   │   ├── README.md
-│   │   └── src
-│   │       ├── browser.js
-│   │       ├── common.js
-│   │       ├── index.js
-│   │       └── node.js
-│   ├── @fastify
-│   │   ├── cookie
-│   │   │   ├── benchmark
-│   │   │   │   ├── cookie.js
-│   │   │   │   ├── cookie-multi.js
-│   │   │   │   ├── signer.js
-│   │   │   │   └── signer-multi.js
-│   │   │   ├── eslint.config.js
-│   │   │   ├── LICENSE
-│   │   │   ├── package.json
-│   │   │   ├── plugin.js
-│   │   │   ├── README.md
-│   │   │   ├── signer.js
-│   │   │   ├── test
-│   │   │   │   ├── cookie.test.js
-│   │   │   │   └── signer.test.js
-│   │   │   └── types
-│   │   │       ├── plugin.d.ts
-│   │   │       └── plugin.test-d.ts
-│   │   └── oauth2
-│   │       ├── eslint.config.js
-│   │       ├── examples
-│   │       │   ├── apple.js
-│   │       │   ├── discord.js
-│   │       │   ├── discovery.js
-│   │       │   ├── epic-games.js
-│   │       │   ├── facebook.js
-│   │       │   ├── github.js
-│   │       │   ├── google.js
-│   │       │   ├── google-with-pkce.js
-│   │       │   ├── linkedin.js
-│   │       │   ├── spotify.js
-│   │       │   ├── userinfo.js
-│   │       │   ├── vatsim-dev.js
-│   │       │   ├── vatsim.js
-│   │       │   ├── vkontakte.js
-│   │       │   └── yandex.js
-│   │       ├── index.js
-│   │       ├── LICENSE
-│   │       ├── package.json
-│   │       ├── README.md
-│   │       ├── test
-│   │       │   └── index.test.js
-│   │       └── types
-│   │           ├── index.d.ts
-│   │           └── index.test-d.ts
-│   ├── fastify-plugin
-│   │   ├── lib
-│   │   │   ├── getPluginName.js
-│   │   │   └── toCamelCase.js
-│   │   ├── LICENSE
-│   │   ├── package.json
-│   │   ├── plugin.js
-│   │   ├── README.md
-│   │   ├── test
-│   │   │   ├── bundlers.test.js
-│   │   │   ├── checkVersion.test.js
-│   │   │   ├── composite.test.js
-│   │   │   ├── esm
-│   │   │   │   ├── esm.mjs
-│   │   │   │   └── index.test.js
-│   │   │   ├── extractPluginName.test.js
-│   │   │   ├── mu1tip1e.composite.test.js
-│   │   │   ├── test.js
-│   │   │   └── toCamelCase.test.js
-│   │   └── types
-│   │       ├── example-async.test-d.ts
-│   │       ├── example-callback.test-d.ts
-│   │       ├── plugin.d.ts
-│   │       └── plugin.test-d.ts
-│   ├── @hapi
-│   │   ├── boom
-│   │   │   ├── lib
-│   │   │   │   ├── index.d.ts
-│   │   │   │   └── index.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   ├── bourne
-│   │   │   ├── lib
-│   │   │   │   ├── index.d.ts
-│   │   │   │   └── index.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   ├── hoek
-│   │   │   ├── lib
-│   │   │   │   ├── applyToDefaults.d.ts
-│   │   │   │   ├── applyToDefaults.js
-│   │   │   │   ├── assert.d.ts
-│   │   │   │   ├── assertError.d.ts
-│   │   │   │   ├── assertError.js
-│   │   │   │   ├── assert.js
-│   │   │   │   ├── bench.d.ts
-│   │   │   │   ├── bench.js
-│   │   │   │   ├── block.d.ts
-│   │   │   │   ├── block.js
-│   │   │   │   ├── clone.d.ts
-│   │   │   │   ├── clone.js
-│   │   │   │   ├── contain.d.ts
-│   │   │   │   ├── contain.js
-│   │   │   │   ├── deepEqual.d.ts
-│   │   │   │   ├── deepEqual.js
-│   │   │   │   ├── escapeHeaderAttribute.d.ts
-│   │   │   │   ├── escapeHeaderAttribute.js
-│   │   │   │   ├── escapeHtml.d.ts
-│   │   │   │   ├── escapeHtml.js
-│   │   │   │   ├── escapeJson.d.ts
-│   │   │   │   ├── escapeJson.js
-│   │   │   │   ├── escapeRegex.d.ts
-│   │   │   │   ├── escapeRegex.js
-│   │   │   │   ├── flatten.d.ts
-│   │   │   │   ├── flatten.js
-│   │   │   │   ├── ignore.d.ts
-│   │   │   │   ├── ignore.js
-│   │   │   │   ├── index.d.ts
-│   │   │   │   ├── index.js
-│   │   │   │   ├── index.mjs
-│   │   │   │   ├── intersect.d.ts
-│   │   │   │   ├── intersect.js
-│   │   │   │   ├── isPromise.d.ts
-│   │   │   │   ├── isPromise.js
-│   │   │   │   ├── merge.d.ts
-│   │   │   │   ├── merge.js
-│   │   │   │   ├── once.d.ts
-│   │   │   │   ├── once.js
-│   │   │   │   ├── reach.d.ts
-│   │   │   │   ├── reach.js
-│   │   │   │   ├── reachTemplate.d.ts
-│   │   │   │   ├── reachTemplate.js
-│   │   │   │   ├── stringify.d.ts
-│   │   │   │   ├── stringify.js
-│   │   │   │   ├── types.js
-│   │   │   │   ├── utils.js
-│   │   │   │   ├── wait.d.ts
-│   │   │   │   └── wait.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   ├── topo
-│   │   │   ├── lib
-│   │   │   │   ├── index.d.ts
-│   │   │   │   └── index.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── node_modules
-│   │   │   │   └── @hapi
-│   │   │   │       └── hoek
-│   │   │   │           ├── lib
-│   │   │   │           │   ├── applyToDefaults.js
-│   │   │   │           │   ├── assert.js
-│   │   │   │           │   ├── bench.js
-│   │   │   │           │   ├── block.js
-│   │   │   │           │   ├── clone.js
-│   │   │   │           │   ├── contain.js
-│   │   │   │           │   ├── deepEqual.js
-│   │   │   │           │   ├── error.js
-│   │   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │   │           │   ├── escapeHtml.js
-│   │   │   │           │   ├── escapeJson.js
-│   │   │   │           │   ├── escapeRegex.js
-│   │   │   │           │   ├── flatten.js
-│   │   │   │           │   ├── ignore.js
-│   │   │   │           │   ├── index.d.ts
-│   │   │   │           │   ├── index.js
-│   │   │   │           │   ├── intersect.js
-│   │   │   │           │   ├── isPromise.js
-│   │   │   │           │   ├── merge.js
-│   │   │   │           │   ├── once.js
-│   │   │   │           │   ├── reach.js
-│   │   │   │           │   ├── reachTemplate.js
-│   │   │   │           │   ├── stringify.js
-│   │   │   │           │   ├── types.js
-│   │   │   │           │   ├── utils.js
-│   │   │   │           │   └── wait.js
-│   │   │   │           ├── LICENSE.md
-│   │   │   │           ├── package.json
-│   │   │   │           └── README.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   └── wreck
-│   │       ├── lib
-│   │       │   ├── index.d.ts
-│   │       │   ├── index.js
-│   │       │   ├── payload.js
-│   │       │   ├── recorder.js
-│   │       │   └── tap.js
-│   │       ├── LICENSE.md
-│   │       ├── package.json
-│   │       └── README.md
-│   ├── joi
-│   │   ├── dist
-│   │   │   └── joi-browser.min.js
-│   │   ├── lib
-│   │   │   ├── annotate.js
-│   │   │   ├── base.js
-│   │   │   ├── cache.js
-│   │   │   ├── common.js
-│   │   │   ├── compile.js
-│   │   │   ├── errors.js
-│   │   │   ├── extend.js
-│   │   │   ├── index.d.ts
-│   │   │   ├── index.js
-│   │   │   ├── manifest.js
-│   │   │   ├── messages.js
-│   │   │   ├── modify.js
-│   │   │   ├── ref.js
-│   │   │   ├── schemas.js
-│   │   │   ├── state.js
-│   │   │   ├── template.js
-│   │   │   ├── trace.js
-│   │   │   ├── types
-│   │   │   │   ├── alternatives.js
-│   │   │   │   ├── any.js
-│   │   │   │   ├── array.js
-│   │   │   │   ├── binary.js
-│   │   │   │   ├── boolean.js
-│   │   │   │   ├── date.js
-│   │   │   │   ├── function.js
-│   │   │   │   ├── keys.js
-│   │   │   │   ├── link.js
-│   │   │   │   ├── number.js
-│   │   │   │   ├── object.js
-│   │   │   │   ├── string.js
-│   │   │   │   └── symbol.js
-│   │   │   ├── validator.js
-│   │   │   └── values.js
-│   │   ├── LICENSE.md
-│   │   ├── node_modules
-│   │   │   └── @hapi
-│   │   │       └── hoek
-│   │   │           ├── lib
-│   │   │           │   ├── applyToDefaults.js
-│   │   │           │   ├── assert.js
-│   │   │           │   ├── bench.js
-│   │   │           │   ├── block.js
-│   │   │           │   ├── clone.js
-│   │   │           │   ├── contain.js
-│   │   │           │   ├── deepEqual.js
-│   │   │           │   ├── error.js
-│   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │           │   ├── escapeHtml.js
-│   │   │           │   ├── escapeJson.js
-│   │   │           │   ├── escapeRegex.js
-│   │   │           │   ├── flatten.js
-│   │   │           │   ├── ignore.js
-│   │   │           │   ├── index.d.ts
-│   │   │           │   ├── index.js
-│   │   │           │   ├── intersect.js
-│   │   │           │   ├── isPromise.js
-│   │   │           │   ├── merge.js
-│   │   │           │   ├── once.js
-│   │   │           │   ├── reach.js
-│   │   │           │   ├── reachTemplate.js
-│   │   │           │   ├── stringify.js
-│   │   │           │   ├── types.js
-│   │   │           │   ├── utils.js
-│   │   │           │   └── wait.js
-│   │   │           ├── LICENSE.md
-│   │   │           ├── package.json
-│   │   │           └── README.md
-│   │   ├── package.json
-│   │   └── README.md
-│   ├── ms
-│   │   ├── index.js
-│   │   ├── license.md
-│   │   ├── package.json
-│   │   └── readme.md
-│   ├── @sideway
-│   │   ├── address
-│   │   │   ├── lib
-│   │   │   │   ├── decode.js
-│   │   │   │   ├── domain.js
-│   │   │   │   ├── email.js
-│   │   │   │   ├── errors.js
-│   │   │   │   ├── index.d.ts
-│   │   │   │   ├── index.js
-│   │   │   │   ├── ip.js
-│   │   │   │   ├── tlds.js
-│   │   │   │   └── uri.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── node_modules
-│   │   │   │   └── @hapi
-│   │   │   │       └── hoek
-│   │   │   │           ├── lib
-│   │   │   │           │   ├── applyToDefaults.js
-│   │   │   │           │   ├── assert.js
-│   │   │   │           │   ├── bench.js
-│   │   │   │           │   ├── block.js
-│   │   │   │           │   ├── clone.js
-│   │   │   │           │   ├── contain.js
-│   │   │   │           │   ├── deepEqual.js
-│   │   │   │           │   ├── error.js
-│   │   │   │           │   ├── escapeHeaderAttribute.js
-│   │   │   │           │   ├── escapeHtml.js
-│   │   │   │           │   ├── escapeJson.js
-│   │   │   │           │   ├── escapeRegex.js
-│   │   │   │           │   ├── flatten.js
-│   │   │   │           │   ├── ignore.js
-│   │   │   │           │   ├── index.d.ts
-│   │   │   │           │   ├── index.js
-│   │   │   │           │   ├── intersect.js
-│   │   │   │           │   ├── isPromise.js
-│   │   │   │           │   ├── merge.js
-│   │   │   │           │   ├── once.js
-│   │   │   │           │   ├── reach.js
-│   │   │   │           │   ├── reachTemplate.js
-│   │   │   │           │   ├── stringify.js
-│   │   │   │           │   ├── types.js
-│   │   │   │           │   ├── utils.js
-│   │   │   │           │   └── wait.js
-│   │   │   │           ├── LICENSE.md
-│   │   │   │           ├── package.json
-│   │   │   │           └── README.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   ├── formula
-│   │   │   ├── lib
-│   │   │   │   ├── index.d.ts
-│   │   │   │   └── index.js
-│   │   │   ├── LICENSE.md
-│   │   │   ├── package.json
-│   │   │   └── README.md
-│   │   └── pinpoint
-│   │       ├── lib
-│   │       │   ├── index.d.ts
-│   │       │   └── index.js
-│   │       ├── LICENSE.md
-│   │       ├── package.json
-│   │       └── README.md
-│   └── simple-oauth2
-│       ├── index.js
-│       ├── lib
-│       │   ├── access-token.js
-│       │   ├── access-token-parser.js
-│       │   ├── authorization-code-grant-type.js
-│       │   ├── client
-│       │   │   ├── client.js
-│       │   │   ├── credentials-encoding.js
-│       │   │   ├── index.js
-│       │   │   └── request-options.js
-│       │   ├── client-credentials-grant-type.js
-│       │   ├── config.js
-│       │   ├── grant-type-params.js
-│       │   └── resource-owner-password-grant-type.js
-│       ├── package.json
-│       └── README.md
-├── subject.txt
 └── tree.txt
 
-1127 directories, 7035 files
+1025 directories, 6452 files
