@@ -15,7 +15,7 @@
 		"succes": "Connecté !",
 		"invalid_credentials": "Identifiants invalides",
 		"verif": "Verifier",
-		"relaod": "Renvoyer le code",
+		"reload": "Renvoyer le code",
 		"return": "Retour",
 		"unexptected_flow": "Flux inattendu. Veuillez réessayer."
 	},

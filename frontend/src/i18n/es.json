@@ -16,7 +16,7 @@
 		"succes": "¡Conectado!",
 		"invalid_credentials": "Credenciales inválidas.",
 		"verif": "Controlar",
-		"relaod": "Reenviar código",
+		"reload": "Reenviar código",
 		"return": "Atrás"
 	},
 	"register": {

@@ -9,166 +9,251 @@ import {
 	Color4,
 	FreeCamera,
 	DynamicTexture,
+	Camera,
+	LinesMesh,
 } from "@babylonjs/core";
+import { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
+
+const THEME = {
+	bg: Color4.FromHexString('#0b0223ff'),
+	neonPrimary: Color3.FromHexString('#00e5ff'),
+	neonSecondary: Color3.FromHexString('#ff3cac'),
+	neonAccent: Color3.FromHexString('#ffe700'),
+	white: Color3.White(),
+};
+
+const GAME = {
+	WIDTH: 800,
+	HEIGHT: 400,
+	PADDLE_LEN: 80,
+	PADDLE_THICK: 10,
+	BALL_SIZE: 10,
+};
 
 export function initPongPage() {
 	const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
 	if (!canvas) return;
 
-	const engine = new Engine(canvas, true);
+	const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
 	const scene = new Scene(engine);
-	scene.clearColor = new Color4(0, 0, 0, 1);
-	const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-	
-	light.intensity = 1.7;
 
-	const { leftPaddle, rightPaddle, ball, scoreTexture } = createGameObjects(scene);
+	scene.clearColor = THEME.bg;
+
+	const light = new HemisphericLight("light", new Vector3(0,1,0), scene);
+	light.intensity = 0.4;
+
+	const glow = new GlowLayer("glow", scene);
+	glow.intensity = 0.6;
+
+	const { leftPaddle, rightPaddle, ball, scoreTexture } = createGameObject(scene);
 	const { mainCam, secondCam } = createCameras(scene);
 
-	// ---- WebSocket ----
 	const ws = new WebSocket("ws://localhost:3000/ws");
 	ws.onopen = () => console.log("Connecté au serveur Pong WS");
 	ws.onmessage = (event) => {
 		const msg = JSON.parse(event.data);
 		if (msg.type === "state") {
-			const state = msg.state;
-			leftPaddle.position.y = state.left.y;
-			rightPaddle.position.y = state.right.y;
-			ball.position.x = state.ball.x;
-			ball.position.y = state.ball.y;
-			updateScoreDynamicTexture(scoreTexture, state.score.left, state.score.right);
+			const s = msg.state;
+			leftPaddle.position.y = s.left.y;
+			rightPaddle.position.y = s.right.y;
+			ball.position.x = s.ball.x;
+			ball.position.y = s.ball.y;
+			updateScoreDynamicTexture(scoreTexture, s.score.left, s.score.right);
 		}
 	};
 
 	setupControls(ws, scene, mainCam, secondCam);
 
 	engine.runRenderLoop(() => scene.render());
+	window.addEventListener("resize", () => engine.resize());
 }
 
-// ---- Create Mesh ----
-function createGameObjects(scene: Scene) { 
-	const GAME_HEIGHT = 400;
-	const PADDLE_LENGTH = 80;
-	const PADDLE_HEIGHT = 10;
-	const BALL_SIZE = 10;
+function makeNeonMaterial(name: string, scene: Scene, color: Color3) {
+	const m = new StandardMaterial(name, scene);
+	m.emissiveColor = color;
+	m.diffuseColor = Color3.Black();
+	m.specularColor = Color3.Black();
+	m.disableLighting = true;
+	return m;
+}
 
-	const paddleMat = new StandardMaterial("paddleMat", scene);
-	paddleMat.diffuseColor = Color3.White();
-	const ballMat = new StandardMaterial("ballMat", scene);
-	ballMat.diffuseColor = Color3.White();
+function createGameObject(scene: Scene) {
+	const paddleMatL = makeNeonMaterial("paddleMatL", scene, THEME.neonPrimary);
+	const paddleMatR = makeNeonMaterial("paddleMatR", scene, THEME.neonSecondary);
+	const ballMat = makeNeonMaterial("ballMat", scene, THEME.neonAccent);
 
-	const leftPaddle = MeshBuilder.CreateBox("leftPaddle", { width: PADDLE_LENGTH, height: PADDLE_HEIGHT, depth: 10 }, scene);
-	leftPaddle.material = paddleMat;
-	leftPaddle.position.x = -400 + PADDLE_HEIGHT;
+	const leftPaddle = MeshBuilder.CreateBox("leftPaddle", {
+		width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 2
+	}, scene);
+	leftPaddle.material = paddleMatL;
+	leftPaddle.position.x = -GAME.WIDTH / 2 + GAME.PADDLE_THICK;
 	leftPaddle.rotation.z = Math.PI / 2;
 
-	const rightPaddle = MeshBuilder.CreateBox("rightPaddle", { width: PADDLE_LENGTH, height: PADDLE_HEIGHT, depth: 10 }, scene);
-	rightPaddle.material = paddleMat;
-	rightPaddle.position.x = 400 - PADDLE_HEIGHT;
-	rightPaddle.rotation.z = Math.PI / 2;
+	const rightPaddle = MeshBuilder.CreateBox("rightPaddle", {
+		width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 2
+	}, scene);
+	rightPaddle.material = paddleMatR;
+	rightPaddle.position.x = GAME.WIDTH / 2 - GAME.PADDLE_THICK;
+	rightPaddle.rotation.z = Math.PI /2;
 
-	const ball = MeshBuilder.CreateSphere("ball", { diameter: BALL_SIZE }, scene);
+	const ball = MeshBuilder.CreateSphere("ball", {diameter: GAME.BALL_SIZE, segments: 12}, scene );
 	ball.material = ballMat;
 
-	createMiddleLine(scene, GAME_HEIGHT);
-	const { dt: scoreTexture } = createScorePlane(scene);
+	createMiddleLine(scene, GAME.HEIGHT);
 
-	return { leftPaddle, rightPaddle, ball, scoreTexture };
+	createNeonGrid(scene, {
+		cols: 16, rows: 8, cell: 50,
+		color: THEME.neonSecondary,
+		y: -GAME.HEIGHT / 2 - 40,
+		z: 40,
+		tiltDeg: 60,
+	});
+
+	const { dt: scoreTexture } = createScorePlane(scene);
+	return { leftPaddle, rightPaddle, ball, scoreTexture};
 }
 
-// ---- Midle Line ----
 function createMiddleLine(scene: Scene, gameHeight: number, segmentHeight = 10, gap = 10) {
-	const GAME_WIDTH = 800;
-	const GAME_HEIGHT = 400;
+	const lineMat = makeNeonMaterial("lineMat", scene, THEME.white);
 
-	const lineMaterial = new StandardMaterial("lineMat", scene);
-	lineMaterial.diffuseColor = Color3.White();
 	const segments = Math.floor(gameHeight / (segmentHeight + gap));
 	for (let i = 0; i < segments; i++) {
-		const segment = MeshBuilder.CreateBox(`lineSeg${i}`, { width: 2, height: segmentHeight, depth: -1 }, scene);
-		segment.material = lineMaterial;
-		segment.position.x = 0;
-		segment.position.y = gameHeight / 2 - (i + 0.5) * (segmentHeight + gap);
+		const seg = MeshBuilder.CreateBox(`lineSeg${i}`, { width:2, height:segmentHeight, depth: 0.5}, scene);
+		seg.material = lineMat;
+		seg.position.x = 0;
+		seg.position.y = gameHeight / 2 - (i + 0.5) * (segmentHeight + gap);
 	}
+	//cadre
+	const up = MeshBuilder.CreateBox("hUp", {width: GAME.WIDTH, height: 1, depth: 0.5}, scene);
+	const down = MeshBuilder.CreateBox("hDown", {width: GAME.WIDTH, height: 1, depth: 0.5}, scene);
+	const left = MeshBuilder.CreateBox("vLeft", { width: 1, height: GAME.HEIGHT, depth: 0.5}, scene);
+	const right = MeshBuilder.CreateBox("vRight", { width: 1, height: GAME.HEIGHT, depth: 0.5}, scene);
 
-	const up = MeshBuilder.CreateBox("horizontal up", { width: GAME_WIDTH, height: 1, depth: -1 }, scene);
-	const down = MeshBuilder.CreateBox("horizontal down", { width: GAME_WIDTH, height: 1, depth: -1 }, scene);
-	const right = MeshBuilder.CreateBox("vertical right", { width: 1, height: GAME_HEIGHT, depth: -1 }, scene);
-	const left = MeshBuilder.CreateBox("vertical left", { width: 1, height: GAME_HEIGHT, depth: -1 }, scene);
+	up.material = down.material = right.material = left.material = lineMat;
 
-	up.position.x = 0;
-	up.position.y = GAME_HEIGHT / 2;
-	down.position.x = 0;
-	down.position.y = -(GAME_HEIGHT / 2);
-
-	right.position.x = GAME_WIDTH / 2;
-	right.position.y = 0;
-	left.position.x = -(GAME_WIDTH / 2);
-	left.position.y = 0;
+	up.position.y = GAME.HEIGHT / 2;
+	down.position.y = -GAME.HEIGHT / 2;
+	right.position.x = GAME.WIDTH / 2;
+	left.position.x = -GAME.WIDTH / 2;
 }
 
-// ---- Cameras ----
-function createCameras(scene: Scene) {
-	const mainCam = new FreeCamera("mainCam", new Vector3(0, 0, -1000), scene);
-	const secondCam = new FreeCamera("secondCam", new Vector3(0, -300, -500), scene);
+//grid neon
 
+function createNeonGrid(
+	scene: Scene,
+	opts: { cols: number; rows: number; cell: number; color: Color3; y?: number; z?: number; tiltDeg?: number }
+) {
+	const { cols, rows, cell, color } = opts;
+	const y = opts.y ?? -200;
+	const z = opts.z ?? 80;
+	const tilt = (opts.tiltDeg ?? 60) * Math.PI / 180;
+
+	const lines: Vector3[][] = [];
+
+	const width = cols * cell;
+	const depth = rows * cell;
+
+	//ligne verticale
+	for (let c = 0; c <= cols; c++) {
+		const x = -width / 2 + c * cell;
+		lines.push([new Vector3(x, 0, -depth / 2), new Vector3(x, 0, depth / 2)]);
+	}
+
+	// lign horizontale
+	for (let r = 0; r <= rows; r++) {
+		const zz = -depth / 2 + r * cell;
+		lines.push([new Vector3(-width / 2, 0, zz), new Vector3(width / 2, 0, zz)]);
+	}
+
+	const lm = MeshBuilder.CreateLineSystem("neonGrid", { lines, updatable: false}, scene) as LinesMesh;
+	lm.color = color;
+
+	lm.position = new Vector3(0, y, z);
+	lm.rotation.x = tilt;
+}
+
+//CAM
+
+function createCameras(scene: Scene) {
+	const mainCam = new FreeCamera("mainCam", new Vector3(0,0, -1000), scene);
+	mainCam.mode = Camera.ORTHOGRAPHIC_CAMERA;
+
+	mainCam.orthoLeft = -GAME.WIDTH / 2;
+	mainCam.orthoRight = GAME.WIDTH / 2;
+	mainCam.orthoTop = GAME.HEIGHT / 2;
+	mainCam.orthoBottom = -GAME.HEIGHT / 2;
+	mainCam.setTarget(Vector3.Zero());
+
+	const secondCam = new FreeCamera("secondeCam", new Vector3(0, -300, -500), scene);
 	secondCam.setTarget(Vector3.Zero());
 	secondCam.fov = 0.9;
 
-	mainCam.mode = 1;
-	mainCam.setTarget(Vector3.Zero());
 	scene.activeCamera = mainCam;
-
 	return { mainCam, secondCam };
 }
 
-// ---- Controles ----
+//controle
 function setupControls(
 	ws: WebSocket,
 	scene: Scene,
 	mainCam: FreeCamera,
 	secondCam: FreeCamera
-) {
-	const keysToLock = ["w", "s", "ArrowUp", "ArrowDown"];
+){
+	const keysToLock = ["w", "s", "ArrowUp", "ArrowDown", " "];
 
 	document.addEventListener("keydown", (e) => {
-		if (keysToLock.includes(e.key)) e.preventDefault(); // deny scroll page
+		if (keysToLock.includes(e.key)) e.preventDefault();
 
-		if ("1".includes(e.key))
-			scene.activeCamera = mainCam;
-		if ("2".includes(e.key))
-			scene.activeCamera = secondCam;
-		if (["w", "s"].includes(e.key))
-			ws.send(JSON.stringify({ type: "move", side: "left", dir: e.key === "w" ? "up" : "down" }));
-		if (["ArrowUp", "ArrowDown"].includes(e.key))
-			ws.send(JSON.stringify({ type: "move", side: "right", dir: e.key === "ArrowUp" ? "up" : "down" }));
+		if (e.key === "1") scene.activeCamera = mainCam;
+		if (e.key === "2") scene.activeCamera = secondCam;
+
+		if (e.key === "w" || e.key === "s")
+			ws.send(JSON.stringify({ type: "move", side: "left", dir: e.key === "w" ? "up" : "down"}));
+
+		if (e.key === "ArrowUp" || e.key === "ArrowDown")
+			ws.send(JSON.stringify({ type: "move", side: "right", dir: e.key === "ArrowUp" ? "up" : "down"}));	
 	});
 
 	document.addEventListener("keyup", (e) => {
-		if (keysToLock.includes(e.key)) e.preventDefault(); // deny scroll page
+		if (keysToLock.includes(e.key)) e.preventDefault();
 
-		if (["w", "s"].includes(e.key))
-			ws.send(JSON.stringify({ type: "move", side: "left", dir: "stop" }));
-		if (["ArrowUp", "ArrowDown"].includes(e.key))
-			ws.send(JSON.stringify({ type: "move", side: "right", dir: "stop" }));
+		if (e.key === "w" || e.key === "s")
+			ws.send(JSON.stringify({ type: "move", side: "left", dir : "stop"}));
+		if (e.key === "ArrowUp" || e.key === "ArrowDown")
+			ws.send(JSON.stringify({ type: "move", side: "right", dir : "stop"}));
 	});
 }
 
-// ---- Score ----
+//SCORE HUD
+
 function createScorePlane(scene: Scene) {
-	const plane = MeshBuilder.CreatePlane("scorePlane", { width: 100, height: 40 }, scene);
-	const dt = new DynamicTexture("scoreDT", { width: 256, height: 128 }, scene);
+	const plane = MeshBuilder.CreatePlane("scorePlane", { width: 120, height: 48}, scene);
+	const dt = new DynamicTexture("scoreDT", { width: 512, height: 192 }, scene);
+
 	const mat = new StandardMaterial("scoreMat", scene);
 	mat.diffuseTexture = dt;
-	mat.emissiveColor = Color3.White();
+	mat.emissiveColor = THEME.white;
+	mat.disableLighting = true;
+
 	plane.material = mat;
-	plane.position.y = 175;
+	plane.position.y = GAME.HEIGHT / 2 - 25;
 	plane.position.z = 0;
+	
 	return { dt };
 }
 
-function updateScoreDynamicTexture(dt: DynamicTexture, leftPoints: number, rightPoints: number) {
+function updateScoreDynamicTexture(dt: DynamicTexture, leftPoints: number, rightPoints: number){
 	const ctx = dt.getContext();
-	ctx.clearRect(0, 0, dt.getSize().width, dt.getSize().height);
-	dt.drawText(`${leftPoints} - ${rightPoints}`, null, 64, "bold 64px Arial", "white", "transparent", true);
+	const { width, height } = dt.getSize();
+	ctx.clearRect(0, 0, width, height);
+
+	const text = `${leftPoints} - ${rightPoints}`;
+	const fontPx = 96;
+	ctx.font = `bold ${fontPx}px Arial`;
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = "#ffffff";
+	ctx.fillText(text, width / 2, height / 2);
+
+	dt.update();
 }

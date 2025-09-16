@@ -16,7 +16,7 @@
 		"succes": "Signed in!",
 		"invalid_credentials": "Invalid credentials.",
 		"verif": "Check",
-		"relaod": "Resend code",
+		"reload": "Resend code",
 		"return": "Back"
 	},
 	"register": {
