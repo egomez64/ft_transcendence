@@ -6,6 +6,7 @@ const cors = require('@fastify/cors');
 const usersRoutes = require('./users');
 const friendsRoutes = require('./friends');
 const db = require('./db');
+const game = require('./game/server')
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -28,16 +29,20 @@ fastify.get('/api/users/:id/stats', async (req, reply) => {
   return { wins, losses, played, winRate }; // <- simple et suffisant
 });
 
-fastify.register(cors, {
-    origin: true, // accepte toutes les origines (à restreindre en prod)
+const corsObj = {
+    origin: [ "http://localhost:5173" ], // accepte toutes les origines (à restreindre en prod)
     credentials: true,
 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: [],
     preflightContinue: false,
-    optionsSuccessStatus: 204,
-});
+    optionsSuccessStatus: 200,
+}
+
+fastify.register(cors, corsObj);
+
+
 
 fastify.register(cookie, {
   // secret optionnel si tu veux des cookies signés
@@ -49,6 +54,8 @@ fastify.register(authRoutes, {prefix: '/api/auth'});
 fastify.register(usersRoutes, { prefix: '/api/users' });
 
 fastify.register(friendsRoutes, { prefix: '/api' });
+
+game.startGameServer(fastify.server, corsObj);
 
 // demarrage du serveur sur le port 3000
 const start = async () => {

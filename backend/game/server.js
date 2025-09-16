@@ -1,7 +1,34 @@
-const { WebSocketServer } = require("ws");
+const io = require("socket.io");
 
-function startGameServer(server) {
-	const wss = new WebSocketServer({ server, path: "/ws" });
+let clients = [];
+let wss = null;
+let state = null;
+
+function startGameServer(server, cors) {
+	wss = new io.Server(server, { cors: cors, path: "/ws" });
+	wss.on("connection", (ws) => {
+		console.log("Client connecté Pong WS");
+		ws.on("move", (data) => {
+			console.log(data);
+			const player = data.side === "left" ? state.left : state.right;
+			if (data.dir === "stop") {
+				player.up = false;
+				player.down = false;
+			} else {
+				player.up = data.dir === "up";
+				player.down = data.dir === "down";
+			}
+			// If somebody move, start the game //To change with proper hook
+			if (state.status === "idle") {
+				state.status = "playing";
+				resetBall(state);
+			}
+		});
+		ws.on("restart", () => resetGame(state));
+		ws.on("disconnect", () => console.log("Client déconnecté Pong WS"));
+		ws.on("error", (err) => console.log("Client déconnecté Pong WS", err));
+		clients.push(ws);
+	});
 
 	const GAME_WIDTH = 800;
 	const GAME_HEIGHT = 400;
@@ -25,13 +52,9 @@ function startGameServer(server) {
 	};
 
 	// ---- Game State ----
-	const state = createInitialState();
-
+	state = createInitialState();
 	// ---- Init ----
 	resetBall(state);
-
-	// ---- Init WebSocket ----
-	setupWebSocket(wss, state);
 
 	// ---- Game loop ----
 	setInterval(() => gameLoop(state, wss), TICK_MS);
@@ -72,40 +95,6 @@ function startGameServer(server) {
 				state.ball.vx = state.ball.speed * (Math.random() > 0.5 ? 1 : -1);
 				state.ball.vy = (Math.random() - 0.5) * 4;
 			}, 1000);
-		}
-	}
-
-	function setupWebSocket(wss, state) {
-		wss.on("connection", (ws) => {
-			console.log("Client connecté Pong WS");
-			ws.send(JSON.stringify({ type: "state", state }));
-
-			ws.on("message", (msg) => handleClientMessage(state, msg));
-			ws.on("close", () => console.log("Client déconnecté Pong WS"));
-		});
-	}
-
-	function handleClientMessage(state, msg) {
-		const data = JSON.parse(msg.toString());
-		if (data.type === "move") {
-			const player = data.side === "left" ? state.left : state.right;
-			if (data.dir === "stop") {
-				player.up = false;
-				player.down = false;
-			} else {
-				player.up = data.dir === "up";
-				player.down = data.dir === "down";
-			}
-
-			// If somebody move, start the game //To change with proper hook
-			if (state.status === "idle") {
-				state.status = "playing";
-				resetBall(state);
-			}
-		}
-
-			if (data.type === "restart") {
-				resetGame(state);
 		}
 	}
 
@@ -191,10 +180,8 @@ function startGameServer(server) {
 	}
 
 	function broadcastState(wss, state) {
-		wss.clients.forEach((client) => {
-			if (client.readyState === 1) {
-				client.send(JSON.stringify({ type: "state", state }));
-			}
+		clients.forEach((client) => {
+			client.emit("state", state);
 		});
 	}
 

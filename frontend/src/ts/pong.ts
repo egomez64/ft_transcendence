@@ -13,6 +13,7 @@ import {
 	LinesMesh,
 } from "@babylonjs/core";
 import { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
+import { io } from "socket.io-client";
 
 const THEME = {
 	bg: Color4.FromHexString('#0b0223ff'),
@@ -48,19 +49,18 @@ export function initPongPage() {
 	const { leftPaddle, rightPaddle, ball, scoreTexture } = createGameObject(scene);
 	const { mainCam, secondCam } = createCameras(scene);
 
-	const ws = new WebSocket("ws://localhost:3000/ws");
-	ws.onopen = () => console.log("Connecté au serveur Pong WS");
-	ws.onmessage = (event) => {
-		const msg = JSON.parse(event.data);
-		if (msg.type === "state") {
-			const s = msg.state;
-			leftPaddle.position.y = s.left.y;
-			rightPaddle.position.y = s.right.y;
-			ball.position.x = s.ball.x;
-			ball.position.y = s.ball.y;
-			updateScoreDynamicTexture(scoreTexture, s.score.left, s.score.right);
-		}
-	};
+	const ws = io("http://localhost:3000", { path: "/ws" });
+	ws.on("connect", () => console.log("Connected to ws"));
+	ws.on("connect_error", (err: string) => console.log(`Connect error: ${err}`));
+	ws.on("disconnect", () => console.log("Disconnected to ws"));
+	ws.on("state", (state) => {
+		const s = state;
+		leftPaddle.position.y = s.left.y;
+		rightPaddle.position.y = s.right.y;
+		ball.position.x = s.ball.x;
+		ball.position.y = s.ball.y;
+		updateScoreDynamicTexture(scoreTexture, s.score.left, s.score.right);
+	});
 
 	setupControls(ws, scene, mainCam, secondCam);
 
@@ -194,7 +194,7 @@ function createCameras(scene: Scene) {
 
 //controle
 function setupControls(
-	ws: WebSocket,
+	ws: any,
 	scene: Scene,
 	mainCam: FreeCamera,
 	secondCam: FreeCamera
@@ -208,19 +208,19 @@ function setupControls(
 		if (e.key === "2") scene.activeCamera = secondCam;
 
 		if (e.key === "w" || e.key === "s")
-			ws.send(JSON.stringify({ type: "move", side: "left", dir: e.key === "w" ? "up" : "down"}));
+			ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down"});
 
 		if (e.key === "ArrowUp" || e.key === "ArrowDown")
-			ws.send(JSON.stringify({ type: "move", side: "right", dir: e.key === "ArrowUp" ? "up" : "down"}));	
+			ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down"});	
 	});
 
 	document.addEventListener("keyup", (e) => {
 		if (keysToLock.includes(e.key)) e.preventDefault();
 
 		if (e.key === "w" || e.key === "s")
-			ws.send(JSON.stringify({ type: "move", side: "left", dir : "stop"}));
+			ws.emit("move", { side: "left", dir : "stop"});
 		if (e.key === "ArrowUp" || e.key === "ArrowDown")
-			ws.send(JSON.stringify({ type: "move", side: "right", dir : "stop"}));
+			ws.emit("move", { side: "right", dir : "stop"});
 	});
 }
 

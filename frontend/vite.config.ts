@@ -10,10 +10,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/ws': {
-        target: 'ws://backend:3000',
-        ws: true,
-      }
     }
   }
 });
