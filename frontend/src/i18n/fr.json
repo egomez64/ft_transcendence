@@ -13,7 +13,11 @@
 		"register": "S'inscrire",
 		"required_fields" : "Champs requis.",
 		"succes": "Connecté !",
-		"invalid_credentials": "Identifiants invalides"
+		"invalid_credentials": "Identifiants invalides",
+		"verif": "Verifier",
+		"relaod": "Renvoyer le code",
+		"return": "Retour",
+		"unexptected_flow": "Flux inattendu. Veuillez réessayer."
 	},
 	"register": {
 		"register": "Inscription",
@@ -75,7 +79,8 @@
 		"network_error": "Problème réseau. Vérifiez votre connexion.",
 		"server_error" : "Une erreur est survenue. Réessayez.",
 		"loading": "Chargement...",
-		"retry": "Réessayer"
+		"retry": "Réessayer",
+		"http_error": "Erreur {status}"
 	},
 	"profile": {
 		"saving": "Sauvegarde en cours...",
@@ -123,9 +128,12 @@
 		"format": "Format d’email invalide."	
 	},
 	"mfa": {
+		"code_sent_email": "Un code vous a été envoyé par e-mail.",
 		"code_required": "Le code est requis.",
 		"setup_required": "Configuration 2FA requise.",
-		"invalid_code": "Code invalide.",
+		"code_invalid_format": "Code invalide.(6 chiffres)",
+		"invalid_or_expired": "Code Invalide ou expiré.",
+		"code_resent": "Code renvoyé.",
 		"expired": "La session MFA a expiré.",
 		"invalid": "Session MFA invalide.",
 		"not_enabled": "La 2FA n'est pas activée."

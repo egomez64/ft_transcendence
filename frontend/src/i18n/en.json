@@ -12,8 +12,12 @@
 		"submit": "Log in",
 		"register": "register",
 		"required_fields" : "Required fields",
+		"unexptected_flow": "Unexpected flow. Please try again.",
 		"succes": "Signed in!",
-		"invalid_credentials": "Invalid credentials."
+		"invalid_credentials": "Invalid credentials.",
+		"verif": "Check",
+		"relaod": "Resend code",
+		"return": "Back"
 	},
 	"register": {
 		"register": "Register",
@@ -72,6 +76,7 @@
 		}
 	},
 	"common" : {
+		"http_error": "Error {status}",
 		"network_error": "Network error. Check your connection.",
 		"server_error" : "An error has occurred. Please try again.",
 		"loading": "Loading...",
@@ -123,12 +128,15 @@
 		"format": "Invalid email format."
 	},
 	"mfa": {
+		"code_sent_email": "A code was sent to your email.",
 		"code_required": "Code is required.",
 		"setup_required": "2FA setup required.",
-		"invalid_code": "Invalid code.",
+		"code_invalid_format": "Invalid code (6 digits).",
 		"expired": "MFA session expired.",
 		"invalid": "Invalid MFA session.",
-		"not_enabled": "2FA is not enabled."
+		"not_enabled": "2FA is not enabled.",
+		"invalid_or_expired": "Invalid or expired code.",
+    	"code_resent": "Code resent."
 	},
 	"oauth": {
 	    "callback_failed": "OAuth callback failed."

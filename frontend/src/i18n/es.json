@@ -12,8 +12,12 @@
 		"submit": "Acceso",
 		"register": "registro",
 		"required_fields" : "Campos obligatorios.",
+		"unexpected_flow": "Flujo inesperado. Inténtalo de nuevo.",
 		"succes": "¡Conectado!",
-		"invalid_credentials": "Credenciales inválidas."
+		"invalid_credentials": "Credenciales inválidas.",
+		"verif": "Controlar",
+		"relaod": "Reenviar código",
+		"return": "Atrás"
 	},
 	"register": {
 		"register": "Registro",
@@ -72,6 +76,7 @@
 		}
 	},
 	"common" : {
+		"http_error": "Error {status}",
 		"network_error": "Error de red. Revisa tu conexión.",
 		"server_error" : "Se ha producido un error. Inténtalo de nuevo.",
 		"loading": "Cargando...",
@@ -123,12 +128,15 @@
 		"format": "Formato de email inválido."
 	},
 	"mfa": {
+		"code_sent_email": "Se envió un código a tu correo.",
 		"code_required": "Se requiere el código.",
 		"setup_required": "Se requiere configuración 2FA.",
-		"invalid_code": "Código inválido.",
+		"code_invalid_format": "Código inválido (6 dígitos).",
 		"expired": "La sesión MFA ha expirado.",
 		"invalid": "Sesión MFA inválida.",
-		"not_enabled": "2FA no está habilitado."
+		"not_enabled": "2FA no está habilitado.",
+		"invalid_or_expired": "Código inválido o caducado.",
+    	"code_resent": "Código reenviado."
 	},
 	"oauth": {
 	    "callback_failed": "Falló el callback de OAuth."
