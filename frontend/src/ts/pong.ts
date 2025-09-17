@@ -82,6 +82,9 @@ export function initPongPage() {
   setScore(0, 0);
   // Réseau
   const ws = io("http://localhost:3000", { path: "/ws", transports: ["websocket"] });
+
+  ws.on("connect", () => { ws.emit("restart") });
+
   let prev = { vx: 0, vy: 0, sl: 0, sr: 0};
 	ws.on("state", (s: any) => {
 		leftPaddle.position.y = s.left.y;
