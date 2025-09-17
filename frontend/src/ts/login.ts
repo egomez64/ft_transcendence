@@ -116,9 +116,9 @@ export function initLoginPage() {
 }*/
 
 const API_BASE =
-  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:3000"
-    : "";
+  location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : '';
 
 function showTwofaPanel(infoText?: string) {
   const loginForm = document.getElementById("loginForm") as HTMLFormElement | null;
@@ -157,9 +157,11 @@ export function mountLoginHandlers() {
   }
 
   if (googleBtn) {
-    googleBtn.addEventListener("click", (e) => {
+    googleBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      window.location.href = "/api/auth/google";
+      e.stopPropagation();
+
+      window.location.assign(`${API_BASE}/api/auth/google`);
     });
   }
 

@@ -8,6 +8,9 @@ const crypto = require('crypto');
 const db = require('./db');
 const { sendMail } = require('./mailer');
 
+const PUBLIC_BACKEND_BASE = process.env.PUBLIC_BACKEND_BASE || 'http://localhost:3000';
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${PUBLIC_BACKEND_BASE}/api/auth/google/callback`;
+
 // ---------- Helpers DB promisifiés ----------
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -77,7 +80,7 @@ async function authRoute(fastify, options) {
       auth: oauth2.GOOGLE_CONFIGURATION,
     },
     startRedirectPath: '/google', // /api/auth/google
-    callbackUri: (req) => `${req.protocol}://${req.headers.host}/api/auth/google/callback`,
+    callbackUri: GOOGLE_REDIRECT_URI,
     cookie: { secure: false, sameSite: 'lax' },
   });
 
@@ -138,35 +141,57 @@ async function authRoute(fastify, options) {
   // ---------- Google OAuth callback -> envoi code 2FA puis redirection ----------
   fastify.get('/google/callback', async (req, reply) => {
     try {
+      // 1) Échange code ↔ token
       const tok = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
       const accessToken = tok?.access_token || tok?.token?.access_token;
-      if (!accessToken) return reply.code(500).send({ ok: false, error_key: 'oauth.callback_failed' });
+      if (!accessToken) {
+        req.log?.error?.({ at: 'google/callback', reason: 'no_access_token', tok });
+        return reply.code(400).send({ ok: false, error_key: 'oauth.callback_failed' });
+      }
 
+      // 2) Userinfo OpenID
       const resp = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (!resp.ok) return reply.code(500).send({ ok: false, error_key: 'oauth.userinfo_failed' });
+      if (!resp.ok) {
+        req.log?.error?.({ at: 'google/callback', reason: 'userinfo_failed', status: resp.status });
+        return reply.code(400).send({ ok: false, error_key: 'oauth.userinfo_failed' });
+      }
       const p = await resp.json();
 
-      const googleEmail = String(p.email || '').toLowerCase().trim();
-      const googleName = String(p.name || '').trim();
-      const googleId = String(p.sub || p.id || '').trim();
+      const googleEmail  = String(p.email || '').toLowerCase().trim();
+      const googleName   = String(p.name || '').trim();
+      const googleId     = String(p.sub || p.id || '').trim();
       const googleAvatar = String(p.picture || '').trim();
       if (!googleEmail) return reply.code(400).send({ ok: false, error: 'NO_EMAIL_FROM_GOOGLE' });
 
+      // 3) Upsert user depuis Google
       const user = await upsertUserFromGoogle({ googleEmail, googleName, googleId, googleAvatar });
 
-      // 2FA OBLIGATOIRE : on envoie le code et on pose un cookie "pre2fa", PAS de session ici
+      // 4) 2FA obligatoire : envoi code + cookie pre2fa (PAS de session ici)
       await createAndSend2fa(user);
       const pre = jwt.sign({ uid: user.id, stage: 'pre2fa' }, JWT_SECRET, { expiresIn: '10m' });
       reply.setCookie('pre2fa', pre, { ...COOKIE_OPTS, maxAge: 600 });
 
-      const redirectTo = process.env.FRONT_REDIRECT_URI || '/';
-      const url = new URL(redirectTo, `${req.protocol}://${req.headers.host}`);
-      url.searchParams.set('mfa', '1'); // le front affiche l'écran "entrer le code"
-      return reply.redirect(url.toString());
+      // 5) Redirection front STABLE (basée sur ENV, pas sur req.headers.host)
+      const FRONT_REDIRECT_URI = process.env.FRONT_REDIRECT_URI || 'http://localhost:5173/login';
+      const PUBLIC_FRONT_BASE  = process.env.PUBLIC_FRONT_BASE  || 'http://localhost:5173';
+
+      let redirectUrl;
+      try {
+        // Si FRONT_REDIRECT_URI est absolue → URL la prend telle quelle.
+        // Si elle est relative (/login) → résolue sur PUBLIC_FRONT_BASE.
+        const u = new URL(FRONT_REDIRECT_URI, PUBLIC_FRONT_BASE);
+        u.searchParams.set('mfa', '1'); // le front affiche l’écran de saisie du code
+        redirectUrl = u.toString();
+      } catch {
+        // Fallback robuste si FRONT_REDIRECT_URI est bizarre
+        redirectUrl = FRONT_REDIRECT_URI + (FRONT_REDIRECT_URI.includes('?') ? '&' : '?') + 'mfa=1';
+      }
+
+      return reply.redirect(redirectUrl);
     } catch (err) {
-      req.log?.error?.({ at: 'google/callback', err: err.message });
+      req.log?.error?.({ at: 'google/callback', err: err?.message || err });
       return reply.code(500).send({ ok: false, error_key: 'oauth.callback_failed' });
     }
   });
