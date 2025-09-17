@@ -29,8 +29,8 @@
 
   <form id="twofaForm" class="hidden flex flex-col splace-y-4">
     <p id="twofaMsg" class="text-sm text-pink-200"></p>
-    <input id="twofaCode" name="code" inputmode="numeric" pattern="\\d{6}" maxlength="6"
-            placeholder="code a 6 chiffres"
+    <input id="twofaCode" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6"
+       maxlength="6" required placeholder="Code à 6 chiffres"
             class="bg-[#1a1a2eb3] border border-[#f462b6]/40 p-6 rounded-md text-pink-100 placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400" />
     <div class="flex gap-4">
       <button type="submit" data-i18n="login.verif" class="py-3 px-6 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-whit hover:opacity-90 transition">
