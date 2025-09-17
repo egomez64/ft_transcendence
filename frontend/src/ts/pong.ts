@@ -1,259 +1,322 @@
 import {
-	Engine,
-	Scene,
-	Vector3,
-	HemisphericLight,
-	MeshBuilder,
-	StandardMaterial,
-	Color3,
-	Color4,
-	FreeCamera,
-	DynamicTexture,
-	Camera,
-	LinesMesh,
+  Engine,
+  Scene,
+  Vector3,
+  HemisphericLight,
+  MeshBuilder,
+  StandardMaterial,
+  Color3,
+  Color4,
+  FreeCamera,
+  Camera,
 } from "@babylonjs/core";
 import { GlowLayer } from "@babylonjs/core/Layers/glowLayer";
+import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
+// (Option) Trail : décommente si tu veux le sillage après que tout marche
+import { TrailMesh } from "@babylonjs/core/Meshes/trailMesh";
+
+import { AdvancedDynamicTexture, TextBlock, Control } from "@babylonjs/gui";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { io } from "socket.io-client";
 
 const THEME = {
-	bg: Color4.FromHexString('#0b0223ff'),
-	neonPrimary: Color3.FromHexString('#00e5ff'),
-	neonSecondary: Color3.FromHexString('#ff3cac'),
-	neonAccent: Color3.FromHexString('#ffe700'),
-	white: Color3.White(),
+  // on garde les couleurs pour les néons, mais on VA rendre le clearColor transparent
+  bg: Color4.FromHexString("#0b022300"), // alpha 0
+  neonPrimary: Color3.FromHexString("#00e5ff"),
+  neonSecondary: Color3.FromHexString("#ff3cac"),
+  neonAccent: Color3.FromHexString("#eeff03"),
+  white: Color3.White(),
 };
 
 const GAME = {
-	WIDTH: 800,
-	HEIGHT: 400,
-	PADDLE_LEN: 80,
-	PADDLE_THICK: 10,
-	BALL_SIZE: 10,
+  WIDTH: 800,
+  HEIGHT: 400,
+  PADDLE_LEN: 90,
+  PADDLE_THICK: 10,
+  BALL_SIZE: 15,
+  BALL_SEGMENTS: 32,
 };
 
 export function initPongPage() {
-	const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
-	if (!canvas) return;
+  const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement | null;
+  if (!canvas) return;
 
-	const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
-	const scene = new Scene(engine);
+  // Canvas/scene transparents
+  canvas.style.backgroundColor = "transparent";
 
-	scene.clearColor = THEME.bg;
+  const engine = new Engine(canvas, true, {
+    preserveDrawingBuffer: true,
+    stencil: true,
+    alpha: true,               // clé pour transparence
+    premultipliedAlpha: true,
+  });
 
-	const light = new HemisphericLight("light", new Vector3(0,1,0), scene);
-	light.intensity = 0.4;
+  const scene = new Scene(engine);
+  scene.clearColor = THEME.bg; // transparent
 
-	const glow = new GlowLayer("glow", scene);
-	glow.intensity = 0.6;
+  // Néon + lumière douce (presque inutile car emissive)
+  const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
+  light.intensity = 0.35;
 
-	const { leftPaddle, rightPaddle, ball, scoreTexture } = createGameObject(scene);
-	const { mainCam, secondCam } = createCameras(scene);
+  const glow = new GlowLayer("glow", scene);
+  glow.intensity = 0.55;
 
-	const ws = io("http://localhost:3000", { path: "/ws" });
-	ws.on("connect", () => console.log("Connected to ws"));
-	ws.on("connect_error", (err: string) => console.log(`Connect error: ${err}`));
-	ws.on("disconnect", () => console.log("Disconnected to ws"));
-	ws.on("state", (state) => {
-		const s = state;
+  // Objets
+  const { leftPaddle, rightPaddle, ball } = createGameObjects(scene);
+
+  // Caméras
+  const { mainCam, secondCam, gameCam } = createCameras(scene);
+
+  // Post-process léger
+  const pipeline = new DefaultRenderingPipeline("drp", true, scene, [mainCam, secondCam, gameCam]);
+  pipeline.fxaaEnabled = true;
+  pipeline.bloomEnabled = true;
+  pipeline.bloomThreshold = 0.88;
+  pipeline.bloomWeight = 0.28;
+  pipeline.bloomKernel = 48;
+
+  // HUD score (overlay 2D)
+  const scoreEL = ensureScoreEl(canvas);
+  const setScore = (l: number, r: number) => {scoreEL.textContent = `${l} - ${r}`;};
+  setScore(0, 0);
+  // Réseau
+  const ws = io("http://localhost:3000", { path: "/ws", transports: ["websocket"] });
+  let prev = { vx: 0, vy: 0, sl: 0, sr: 0};
+	ws.on("state", (s: any) => {
 		leftPaddle.position.y = s.left.y;
 		rightPaddle.position.y = s.right.y;
 		ball.position.x = s.ball.x;
 		ball.position.y = s.ball.y;
-		updateScoreDynamicTexture(scoreTexture, s.score.left, s.score.right);
+		setScore(s.score.left, s.score.right);
+
+		// --- Détections ---
+		// Rebond paddle => inversion de vx
+		if (prev.vx !== 0 && s.ball.vx !== 0 && (prev.vx * s.ball.vx) < 0) {
+			const col = s.ball.x >= 0 ? THEME.neonSecondary : THEME.neonPrimary;
+			playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), col);
+			// petit "pop" vers la caméra
+			ball.position.z = 8;
+		}
+		// Rebond mur haut/bas => inversion de vy
+		if (prev.vy !== 0 && s.ball.vy !== 0 && (prev.vy * s.ball.vy) < 0) {
+			playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), THEME.white);
+		}
+		// Score changé => burst au centre
+		if (s.score.left !== prev.sl || s.score.right !== prev.sr) {
+			playHitParticles(scene, new Vector3(0, 0, 0), THEME.white);
+		}
+
+		prev = { vx: s.ball.vx, vy: s.ball.vy, sl: s.score.left, sr: s.score.right };
 	});
 
-	setupControls(ws, scene, mainCam, secondCam);
+  setupControls(ws, scene, mainCam, secondCam, gameCam);
 
-	engine.runRenderLoop(() => scene.render());
-	window.addEventListener("resize", () => engine.resize());
+	engine.runRenderLoop(() => {
+  	// decay du pop Z
+  	if (Math.abs(ball.position.z) > 0.01) {
+  	  ball.position.z *= 0.85;
+  	  if (Math.abs(ball.position.z) < 0.01) ball.position.z = 0;
+  	}
+  	scene.render();
+	});
+  window.addEventListener("resize", () => engine.resize());
 }
+
+/* =========================
+   Helpers & construction
+   ========================= */
 
 function makeNeonMaterial(name: string, scene: Scene, color: Color3) {
-	const m = new StandardMaterial(name, scene);
-	m.emissiveColor = color;
-	m.diffuseColor = Color3.Black();
-	m.specularColor = Color3.Black();
-	m.disableLighting = true;
-	return m;
+  const m = new StandardMaterial(name, scene);
+  m.emissiveColor = color;
+  m.diffuseColor = Color3.Black();
+  m.specularColor = Color3.Black();
+  m.disableLighting = true;
+  return m;
 }
 
-function createGameObject(scene: Scene) {
-	const paddleMatL = makeNeonMaterial("paddleMatL", scene, THEME.neonPrimary);
-	const paddleMatR = makeNeonMaterial("paddleMatR", scene, THEME.neonSecondary);
-	const ballMat = makeNeonMaterial("ballMat", scene, THEME.neonAccent);
+function ensureScoreEl(canvas: HTMLCanvasElement) {
+	let el = document.getElementById("pong-score") as HTMLDivElement | null;
+	if (!el) {
+		el = document.createElement("div");
+		el.id = "pong-score";
 
-	const leftPaddle = MeshBuilder.CreateBox("leftPaddle", {
-		width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 2
-	}, scene);
-	leftPaddle.material = paddleMatL;
-	leftPaddle.position.x = -GAME.WIDTH / 2 + GAME.PADDLE_THICK;
-	leftPaddle.rotation.z = Math.PI / 2;
-
-	const rightPaddle = MeshBuilder.CreateBox("rightPaddle", {
-		width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 2
-	}, scene);
-	rightPaddle.material = paddleMatR;
-	rightPaddle.position.x = GAME.WIDTH / 2 - GAME.PADDLE_THICK;
-	rightPaddle.rotation.z = Math.PI /2;
-
-	const ball = MeshBuilder.CreateSphere("ball", {diameter: GAME.BALL_SIZE, segments: 12}, scene );
-	ball.material = ballMat;
-
-	createMiddleLine(scene, GAME.HEIGHT);
-
-	createNeonGrid(scene, {
-		cols: 16, rows: 8, cell: 50,
-		color: THEME.neonSecondary,
-		y: -GAME.HEIGHT / 2 - 40,
-		z: 40,
-		tiltDeg: 60,
-	});
-
-	const { dt: scoreTexture } = createScorePlane(scene);
-	return { leftPaddle, rightPaddle, ball, scoreTexture};
-}
-
-function createMiddleLine(scene: Scene, gameHeight: number, segmentHeight = 10, gap = 10) {
-	const lineMat = makeNeonMaterial("lineMat", scene, THEME.white);
-
-	const segments = Math.floor(gameHeight / (segmentHeight + gap));
-	for (let i = 0; i < segments; i++) {
-		const seg = MeshBuilder.CreateBox(`lineSeg${i}`, { width:2, height:segmentHeight, depth: 0.5}, scene);
-		seg.material = lineMat;
-		seg.position.x = 0;
-		seg.position.y = gameHeight / 2 - (i + 0.5) * (segmentHeight + gap);
+		Object.assign(el.style, {
+			position: "absolute",
+			top: "12px",
+			left: "50%",
+			transform: "translateX(-50%)",
+			color: "#fff",
+			fontFamily: "Inter, system-ui, Arial, sans-serif",
+			fontWeight: "800",
+			fontSize: "44px",
+			textShadow: "0 0 10px rgba(0,0,0,.9)",
+			pointerEvents: "none",
+			zIndex: "3",
+		} as CSSStyleDeclaration);
+		const parent = canvas.parentElement!;
+		parent.style.position ||= "relative";
+		parent.appendChild(el);
 	}
-	//cadre
-	const up = MeshBuilder.CreateBox("hUp", {width: GAME.WIDTH, height: 1, depth: 0.5}, scene);
-	const down = MeshBuilder.CreateBox("hDown", {width: GAME.WIDTH, height: 1, depth: 0.5}, scene);
-	const left = MeshBuilder.CreateBox("vLeft", { width: 1, height: GAME.HEIGHT, depth: 0.5}, scene);
-	const right = MeshBuilder.CreateBox("vRight", { width: 1, height: GAME.HEIGHT, depth: 0.5}, scene);
-
-	up.material = down.material = right.material = left.material = lineMat;
-
-	up.position.y = GAME.HEIGHT / 2;
-	down.position.y = -GAME.HEIGHT / 2;
-	right.position.x = GAME.WIDTH / 2;
-	left.position.x = -GAME.WIDTH / 2;
+	return el;
 }
 
-//grid neon
+function createGameObjects(scene: Scene) {
+  // Paddles
+  const paddleMatL = makeNeonMaterial("paddleMatL", scene, THEME.neonPrimary);
+  const paddleMatR = makeNeonMaterial("paddleMatR", scene, THEME.neonSecondary);
 
-function createNeonGrid(
-	scene: Scene,
-	opts: { cols: number; rows: number; cell: number; color: Color3; y?: number; z?: number; tiltDeg?: number }
-) {
-	const { cols, rows, cell, color } = opts;
-	const y = opts.y ?? -200;
-	const z = opts.z ?? 80;
-	const tilt = (opts.tiltDeg ?? 60) * Math.PI / 180;
+  const leftPaddle = MeshBuilder.CreateBox(
+    "leftPaddle",
+    { width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 3 },
+    scene
+  );
+  leftPaddle.material = paddleMatL;
+  leftPaddle.position.x = -GAME.WIDTH / 2 + GAME.PADDLE_THICK;
+  leftPaddle.rotation.z = Math.PI / 2;
 
-	const lines: Vector3[][] = [];
+  const rightPaddle = MeshBuilder.CreateBox(
+    "rightPaddle",
+    { width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 3 },
+    scene
+  );
+  rightPaddle.material = paddleMatR;
+  rightPaddle.position.x = GAME.WIDTH / 2 - GAME.PADDLE_THICK;
+  rightPaddle.rotation.z = Math.PI / 2;
 
-	const width = cols * cell;
-	const depth = rows * cell;
+  // Balle : plus petite et segments élevés => bien ronde
+  const ball = MeshBuilder.CreateSphere(
+    "ball",
+    { diameter: GAME.BALL_SIZE, segments: GAME.BALL_SEGMENTS },
+    scene
+  );
+  ball.material = makeNeonMaterial("ballMat", scene, THEME.neonAccent);
 
-	//ligne verticale
-	for (let c = 0; c <= cols; c++) {
-		const x = -width / 2 + c * cell;
-		lines.push([new Vector3(x, 0, -depth / 2), new Vector3(x, 0, depth / 2)]);
-	}
+  // (Option) sillage discret – à activer plus tard si tu veux
+  const trail = new TrailMesh("ballTrail", ball, scene, 8, 100, true);
+  const trailMat = new StandardMaterial("trailMat", scene);
+  trailMat.emissiveColor = THEME.neonAccent;
+  trailMat.disableLighting = true;
+  trailMat.alpha = 1;
+  trail.material = trailMat;
+  // Ligne médiane + cadre néon (rien d'autre : le fond vient de ta page)
+  createMiddleLine(scene);
 
-	// lign horizontale
-	for (let r = 0; r <= rows; r++) {
-		const zz = -depth / 2 + r * cell;
-		lines.push([new Vector3(-width / 2, 0, zz), new Vector3(width / 2, 0, zz)]);
-	}
-
-	const lm = MeshBuilder.CreateLineSystem("neonGrid", { lines, updatable: false}, scene) as LinesMesh;
-	lm.color = color;
-
-	lm.position = new Vector3(0, y, z);
-	lm.rotation.x = tilt;
+  return { leftPaddle, rightPaddle, ball };
 }
 
-//CAM
+function createMiddleLine(scene: Scene, segmentHeight = 10, gap = 10) {
+  const lineMat = makeNeonMaterial("lineMat", scene, THEME.white);
+  // Ces 3 lignes garantissent que les segments passent devant
+  lineMat.backFaceCulling = false;
+  lineMat.forceDepthWrite = true;
+  lineMat.zOffset = -2; // “tire” le depth vers la caméra
+
+  const FRAME_Z = 0.2;      // on met le cadre 0.2 devant le plan des paddles
+  const RG = 2;             // rendu après le reste (ball/paddles en RG=1 par défaut)
+
+  // pointillés centraux
+  const segments = Math.floor(GAME.HEIGHT / (segmentHeight + gap));
+  for (let i = 0; i < segments; i++) {
+    const seg = MeshBuilder.CreateBox(
+      `lineSeg${i}`,
+      { width: 2, height: segmentHeight, depth: 0.5 },
+      scene
+    );
+    seg.material = lineMat;
+    seg.position.set(0, GAME.HEIGHT / 2 - (i + 0.5) * (segmentHeight + gap), FRAME_Z);
+    seg.renderingGroupId = RG;
+  }
+
+  // cadre
+  const up = MeshBuilder.CreateBox("hUp", { width: GAME.WIDTH, height: 1, depth: 0.5 }, scene);
+  const down = MeshBuilder.CreateBox("hDown", { width: GAME.WIDTH, height: 1, depth: 0.5 }, scene);
+  const left = MeshBuilder.CreateBox("vLeft", { width: 1, height: GAME.HEIGHT, depth: 0.5 }, scene);
+  const right = MeshBuilder.CreateBox("vRight", { width: 1, height: GAME.HEIGHT, depth: 0.5 }, scene);
+
+  up.material = down.material = right.material = left.material = lineMat;
+
+  up.position.set(0,  GAME.HEIGHT / 2, FRAME_Z);
+  down.position.set(0, -GAME.HEIGHT / 2, FRAME_Z);
+  right.position.set( GAME.WIDTH / 2, 0, FRAME_Z);
+  left.position.set(-GAME.WIDTH / 2, 0, FRAME_Z);
+
+  up.renderingGroupId = down.renderingGroupId = left.renderingGroupId = right.renderingGroupId = RG;
+}
 
 function createCameras(scene: Scene) {
-	const mainCam = new FreeCamera("mainCam", new Vector3(0,0, -1000), scene);
-	mainCam.mode = Camera.ORTHOGRAPHIC_CAMERA;
+  // Caméra 1 : orthographique (gameplay net)
+  const mainCam = new FreeCamera("mainCam", new Vector3(0, 0, -1000), scene);
+  mainCam.mode = Camera.ORTHOGRAPHIC_CAMERA;
+  mainCam.orthoLeft = -GAME.WIDTH / 2;
+  mainCam.orthoRight = GAME.WIDTH / 2;
+  mainCam.orthoTop = GAME.HEIGHT / 2;
+  mainCam.orthoBottom = -GAME.HEIGHT / 2;
+  mainCam.setTarget(Vector3.Zero());
 
-	mainCam.orthoLeft = -GAME.WIDTH / 2;
-	mainCam.orthoRight = GAME.WIDTH / 2;
-	mainCam.orthoTop = GAME.HEIGHT / 2;
-	mainCam.orthoBottom = -GAME.HEIGHT / 2;
-	mainCam.setTarget(Vector3.Zero());
+  // Caméra 2 : ciné
+  const secondCam = new FreeCamera("secondCam", new Vector3(0, -300, -500), scene);
+  secondCam.setTarget(Vector3.Zero());
+  secondCam.fov = 0.9;
 
-	const secondCam = new FreeCamera("secondeCam", new Vector3(0, -300, -500), scene);
-	secondCam.setTarget(Vector3.Zero());
-	secondCam.fov = 0.9;
+  // Caméra 3 : perspective douce (2.5D)
+  const gameCam = new FreeCamera("gameCam", new Vector3(0, -120, -750), scene);
+  gameCam.setTarget(new Vector3(0, -40, 0));
+  gameCam.fov = 0.8;
 
-	scene.activeCamera = mainCam;
-	return { mainCam, secondCam };
+  scene.activeCamera = mainCam;
+  return { mainCam, secondCam, gameCam };
 }
 
-//controle
+function playHitParticles(scene: Scene, pos: Vector3, color: Color3) {
+  const ps = new ParticleSystem("hit", 60, scene);
+  // petit pixel blanc en base64 (évite d’héberger un png)
+  ps.particleTexture = new Texture(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axV6eQAAAAASUVORK5CYII=",
+    scene
+  );
+  ps.blendMode = ParticleSystem.BLENDMODE_ONEONE; // additif = néon
+  ps.emitter = pos.clone();
+  ps.minSize = 4; ps.maxSize = 8;
+  ps.minEmitPower = 2; ps.maxEmitPower = 5;
+  ps.minLifeTime = 0.12; ps.maxLifeTime = 0.3;
+  ps.emitRate = 0;
+  ps.color1 = new Color4(color.r, color.g, color.b, 1);
+  ps.color2 = new Color4(color.r, color.g, color.b, 0.25);
+  ps.disposeOnStop = true;
+  ps.start();
+  ps.manualEmitCount = 40; // burst court
+  setTimeout(() => ps.stop(), 60);
+}
+
 function setupControls(
-	ws: any,
-	scene: Scene,
-	mainCam: FreeCamera,
-	secondCam: FreeCamera
-){
-	const keysToLock = ["w", "s", "ArrowUp", "ArrowDown", " "];
+  ws: any,
+  scene: Scene,
+  mainCam: FreeCamera,
+  secondCam: FreeCamera,
+  gameCam: FreeCamera
+) {
+  const keysToLock = ["w", "s", "ArrowUp", "ArrowDown", " "];
 
-	document.addEventListener("keydown", (e) => {
-		if (keysToLock.includes(e.key)) e.preventDefault();
+  document.addEventListener("keydown", (e) => {
+    if (keysToLock.includes(e.key)) e.preventDefault();
 
-		if (e.key === "1") scene.activeCamera = mainCam;
-		if (e.key === "2") scene.activeCamera = secondCam;
+    if (e.key === "1") scene.activeCamera = mainCam;
+    if (e.key === "2") scene.activeCamera = secondCam;
+    if (e.key === "3") scene.activeCamera = gameCam;
 
-		if (e.key === "w" || e.key === "s")
-			ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down"});
+    if (e.key === "w" || e.key === "s")
+      ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
 
-		if (e.key === "ArrowUp" || e.key === "ArrowDown")
-			ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down"});	
-	});
+    if (e.key === "ArrowUp" || e.key === "ArrowDown")
+      ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down" });
+  });
 
-	document.addEventListener("keyup", (e) => {
-		if (keysToLock.includes(e.key)) e.preventDefault();
+  document.addEventListener("keyup", (e) => {
+    if (keysToLock.includes(e.key)) e.preventDefault();
 
-		if (e.key === "w" || e.key === "s")
-			ws.emit("move", { side: "left", dir : "stop"});
-		if (e.key === "ArrowUp" || e.key === "ArrowDown")
-			ws.emit("move", { side: "right", dir : "stop"});
-	});
-}
-
-//SCORE HUD
-
-function createScorePlane(scene: Scene) {
-	const plane = MeshBuilder.CreatePlane("scorePlane", { width: 120, height: 48}, scene);
-	const dt = new DynamicTexture("scoreDT", { width: 512, height: 192 }, scene);
-
-	const mat = new StandardMaterial("scoreMat", scene);
-	mat.diffuseTexture = dt;
-	mat.emissiveColor = THEME.white;
-	mat.disableLighting = true;
-
-	plane.material = mat;
-	plane.position.y = GAME.HEIGHT / 2 - 25;
-	plane.position.z = 0;
-	
-	return { dt };
-}
-
-function updateScoreDynamicTexture(dt: DynamicTexture, leftPoints: number, rightPoints: number){
-	const ctx = dt.getContext();
-	const { width, height } = dt.getSize();
-	ctx.clearRect(0, 0, width, height);
-
-	const text = `${leftPoints} - ${rightPoints}`;
-	const fontPx = 96;
-	ctx.font = `bold ${fontPx}px Arial`;
-	ctx.textAlign = "center";
-	ctx.textBaseline = "middle";
-	ctx.fillStyle = "#ffffff";
-	ctx.fillText(text, width / 2, height / 2);
-
-	dt.update();
+    if (e.key === "w" || e.key === "s") ws.emit("move", { side: "left", dir: "stop" });
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") ws.emit("move", { side: "right", dir: "stop" }); 
+  });
 }
