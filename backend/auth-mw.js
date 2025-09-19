@@ -1,7 +1,7 @@
+// auth-mw.js
+const fp = require('fastify-plugin');
 const jwt = require('jsonwebtoken');
 const db = require('./db');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -9,17 +9,26 @@ function dbGet(sql, params = []) {
   });
 }
 
-async function requireUser(req, reply) {
-  const raw = req.cookies?.session;
-  if (!raw) return reply.code(401).send({ error: 'Not authenticated' });
-  try {
-    const { uid } = jwt.verify(raw, JWT_SECRET);
-    const me = await dbGet('SELECT id, username, email FROM users WHERE id = ?', [uid]);
-    if (!me) return reply.code(401).send({ error: 'Not authenticated' });
-    req.user = me; // attache l’utilisateur sur la requête
-  } catch {
-    return reply.code(401).send({ error: 'Not authenticated' });
-  }
-}
+module.exports = fp(async function authPlugin(fastify, opts) {
+  // ⚠️ Idéalement mets JWT_SECRET dans .env ; à défaut, même fallback que auth.js
+  const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
-module.exports = { requireUser };
+  fastify.decorate('verifySession', async function verifySession(req, reply) {
+    const token = req.cookies?.session;
+    if (!token) {
+      reply.code(401).send({ ok: false, error: 'Not authenticated' });
+      return;
+    }
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      const user = await dbGet('SELECT id, username, email FROM users WHERE id = ?', [payload.uid]);
+      if (!user) {
+        reply.code(401).send({ ok: false, error: 'Not authenticated' });
+        return;
+      }
+      req.user = user;
+    } catch (e) {
+      reply.code(401).send({ ok: false, error: 'Not authenticated' });
+    }
+  });
+});

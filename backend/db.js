@@ -52,12 +52,12 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player1_id INTEGER NOT NULL,
     player2_id INTEGER NOT NULL,
-    score_p1 INTEGER NOT NULL,
-    score_p2 INTEGER NOT NULL,
-    winner_id INTEGER NOT NULL,
-    FOREIGN KEY(player1_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(player2_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(winner_id)  REFERENCES users(id) ON DELETE CASCADE
+    score_p1 INTEGER NOT NULL DEFAULT 0,
+    score_p2 INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'pending',
+    winner_id INTEGER,
+    CHECK (player1_id != player2_id)
   )
 `, (err) => {
   if (err) {

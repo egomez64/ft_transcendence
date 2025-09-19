@@ -5,6 +5,7 @@ const authRoutes = require('./auth');
 const cors = require('@fastify/cors');
 const usersRoutes = require('./users');
 const friendsRoutes = require('./friends');
+const matchRoutes = require('./match');
 const db = require('./db');
 const game = require('./game/server')
 
@@ -49,11 +50,15 @@ fastify.register(cookie, {
   // secret: process.env.COOKIE_SECRET
 });
 
+fastify.register(require('./auth-mw'));
+
 fastify.register(authRoutes, {prefix: '/api/auth'});
 
 fastify.register(usersRoutes, { prefix: '/api/users' });
 
 fastify.register(friendsRoutes, { prefix: '/api' });
+
+fastify.register(matchRoutes, { prefix: '/api/match' });
 
 game.startGameServer(fastify.server, corsObj);
 
