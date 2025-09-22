@@ -1,10 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// PONG 2.5D — Babylon.js (front)
-// Refactor léger : structure, lisibilité, commentaires, imports nettoyés.
-// Garde : fond transparent, 3 cams, trail, particules (hit/goal/win), score DOM,
-//         WS "state" (socket.io), et petites touches de polish.
-// ─────────────────────────────────────────────────────────────────────────────
-
 import {
   Engine,
   Scene,
@@ -44,6 +37,14 @@ const GAME = {
   BALL_SIZE: 20,
   BALL_SEGMENTS: 32,
   WIN_SCORE: 10,
+};
+
+type LocalMatch = {
+  id: number;
+  p1: { id:number; username:string};
+  p2: { id:number; username:string};
+  controls: {left: "WS"; right:"ARROWS"};
+  mode: "local-1v1";
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,8 +89,12 @@ export function initPongPage() {
   const setScore = mountScoreHUD(canvas);
   setScore(0, 0);
 
+  const lm = readLocalMatch();
+  if (lm)
+    mountPlayerHUD(canvas, lm.p1.username, lm.p2.username);
+
   // Réseau (WS state) + triggers d’effets
-  wireNetwork(scene, world, setScore);
+  wireNetwork(scene, world, setScore, canvas);
 
   // Render loop : petit amorti Z pour le “pop” de la balle
   engine.runRenderLoop(() => {
@@ -194,24 +199,24 @@ function createMiddleLine(scene: Scene, segmentHeight = 10, gap = 10) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createCameras(scene: Scene) {
-  // Cam 1 : ortho (gameplay net)
-  const main = new FreeCamera("mainCam", new Vector3(0, 0, -1000), scene);
-  main.mode = Camera.ORTHOGRAPHIC_CAMERA;
-  main.orthoLeft = -GAME.WIDTH / 2;
-  main.orthoRight = GAME.WIDTH / 2;
-  main.orthoTop = GAME.HEIGHT / 2;
-  main.orthoBottom = -GAME.HEIGHT / 2;
+  // Cam 1 : 3d
+  const main = new FreeCamera("mainCam", new Vector3(0, -300, -500), scene);
   main.setTarget(Vector3.Zero());
+  main.fov = 0.9;
 
   // Cam 2 : ciné
-  const cine = new FreeCamera("secondCam", new Vector3(0, -300, -500), scene);
-  cine.setTarget(Vector3.Zero());
-  cine.fov = 0.9;
+  const cine = new FreeCamera("secondCam", new Vector3(0, -120, -750), scene);
+  cine.setTarget(new Vector3(0, -40, 0));
+  cine.fov = 0.8;
 
-  // Cam 3 : perspective douce (2.5D)
-  const persp = new FreeCamera("gameCam", new Vector3(0, -120, -750), scene);
-  persp.setTarget(new Vector3(0, -40, 0));
-  persp.fov = 0.8;
+  //cam 3  (plat) 
+  const persp = new FreeCamera("gameCam", new Vector3(0, 0, -1000), scene);
+  persp.mode = Camera.ORTHOGRAPHIC_CAMERA;
+  persp.orthoLeft = -GAME.WIDTH / 2;
+  persp.orthoRight = GAME.WIDTH / 2;
+  persp.orthoTop = GAME.HEIGHT / 2;
+  persp.orthoBottom = -GAME.HEIGHT / 2;
+  persp.setTarget(Vector3.Zero());
 
   scene.activeCamera = main;
   return { main, cine, persp };
@@ -224,7 +229,8 @@ function createCameras(scene: Scene) {
 function wireNetwork(
   scene: Scene,
   world: { leftPaddle: any; rightPaddle: any; ball: any; trail: any },
-  setScore: (l: number, r: number) => void
+  setScore: (l: number, r: number) => void,
+  canvas: HTMLCanvasElement
 ) {
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
@@ -276,10 +282,18 @@ function wireNetwork(
       (prev.sl < GAME.WIN_SCORE && prev.sr < GAME.WIN_SCORE);
 
     if (finishedNow) {
-      const winnerColor = s.score.left >= GAME.WIN_SCORE ? THEME.neonPrimary : THEME.neonSecondary;
+      const lm = readLocalMatch();
+      const leftWins  = s.score.left >= GAME.WIN_SCORE;
+      const winnerName = lm ? (leftWins ? lm.p1.username : lm.p2.username) : (leftWins ? "Left" : "Right");
+      const winnerColor = leftWins ? THEME.neonPrimary : THEME.neonSecondary;
+
+      // FX + disparition balle
       ball.position.set(0, 0, 0);
       explodeBall(scene, ball, trail, winnerColor);
       ballHiddenForWin = true;
+
+      // Overlay avec le score final
+      showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");
     }
 
     // Nouvelle manche (scores remis à 0) → on réaffiche la balle/trail
@@ -288,6 +302,10 @@ function wireNetwork(
       if (trail) trail.isVisible = true;
       ball.scaling.set(1, 1, 1);
       ballHiddenForWin = false;
+
+      // on masque l'overlay si visible
+      const wrap = document.getElementById("pong-win-overlay");
+      if (wrap) wrap.classList.add("hidden");
     }
 
     // Save prev
@@ -329,6 +347,128 @@ function mountScoreHUD(canvas: HTMLCanvasElement) {
   return (l: number, r: number) => { el!.textContent = `${l} - ${r}`; };
 }
 
+function mountPlayerHUD(canvas: HTMLCanvasElement, p1: string, p2: string) {
+  let banner = document.getElementById("pong-players-banner") as HTMLDivElement | null;
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "pong-players-banner";
+    Object.assign(banner.style, {
+      position: "absolute",
+      top: "56px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: "14px",
+      textShadow: "0 0 8px rgba(0,0,0,.7)",
+      pointerEvents: "none",
+      zIndex: "3",
+      letterSpacing: ".3px",
+      whiteSpace: "nowrap",
+    } as CSSStyleDeclaration);
+    canvas.parentElement!.appendChild(banner);
+  }
+  banner.textContent = `${p1} (W/S) vs ${p2} (↑/↓)`;
+// labels aux bords (gauche/droite)
+  let left = document.getElementById("pong-left-label") as HTMLDivElement | null;
+  if (!left) {
+    left = document.createElement("div");
+    left.id = "pong-left-label";
+    Object.assign(left.style, {
+      position: "absolute",
+      left: "8px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      color: "#9be7ff",
+      fontWeight: "800",
+      textShadow: "0 0 8px rgba(0,0,0,.7)",
+      pointerEvents: "none",
+      zIndex: "3",
+    } as CSSStyleDeclaration);
+    canvas.parentElement!.appendChild(left);
+  }
+  left.textContent = p1;
+
+  let right = document.getElementById("pong-right-label") as HTMLDivElement | null;
+  if (!right) {
+    right = document.createElement("div");
+    right.id = "pong-right-label";
+    Object.assign(right.style, {
+      position: "absolute",
+      right: "8px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      color: "#ff9bd6",
+      fontWeight: "800",
+      textShadow: "0 0 8px rgba(0,0,0,.7)",
+      pointerEvents: "none",
+      zIndex: "3",
+      textAlign: "right",
+    } as CSSStyleDeclaration);
+    canvas.parentElement!.appendChild(right);
+  }
+  right.textContent = p2;
+}
+
+function ensureWinOverlay(canvas: HTMLCanvasElement) {
+  let wrap = document.getElementById("pong-win-overlay") as HTMLDivElement | null;
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "pong-win-overlay";
+    wrap.className = "hidden"; // caché par défaut
+
+    Object.assign(wrap.style, {
+      position: "absolute",
+      inset: "0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(5, 0, 20, 0.6)",
+      backdropFilter: "blur(2px)",
+      zIndex: "5",
+    } as CSSStyleDeclaration);
+
+    const card = document.createElement("div");
+    Object.assign(card.style, {
+      minWidth: "min(90vw, 520px)",
+      padding: "24px",
+      borderRadius: "16px",
+      background: "linear-gradient(135deg, rgba(88,28,135,.7), rgba(190,24,93,.6))",
+      color: "white",
+      boxShadow: "0 10px 40px rgba(0,0,0,.35)",
+      textAlign: "center",
+    } as CSSStyleDeclaration);
+
+    card.innerHTML = `
+      <h3 id="win-title" style="font-size:28px;font-weight:900;margin:0 0 6px">Victoire !</h3>
+      <p id="win-sub" style="opacity:.9;margin:0 0 16px">—</p>
+      <div id="win-score" style="font-size:40px;font-weight:800;margin-bottom:18px">0 - 0</div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <a id="win-quit" class="py-3 px-6 rounded-full font-bold"
+          style="background:#334155;color:white;text-decoration:none;display:inline-flex;align-items:center;justify-content:center"
+          href="/play">Quitter</a>
+      </div>
+    `;
+    wrap.appendChild(card);
+    canvas.parentElement!.style.position ||= "relative";
+    canvas.parentElement!.appendChild(wrap);
+  }
+  return wrap;
+}
+
+function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: number, scoreR: number, winnerColor: string) {
+  const wrap = ensureWinOverlay(canvas);
+  const title = wrap.querySelector("#win-title") as HTMLHeadingElement;
+  const sub   = wrap.querySelector("#win-sub") as HTMLParagraphElement;
+  const sc    = wrap.querySelector("#win-score") as HTMLDivElement;
+
+  title.textContent = `${winnerName} a gagné !`;
+  title.style.textShadow = `0 0 14px ${winnerColor}`;
+  sub.textContent = "Partie terminée";
+  sc.textContent = `${scoreL} - ${scoreR}`;
+
+  wrap.classList.remove("hidden");
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // 7) EFFETS — matériaux, particules, “grosse explosion” de fin
 // ─────────────────────────────────────────────────────────────────────────────
@@ -460,4 +600,13 @@ function computeGoalImpact(
   const maxY = GAME.HEIGHT / 2 - pad;
 
   return new Vector3(boundaryX, clamp(y, minY, maxY), 0);
+}
+
+
+function readLocalMatch(): LocalMatch | null {
+  try {
+    const raw = sessionStorage.getItem("localMatch");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null;}
 }

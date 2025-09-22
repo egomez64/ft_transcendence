@@ -16,6 +16,7 @@ import {
 } from "./layout";
 import { applyTranslations, initI18n } from "../i18n";
 import { initPlayPage } from "./play";
+import { initLocal1v1Page } from "./1vs1";
 
 function routeFromLocation(): string {
   const p = window.location.pathname || "/";
@@ -55,6 +56,7 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   profils:   { file: "profile.html", mount: mountProfileHandlers, protected: true },
   friends:   { file: "friends.html", mount: initFriendsPage, protected: false },
   pong:      { file: "pong.html", mount: initPongPage, protected: false },
+  '1v1':     { file: "1v1.html", mount: initLocal1v1Page, protected : false},
 };
 
 // --------- ROUTER ---------

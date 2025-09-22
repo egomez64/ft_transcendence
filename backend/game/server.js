@@ -367,7 +367,7 @@ function startGameServer(server, cors) {
 	function gameLoop(state, wss) {
 		updatePaddles(state);
 		updateBall(state);
-        updateAI(state);
+        //updateAI(state);
 		//handleCollisions(state);
 		handleScore(state);
 		broadcastState(wss, state);
