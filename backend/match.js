@@ -44,6 +44,46 @@ async function matchRoutes(fastify) {
       return reply.code(500).send({ ok:false, error:'MATCH_CREATION_FAILED' });
     }
   });
+
+fastify.post("/ai", { preHandler: fastify.verifySession }, async (req, reply) => {
+    try {
+      const p1 = req.user;
+      if (!p1?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
+
+      // Récupère l'ID du compte IA
+      const ai = await new Promise((resolve, reject) => {
+        db.get(`SELECT id FROM users WHERE username = 'AI'`, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+      if (!ai) {
+        return reply.code(500).send({ ok: false, error: "AI_USER_NOT_FOUND" });
+      }
+
+      // Insère le match (humain vs IA)
+      const info = await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT INTO matches (player1_id, player2_id, status) VALUES (?, ?, 'pending')`,
+          [p1.id, ai.id],
+          function (err) {
+            if (err) reject(err);
+            else resolve(this);
+          }
+        );
+      });
+
+      return reply.send({
+        ok: true,
+        match_id: info.lastID,
+        player1: { id: p1.id, username: p1.username },
+        player2: { id: ai.id, username: "AI" },
+      });
+    } catch (err) {
+      req.log?.error?.({ at: "match/ai", err: err?.message || err });
+      return reply.code(500).send({ ok: false, error: "MATCH_AI_CREATION_FAILED" });
+    }
+  });
 }
 
 module.exports = matchRoutes;

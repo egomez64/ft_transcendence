@@ -65,4 +65,27 @@ db.run(`
   }
 });
 
+db.serialize(() => {
+  db.get(`SELECT id FROM users WHERE username = 'AI'`, (err, row) => {
+    if (err) {
+      console.error('Erreur vérif IA:', err);
+    } else if (!row) {
+      const bcrypt = require('bcrypt');
+      const hash = bcrypt.hashSync('ai-password', 10);
+
+      db.run(
+        `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+        ['AI', 'ai@pong.local', hash],
+        function (err2) {
+          if (err2) {
+            console.error('Erreur insertion IA:', err2);
+          } else {
+            console.log('Utilisateur IA créé avec id', this.lastID);
+          }
+        }
+      );
+    }
+  });
+});
+
 module.exports = db;
