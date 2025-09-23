@@ -331,63 +331,11 @@ async function loadHistory(userId: number) {
 
 function historyView() {
   return `
-<<<<<<< Updated upstream
-             <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
-                 <h3 class="text-2xl font-bold text-pink-300 mb-4">📝 Historique des parties</h3>
-
-                 <div class="space-y-4">
-                 <!-- match 1 -->
-                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-                         <div class="flex items-center gap-4">
-                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
-                             <div>
-                                 <p class="text-pink-100 font-semibold">vs CyberAlice</p>
-                                 <p class="text-sm text-pink-400">2024-01-15</p>
-                             </div>
-                         </div>
-                         <div class="text-right">
-                             <p class="text-green-400 font-bold text-xl">5 - 3</p>
-                         </div>
-                     </div>
-                
-                 <!-- match 2 -->
-                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-                         <div class="flex items-center gap-4">
-                             <span class="w-3 h-3 rounded-full bg-red-400"></span>
-                             <div>
-                                 <p class="text-pink-100 font-semibold">vs CyberBob</p>
-                                 <p class="text-sm text-pink-400">2024-01-16</p>
-                             </div>
-                         </div>
-                         <div class="text-right">
-                             <p class="text-red-400 font-bold text-xl">4 - 5</p>
-                         </div>
-                     </div>
-                
-                 <!-- match 3 -->
-                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-                         <div class="flex items-center gap-4">
-                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
-                             <div>
-                                 <p class="text-pink-100 font-semibold">vs CyberCharlie</p>
-                                 <p class="text-sm text-pink-400">2024-01-17</p>
-                             </div>
-                         </div>
-                         <div class="text-right">
-                             <p class="text-green-400 font-bold text-xl">5 - 4</p>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-
-         `;
-=======
     <div class="bg-black/30 p-6 rounded-xl shadow-neon">
       <h3 class="text-2xl font-bold text-pink-200">Historique</h3>
       <div id="history-list" class="mt-4 space-y-4 text-white">
       </div>
     </div>`;
->>>>>>> Stashed changes
 }
 
 function rankingView() {
