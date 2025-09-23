@@ -288,8 +288,50 @@ function statsView() {
   `;
 }
 
+//No Trad
+async function loadHistory(userId: number) {
+  try {
+    const res = await fetch(`/api/history/${userId}`);
+    const matches = await res.json();
+
+    const container = document.getElementById('history-list');
+    if (!container) return;
+
+    if (matches.length === 0) {
+      container.innerHTML = `<p class="text-pink-300/80">Aucun match pour l’instant</p>`; //here
+      return;
+    }
+
+    container.innerHTML = matches.map((m: any) => `
+      <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
+        <div class="flex items-center gap-4">
+          <span class="w-3 h-3 rounded-full ${
+            m.result === 'win' ? 'bg-green-400' :
+            m.result === 'lose' ? 'bg-red-400' :
+            'bg-yellow-400'
+          }"></span>
+          <div>
+            <p class="text-pink-100 font-semibold"> ${m.player} vs ${m.opponent}</p>
+            <p class="text-sm text-pink-400">${new Date(m.played_at).toLocaleString()}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="${
+            m.result === 'win' ? 'text-green-400' :
+            m.result === 'lose' ? 'text-red-400' :
+            'text-yellow-400'
+          } font-bold text-xl">${m.score}</p>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Erreur chargement historique :', err);
+  }
+}
+
 function historyView() {
   return `
+<<<<<<< Updated upstream
              <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
                  <h3 class="text-2xl font-bold text-pink-300 mb-4">📝 Historique des parties</h3>
 
@@ -339,6 +381,13 @@ function historyView() {
              </div>
 
          `;
+=======
+    <div class="bg-black/30 p-6 rounded-xl shadow-neon">
+      <h3 class="text-2xl font-bold text-pink-200">Historique</h3>
+      <div id="history-list" class="mt-4 space-y-4 text-white">
+      </div>
+    </div>`;
+>>>>>>> Stashed changes
 }
 
 function rankingView() {
@@ -532,26 +581,41 @@ async function loadStats(userId: number) {
 }
 
 // ---- Controller ----
-function setActiveTab(name: "stats"|"history"|"ranking") {
+function setActiveTab(name: "stats" | "history" | "ranking") {
   const content = document.getElementById("dashboard-content")!;
   content.innerHTML =
     name === "stats"   ? statsView() :
     name === "history" ? historyView() :
                          rankingView();
-    applyTranslations(content);
-    if (name === "stats") {
+  applyTranslations(content);
+
+  if (name === "stats") {
     const raw = localStorage.getItem("auth");
     let user: any = null;
     try { user = raw ? JSON.parse(raw) : null; } catch {}
+    
     const state = document.getElementById("stats-state");
     if (!user?.id) {
         if (state) state.textContent = "Veuillez vous connecter.";
         return;
     }
-    // lance le chargement
     loadStats(Number(user.id));
+  }
+
+  if (name === "history") {
+    const raw = localStorage.getItem("auth");
+    let user: any = null;
+    try { user = raw ? JSON.parse(raw) : null; } catch {}
+    
+    const container = document.getElementById("history-list");
+    if (!user?.id) {
+      if (container) container.textContent = "Veuillez vous connecter.";
+      return;
     }
+    loadHistory(Number(user.id));
+  }
 }
+
 
 // Public: appelé après injection de dashboard.html
 export function mountDashboard() {
