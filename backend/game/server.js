@@ -8,8 +8,20 @@ function startGameServer(server, cors) {
 	wss = new io.Server(server, { cors: cors, path: "/ws" });
 	wss.on("connection", (ws) => {
 		console.log("Client connecté Pong WS");
+
+		ws.on("setAi", (payload) => {
+			const enabled = !!(payload && payload.enabled);
+			state.aiEnabled = enabled;
+			state.right.up = false;
+			state.right.down = false;
+			if (enabled && state.status == "idle") {
+				state.status = "playing";
+				resetBall(state);
+			}
+		});
 		ws.on("move", (data) => {
 			console.log(data);
+			if (state.aiEnabled && data.side == "right") return;
 			const player = data.side === "left" ? state.left : state.right;
 			if (data.dir === "stop") {
 				player.up = false;
@@ -42,7 +54,6 @@ function startGameServer(server, cors) {
 	const WIN_SCORE = 10;
    // let lastAIUpdate = Date.now() - 1000;
     let targetY = 0;
-    const AI_ENABLED = true;
 	const AI = {
 		reactMs: 0,
 		speedMul: 1.35,
@@ -71,6 +82,7 @@ function startGameServer(server, cors) {
 			right: { y: 0, up: false, down: false },
 			score: { left: 0, right: 0 },
 			winner: null,
+			aiEnabled: false,
 		};
 	}
 
@@ -245,59 +257,25 @@ function startGameServer(server, cors) {
     }
 
 	function updateAI() {
-		if (!AI_ENABLED) return;
 
-		const now = Date.now();
+		const paddleX = RIGHT_PADDLE_X;
 		const H = GAME_HEIGHT;
 
-		//if (now - lastAIUpdate >= AI.reactMs) {
-			//lastAIUpdate = now;
-        setTimeout(() => {
-			const paddleX = RIGHT_PADDLE_X
-			const TICK_MS = 1000 / 60;
-			const leadTicks = Math.round(1000 / TICK_MS);
+		const leadTicks = Math.round(AI.reactMs / TICK_MS);
 
-			const predictedY = predictBallYAtX_simCentered(state.ball, paddleX, {
-			H,
-			ballRadius: BALL_RADIUS,
-			leadTicks,
-			stepLimit: 3000
-			});
+		const predictedY = predictBallYAtX_simCentered(state.ball, paddleX, {
+			H, ballRadius: BALL_RADIUS, leadTicks, stepLimit: 2000
+		});
 
-			//const aimY = (1 - AI.anticipate) * state.ball.y + AI.anticipate * predictedY;
-
-			let noisyY = state.ball.y * ((state.ball.y / predictedY) * AI.anticipate);
-			if (Math.random() < AI.errorRate && state.score.right >= WIN_SCORE - 1) {
-			noisyY += (Math.random() * 2 - 1) * 40;
-			}
-
-			/*const minY = -H/2 + PADDLE_LENGTH / 2;
-			const maxY =  H/2 - PADDLE_LENGTH / 2;
-			targetY = clamp(noisyY, minY, maxY);
-
-			const dx = Math.max(1, (paddleX - state.ball.x));
-			const maxTravel = dx * (PADDLE_SPEED * AI.speedMul);
-			targetY = clamp(targetY, state.right.y - maxTravel, state.right.y + maxTravel);
-			targetY = clamp(targetY, minY, maxY);*/
-            targetY = (state.ball.vx > 0) ? noisyY: 0;
-		//}
-        }, AI.reactMs);
-
+		let target = (state.ball.vx > 0) ? predictedY : 0;
+		target += (Math.random() * 2 - 1 ) * AI.jitter;
+        
 		const step = PADDLE_SPEED * AI.speedMul;
-		/*const diff = targetY - state.right.y;
-		if (Math.abs(diff) <= step) {
-			state.right.y = targetY;
-		} else {
-			state.right.y += Math.sign(diff) * step;
-		}
-
-		const minY = -GAME_HEIGHT/2 + PADDLE_LENGTH / 2;
-		const maxY =  GAME_HEIGHT/2 - PADDLE_LENGTH / 2;
-		state.right.y = clamp(state.right.y, minY, maxY);*/
-		if (targetY > state.right.y + 5) {
-			if (state.right.y + PADDLE_LENGTH / 2 < GAME_HEIGHT / 2) state.right.y += step;
-		} else if (targetY < state.right.y - 5) {
-			if (state.right.y - PADDLE_LENGTH / 2 > -GAME_HEIGHT / 2) state.right.y -= step;
+		/*const diff = targetY - state.right.y;*/
+		if (target > state.right.y + 3) {
+			state.right.y = Math.min(state.right.y + step, H/2 - PADDLE_LENGTH/2);
+		} else if (target < state.right.y - 3) {
+			state.right.y = Math.max(state.right.y - step, -H/2 + PADDLE_LENGTH/2);
 		}
 	}
 
@@ -338,7 +316,6 @@ function startGameServer(server, cors) {
 	}
 
 	function updateAI(state) {
-		if (!AI_ENABLED) return;
 		//const now = Date.now();
 		
 		//if (now - lastAIUpdate >= AI.reactMs) {
@@ -367,7 +344,7 @@ function startGameServer(server, cors) {
 	function gameLoop(state, wss) {
 		updatePaddles(state);
 		updateBall(state);
-        //updateAI(state);
+		if(state.aiEnabled) updateAI();
 		//handleCollisions(state);
 		handleScore(state);
 		broadcastState(wss, state);

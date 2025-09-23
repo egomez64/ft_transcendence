@@ -102,7 +102,7 @@
 		"invalid_username": "Nom d'utilisateur invalide.",
 		"invalid_email": "Email invalide.",
 		"weak_password": "Mot de passe trop faible.",
-		"user_exists": "Ce nom d'utilisateur est déjà pris.",
+		"user_exists": "Ce nom d'utilisateur ou l'Email est déjà pris.",
 		"email_used": "Cet email est déjà utilisé.",
 		"register_succes": "Compte créé avec succès !",
 		"missing_credentials": "Nom d'utilisateur et mot de passe requis."
@@ -157,6 +157,31 @@
 			"1v1": {"title": "1 vs 1 (local)", "desc": "Deux joueurs au clavier, même écran."},
 			"ai": {"title": "Joueur vs IA", "desc": "Affronte une IA"},
 			"tournament": {"title": "Tournoi", "desc": "Organise un bracket et enchaîne les matchs."}
+		}
+	},
+ 	"local1v1": {
+    	"title": "Local 1 vs 1",
+    	"intro": "Le joueur 1 est déjà connecté dans cet onglet. Connecte le joueur 2 pour jouer sur le même PC.",
+    	"inputs": {
+      		"username": "Nom d'utilisateur",
+      		"password": "Mot de passe"
+    	},
+    	"actions": {
+      		"cancel": "Annuler",
+      		"continue": "Continuer",
+      		"connecting": "Connexion…"
+    	},
+    "hints": {
+      "controls": "Joueur 1 : W/S • Joueur 2 : ↑/↓"
+    },
+	"errors": {
+		"login_failed": "Échec de la connexion. Vérifiez le serveur et réessayez.",
+		"p1_not_auth": "Le joueur 1 n'est pas connecté dans cet onglet.",
+		"missing_credentials": "Veuillez saisir le nom d'utilisateur et le mot de passe du joueur 2.",
+		"p2_not_found": "Aucun compte ne correspond à ce nom d'utilisateur.",
+		"p2_bad_password": "Mot de passe incorrect pour le joueur 2.",
+		"cannot_play_with_self": "Le joueur 2 doit être un compte différent du joueur 1.",
+		"generic": "Impossible de créer le match local."
 		}
 	}
 }

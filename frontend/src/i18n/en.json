@@ -102,7 +102,7 @@
 		"invalid_username": "Invalid username.",
 		"invalid_email": "Invalid email.",
 		"weak_password": "Password too weak.",
-		"user_exists": "Username already exists.",
+		"user_exists": "Username or Email already exists.",
 		"email_used": "Email already used.",
 		"register_succes": "User registered successfully!",
 		"missing_credentials": "Username and password are required."
@@ -157,6 +157,31 @@
 			"1v1": {"title": "1 vs 1 (local)", "desc": "Two players on the same keyboard."},
 			"ai": {"title": "Play vs AI", "desc": "Face a progressive AI."},
 			"tournament": {"title": "Tournament", "desc": "Create a bracket and chain matches."}
+		}
+	},
+ 	"local1v1": {
+    	"title": "Local 1 vs 1",
+    	"intro": "Player 1 is already signed in on this tab. Sign in Player 2 to play on the same PC.",
+    	"inputs": {
+      		"username": "Username",
+      		"password": "Password"
+    	},
+    	"actions": {
+      		"cancel": "Cancel",
+      		"continue": "Continue",
+      		"connecting": "Signing in…"
+    	},
+    "hints": {
+      "controls": "Player 1: W/S • Player 2: ↑/↓"
+    },
+	"errors": {
+		"login_failed": "Sign-in failed. Check the server and try again.",
+		"p1_not_auth": "Player 1 is not signed in on this tab.",
+		"missing_credentials": "Enter Player 2's username and password.",
+		"p2_not_found": "No account matches this username.",
+		"p2_bad_password": "Incorrect password for Player 2.",
+		"cannot_play_with_self": "Player 2 must be a different account from Player 1.",
+		"generic": "Unable to create the local match."
 		}
 	}
 }

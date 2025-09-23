@@ -290,18 +290,176 @@ function statsView() {
 
 function historyView() {
   return `
-    <div class="bg-black/30 p-6 rounded-xl shadow-neon">
-      <h3 class="text-2xl font-bold text-pink-200">Historique</h3>
-      <p class="text-pink-300/80 mt-2">À venir…</p>
-    </div>`;
+             <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
+                 <h3 class="text-2xl font-bold text-pink-300 mb-4">📝 Historique des parties</h3>
+
+                 <div class="space-y-4">
+                 <!-- match 1 -->
+                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
+                         <div class="flex items-center gap-4">
+                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
+                             <div>
+                                 <p class="text-pink-100 font-semibold">vs CyberAlice</p>
+                                 <p class="text-sm text-pink-400">2024-01-15</p>
+                             </div>
+                         </div>
+                         <div class="text-right">
+                             <p class="text-green-400 font-bold text-xl">5 - 3</p>
+                         </div>
+                     </div>
+                
+                 <!-- match 2 -->
+                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
+                         <div class="flex items-center gap-4">
+                             <span class="w-3 h-3 rounded-full bg-red-400"></span>
+                             <div>
+                                 <p class="text-pink-100 font-semibold">vs CyberBob</p>
+                                 <p class="text-sm text-pink-400">2024-01-16</p>
+                             </div>
+                         </div>
+                         <div class="text-right">
+                             <p class="text-red-400 font-bold text-xl">4 - 5</p>
+                         </div>
+                     </div>
+                
+                 <!-- match 3 -->
+                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
+                         <div class="flex items-center gap-4">
+                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
+                             <div>
+                                 <p class="text-pink-100 font-semibold">vs CyberCharlie</p>
+                                 <p class="text-sm text-pink-400">2024-01-17</p>
+                             </div>
+                         </div>
+                         <div class="text-right">
+                             <p class="text-green-400 font-bold text-xl">5 - 4</p>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+
+         `;
 }
 
 function rankingView() {
-  return `
-    <div class="bg-black/30 p-6 rounded-xl shadow-neon">
-      <h3 class="text-2xl font-bold text-pink-200">Classement</h3>
-      <p class="text-pink-300/80 mt-2">À venir…</p>
-    </div>`;
+  return `<div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
+                 <h3 class="text-2xl font-bold text-pink-300 mb-4">🏆 Classement</h3>
+
+                 <div class="space-y-3">
+                     <!-- rank 1 -->
+                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
+                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
+                         <div class="flex items-center space-x-4">
+                             <!-- Rang / Médaille -->
+                             <div class="text-2xl w-8 text-center">
+                             🥇
+                             </div>
+                             <!-- Nom + Stat -->
+                             <div class="flex flex-col">
+                             <span class="font-bold text-pink-100 text-lg">SynthMaster</span>
+                             <span class="text-sm text-left text-pink-400">145W - 23L</span>
+                             </div>
+                         </div>
+
+                         <!-- Droite : Score + WR -->
+                         <div class="text-right">
+                             <div class="text-yellow-400 font-extrabold text-lg">2156 pts</div>
+                             <div class="text-pink-300 text-sm">86% WR</div>
+                         </div>
+                         </div>
+
+                     <!-- rank 2 -->
+                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
+                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
+                         <div class="flex items-center space-x-4">
+                             <!-- Rang / Médaille -->
+                             <div class="text-2xl w-8 text-center">
+                             🥈
+                             </div>
+                             <!-- Nom + Stat -->
+                             <div class="flex flex-col">
+                             <span class="font-bold text-pink-100 text-lg">CyberBob</span>
+                             <span class="text-sm text-left text-pink-400">115W - 43L</span>
+                             </div>
+                         </div>
+
+                         <!-- Droite : Score + WR -->
+                         <div class="text-right">
+                             <div class="text-yellow-400 font-extrabold text-lg">1856 pts</div>
+                             <div class="text-pink-300 text-sm">70% WR</div>
+                         </div>
+                         </div>
+
+                     <!-- rank 3 -->
+                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
+                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
+                         <div class="flex items-center space-x-4">
+                             <!-- Rang / Médaille -->
+                             <div class="text-2xl w-8 text-center">
+                             🥉
+                             </div>
+                             <!-- Nom + Stat -->
+                             <div class="flex flex-col">
+                             <span class="font-bold text-pink-100 text-lg">CyberAlice</span>
+                             <span class="text-sm text-left text-pink-400">105W - 83L</span>
+                             </div>
+                         </div>
+
+                         <!-- Droite : Score + WR -->
+                         <div class="text-right">
+                             <div class="text-yellow-400 font-extrabold text-lg">1406 pts</div>
+                             <div class="text-pink-300 text-sm">51% WR</div>
+                         </div>
+                         </div>
+
+                     <!-- rank 4-->
+                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
+                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
+                         <div class="flex items-center space-x-4">
+                             <!-- Rang / Médaille -->
+                             <div class="text-2xl w-8 text-center">
+                             #4
+                             </div>
+                             <!-- Nom + Stat -->
+                             <div class="flex flex-col">
+                             <span class="font-bold text-pink-100 text-lg">CyberEric</span>
+                             <span class="text-sm text-left text-pink-400">100W - 83L</span>
+                             </div>
+                         </div>
+
+                         <!-- Droite : Score + WR -->
+                         <div class="text-right">
+                             <div class="text-yellow-400 font-extrabold text-lg">1350 pts</div>
+                             <div class="text-pink-300 text-sm">50% WR</div>
+                         </div>
+                         </div>
+
+                     <!-- rank 5-->
+                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
+                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
+                         <div class="flex items-center space-x-4">
+                             <!-- Rang / Médaille -->
+                             <div class="text-2xl w-8 text-center">
+                             #5
+                             </div>
+                             <!-- Nom + Stat -->
+                             <div class="flex flex-col">
+                             <span class="font-bold text-pink-100 text-lg">CyberTeddy</span>
+                             <span class="text-sm text-left text-pink-400">98W - 83L</span>
+                             </div>
+                         </div>
+
+                         <!-- Droite : Score + WR -->
+                         <div class="text-right">
+                             <div class="text-yellow-400 font-extrabold text-lg">1300 pts</div>
+                             <div class="text-pink-300 text-sm">51% WR</div>
+                         </div>
+                         </div>
+
+                         </div>
+                     </div>
+                 </div>
+             </div>`;
 }
 
 // ---- Data loader ----

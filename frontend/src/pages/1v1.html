@@ -1,29 +1,33 @@
 <section class="max-w-lg mx-auto mt-20 bg-gradient-to-br from-[#581c87b3] via-[#be185d99] to-[#581c87b3] p-12 rounded-2xl shadow-2xl text-pink-100 space-y-8">
-  <h2 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#ff4500] via-[#ff1493] to-[#4b0082]">
+  <h2 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#ff4500] via-[#ff1493] to-[#4b0082]" data-i18n="local1v1.title">
     Local 1 vs 1
   </h2>
 
-  <p class="text-center opacity-90">
+  <p class="text-center opacity-90" data-i18n="local1v1.intro">
     Le joueur 1 est déjà connecté dans cet onglet. Connecte le joueur 2 pour jouer sur le même PC.
   </p>
 
   <form id="p2-form" class="flex flex-col space-y-6">
     <input id="p2-username" type="text" autocomplete="username"
            placeholder="Nom d'utilisateur"
+           data-i18n="local1v1.inputs.username"
            class="bg-[#1a1a2eb3] border border-[#f472b6]/40 p-6 rounded-md text-pink-100 placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400" />
     <input id="p2-password" type="password" autocomplete="current-password"
            placeholder="Mot de passe"
+           data-i18n="local1v1.inputs.password"
            class="bg-[#1a1a2eb3] border border-[#f472b6]/40 p-6 rounded-md text-pink-100 placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-400" />
 
     <div class="flex gap-4 justify-end">
-      <a href="/pong" class="py-3 px-6 rounded-full font-bold bg-slate-600 hover:bg-slate-700 text-white transition">Annuler</a>
+      <a id="p2-cancel" href="/play" class="py-3 px-6 rounded-full font-bold bg-slate-600 hover:bg-slate-700 text-white transition" data-i18n="local1v1.actions.cancel">
+        Annuler
+      </a>
       <button id="p2-submit" type="submit"
-              class="py-3 px-6 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition">
+              class="py-3 px-6 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition" data-i18n="local1v1.actions.continue">
         Continuer
       </button>
     </div>
 
-    <p class="text-center opacity-80">
+    <p class="text-center opacity-80" data-i18n="local1v1.hints.controls">
       Joueur&nbsp;1 : <kbd>W</kbd>/<kbd>S</kbd> • Joueur&nbsp;2 : <kbd>↑</kbd>/<kbd>↓</kbd>
     </p>
 

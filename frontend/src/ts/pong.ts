@@ -16,6 +16,7 @@ import { TrailMesh } from "@babylonjs/core/Meshes/trailMesh";
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { io } from "socket.io-client";
+import { currentUser } from "./layout";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) CONSTANTES & THEME
@@ -89,12 +90,19 @@ export function initPongPage() {
   const setScore = mountScoreHUD(canvas);
   setScore(0, 0);
 
+  const params = new URLSearchParams(location.search);
+  const isVsAI = params.get("mode") == "ai";
+
   const lm = readLocalMatch();
-  if (lm)
+  if (lm) {
     mountPlayerHUD(canvas, lm.p1.username, lm.p2.username);
+  } else if (isVsAI){
+    const me = currentUser()?.username || "joueur 1";
+    mountPlayerHUD(canvas, me, "IA");
+  }
 
   // Réseau (WS state) + triggers d’effets
-  wireNetwork(scene, world, setScore, canvas);
+  wireNetwork(scene, world, setScore, canvas, isVsAI, currentUser()?.username || "Joueur 1");
 
   // Render loop : petit amorti Z pour le “pop” de la balle
   engine.runRenderLoop(() => {
@@ -230,12 +238,17 @@ function wireNetwork(
   scene: Scene,
   world: { leftPaddle: any; rightPaddle: any; ball: any; trail: any },
   setScore: (l: number, r: number) => void,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  isVsAI: boolean,
+  meName: string
 ) {
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
   const ws = io("http://localhost:3000", { path: "/ws", transports: ["websocket"] });
-  ws.on("connect", () => ws.emit("restart"));
+  ws.on("connect", () => {
+    ws.emit("restart");
+    ws.emit("setAi", {enabled: isVsAI});
+  });
 
   // Mémoire du tick précédent pour détecter inversions et scores
   let prev = { vx: 0, vy: 0, bx: 0, by: 0, sl: 0, sr: 0 };
@@ -282,11 +295,15 @@ function wireNetwork(
       (prev.sl < GAME.WIN_SCORE && prev.sr < GAME.WIN_SCORE);
 
     if (finishedNow) {
-      const lm = readLocalMatch();
       const leftWins  = s.score.left >= GAME.WIN_SCORE;
-      const winnerName = lm ? (leftWins ? lm.p1.username : lm.p2.username) : (leftWins ? "Left" : "Right");
+      let winnerName = "Left";
+      if (isVsAI) {
+        winnerName = leftWins ? meName : "IA";
+      } else {
+        const lm = readLocalMatch();
+        winnerName = lm ? (leftWins ? lm.p1.username : lm.p2.username) : (leftWins ? "Left" : "Right");
+      }
       const winnerColor = leftWins ? THEME.neonPrimary : THEME.neonSecondary;
-
       // FX + disparition balle
       ball.position.set(0, 0, 0);
       explodeBall(scene, ball, trail, winnerColor);
@@ -315,7 +332,8 @@ function wireNetwork(
   // Contrôles clavier (changement de caméra + mouvements)
   setupControls(ws, scene, scene.getCameraByName("mainCam") as FreeCamera,
                       scene.getCameraByName("secondCam") as FreeCamera,
-                      scene.getCameraByName("gameCam") as FreeCamera);
+                      scene.getCameraByName("gameCam") as FreeCamera,
+                      isVsAI);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -550,7 +568,8 @@ function setupControls(
   scene: Scene,
   mainCam: FreeCamera,
   secondCam: FreeCamera,
-  gameCam: FreeCamera
+  gameCam: FreeCamera,
+  isVsAI: boolean
 ) {
   const keysToLock = ["w", "s", "ArrowUp", "ArrowDown", " "];
 
@@ -563,7 +582,7 @@ function setupControls(
 
     if (e.key === "w" || e.key === "s")
       ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
-    if (e.key === "ArrowUp" || e.key === "ArrowDown")
+    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown"))
       ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down" });
   });
 
@@ -571,7 +590,7 @@ function setupControls(
     if (keysToLock.includes(e.key)) e.preventDefault();
 
     if (e.key === "w" || e.key === "s") ws.emit("move", { side: "left", dir: "stop" });
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") ws.emit("move", { side: "right", dir: "stop" });
+    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) ws.emit("move", { side: "right", dir: "stop" });
   });
 }
 

@@ -1,3 +1,5 @@
+import { initI18n, t } from "../i18n";
+
 type MatchApiResponse =
   | { ok: true; match_id: number; player1: { id: number; username: string }; player2: { id: number; username: string } }
   | { ok: false; error: string };
@@ -10,12 +12,37 @@ export function initLocal1v1Page() {
   const passEl = document.getElementById("p2-password") as HTMLInputElement | null;
   const errEl  = document.getElementById("p2-error") as HTMLParagraphElement | null;
   const btn    = document.getElementById("p2-submit") as HTMLButtonElement | null;
-  if (!form || !userEl || !passEl || !errEl || !btn) return;
+  const cancel = document.getElementById("p2-cancel") as HTMLAnchorElement | null;
+  if (!form || !userEl || !passEl || !errEl || !btn || !cancel) return;
+
+  let currentAbort: AbortController | null = null;
+  let cancelled = false;
+
+  cancel.addEventListener("click", (e) => {
+    e.preventDefault();
+    cancelled = true;
+    if (currentAbort) currentAbort.abort();
+    btn.disabled = false;
+    btn.textContent = t("local1v1.actions.continue");
+    errEl.textContent = "";
+    history.pushState({}, "", "/play");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
 
   form.onsubmit = async (e) => {
     e.preventDefault();
+    cancelled = false;
     errEl.textContent = "";
-    btn.disabled = true; btn.textContent = "Connexion…";
+    btn.disabled = true; btn.textContent = t("local1v1.actions.connecting");
+
+    if (!userEl.value.trim() || !passEl.value) {
+      errEl.textContent = t("local1v1.errors.missing_credentials");
+      btn.disabled = false;
+      btn.textContent = t("local1v1.actions.continue");
+      return;
+    }
+
+    currentAbort = new AbortController();
 
     try {
       const res = await fetch(MATCH_API, {
@@ -23,7 +50,11 @@ export function initLocal1v1Page() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: userEl.value.trim(), password: passEl.value }),
+        signal: currentAbort.signal
       });
+
+      if (cancelled) return;
+
       const data = (await res.json()) as MatchApiResponse;
 
       if (!res.ok || !("ok" in data) || !data.ok) {
@@ -44,21 +75,25 @@ export function initLocal1v1Page() {
       );
 
       window.location.href = "/pong";
-    } catch {
-      errEl.textContent = "Échec de la connexion. Vérifiez le serveur et réessayez.";
+    } catch (err:any) {
+      if (cancelled || err?.name === "AbortError")
+        return;
+      errEl.textContent = t("local1v1.errors.login_failed");
     } finally {
-      btn.disabled = false; btn.textContent = "Continuer";
+      if (!cancelled)   
+        btn.disabled = false; btn.textContent = t("local1v1.actions.continue");
+      currentAbort = null;
     }
   };
 }
 
 function normalizeErrorMsg(code: string): string {
   switch (code) {
-    case "PLAYER1_NOT_AUTHENTICATED": return "Le joueur 1 n'est pas connecté dans cet onglet.";
-    case "MISSING_CREDENTIALS":      return "Veuillez saisir le nom d'utilisateur et le mot de passe du joueur 2.";
-    case "PLAYER2_NOT_FOUND":        return "Aucun compte ne correspond à ce nom d'utilisateur.";
-    case "PLAYER2_INVALID_PASSWORD": return "Mot de passe incorrect pour le joueur 2.";
-    case "CANNOT_PLAY_WITH_SELF":    return "Le joueur 2 doit être un compte différent du joueur 1.";
-    default:                         return "Impossible de créer le match local.";
+    case "PLAYER1_NOT_AUTHENTICATED": return t("local1v1.errors.p1_not_auth");
+    case "MISSING_CREDENTIALS":      return t("local1v1.errors.missing_credentials");
+    case "PLAYER2_NOT_FOUND":        return t("local1v1.errors.p2_not_found");
+    case "PLAYER2_INVALID_PASSWORD": return t("local1v1.errors.p2_bad_password");
+    case "CANNOT_PLAY_WITH_SELF":    return t("local1v1.errors.cannot_play_with_self");
+    default:                         return t("local1v1.errors.generic");
   }
 }
