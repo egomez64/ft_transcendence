@@ -21,6 +21,9 @@ db.run(`
     avatar_url TEXT,
     wins INTEGER NOT NULL DEFAULT 0,
     losses INTEGER NOT NULL DEFAULT 0,
+    games_played INTEGER NOT NULL DEFAULT 0,
+    win_streak INTEGER NOT NULL DEFAULT 0,
+    elo INTEGER NOT NULL DEFAULT 0,
     twofa_code_hash TEXT,
     twofa_code_expires INTEGER,
     twofa_last_sent INTEGER
