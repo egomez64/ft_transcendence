@@ -183,5 +183,16 @@
 		"cannot_play_with_self": "El jugador 2 debe ser una cuenta distinta del jugador 1.",
 		"generic": "No se puede crear la partida local."
 		}
+	},
+	"twofa": {
+		"title": "Verificación de dos factores",
+		"subtitle": "Introduzca el código de 6 dígitos enviado a su correo electrónico.",
+		"code_placeholder": "código de 6 dígitos",
+		"actions": {
+			"verify": "Verificar",
+			"resend": "Reenviar código",
+			"back": "Atrás"
+		},
+		"resent": "Código reenviado."
 	}
 }

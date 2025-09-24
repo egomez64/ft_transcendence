@@ -183,5 +183,16 @@
 		"cannot_play_with_self": "Player 2 must be a different account from Player 1.",
 		"generic": "Unable to create the local match."
 		}
+	},
+	"twofa": {
+		"title": "Two-factor verification",
+		"subtitle": "Enter the 6-digit code sent to your email.",
+		"code_placeholder": "6-digit code",
+		"actions": {
+			"verify": "Verify",
+			"resend": "Resend code",
+			"back": "Back"
+		},
+		"resent": "Code resent."
 	}
 }

@@ -120,32 +120,8 @@ const API_BASE =
     ? 'http://localhost:3000'
     : '';
 
-function showTwofaPanel(infoText?: string) {
-  const loginForm = document.getElementById("loginForm") as HTMLFormElement | null;
-  const twofaForm = document.getElementById("twofaForm") as HTMLFormElement | null;
-  const twofaMsg = document.getElementById("twofaMsg") as HTMLParagraphElement | null;
-  const codeInput = document.getElementById("twofaCode") as HTMLInputElement | null;
-
-  if (loginForm) loginForm.classList.add("hidden");
-  if (twofaForm) twofaForm.classList.remove("hidden");
-  if (twofaMsg && infoText) twofaMsg.textContent = infoText;
-
-  setTimeout(() => codeInput?.focus(), 0);
-}
-
-function hideTwofaPanel() {
-  const loginForm = document.getElementById("loginForm") as HTMLFormElement | null;
-  const twofaForm = document.getElementById("twofaForm") as HTMLFormElement | null;
-  if (twofaForm) twofaForm.classList.add("hidden");
-  if (loginForm) loginForm.classList.remove("hidden");
-}
-
 export function mountLoginHandlers() {
   const loginForm = document.getElementById("loginForm") as HTMLFormElement | null;
-  const twofaForm = document.getElementById("twofaForm") as HTMLFormElement | null;
-  const twofaMsg = document.getElementById("twofaMsg") as HTMLParagraphElement | null;
-  const twofaResendBtn = document.getElementById("twofaResendBtn") as HTMLButtonElement | null;
-  const twofaBackBtn = document.getElementById("twofaBackBtn") as HTMLButtonElement | null;
   const googleBtn = document.getElementById("googleLoginBtn") as HTMLButtonElement | null;
 
   const setMsg = makeSetMsg("#loginMsg");
@@ -190,7 +166,9 @@ export function mountLoginHandlers() {
       }
 
       if (body.step === "2fa_required") {
-        showTwofaPanel("Un code vous a été envoyé par e-mail.");
+        sessionStorage.setItem("2fa:pending", "1");
+        history.pushState({}, "", "/twofa");
+        window.dispatchEvent(new PopStateEvent("popstate"));
         return;
       }
 
@@ -203,60 +181,5 @@ export function mountLoginHandlers() {
     } catch (err: any) {
       setMsg(err?.message || "Erreur réseau", "err");
     }
-  });
-
-  // ---- Étape 2 : VERIFY ----
-  twofaForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = new FormData(twofaForm);
-    const code = String(data.get("code") || "").trim();
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/2fa/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ code }),
-      });
-      const body = await res.json().catch(() => ({} as any));
-
-      if (!res.ok || !body.ok) {
-        if (twofaMsg) twofaMsg.textContent = body?.error || `Erreur ${res.status}`;
-        return;
-      }
-
-      localStorage.setItem("auth", JSON.stringify(body.user));
-      window.dispatchEvent(new CustomEvent("auth:changed"));
-      history.pushState({}, "", "/dashboard");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    } catch (err: any) {
-      if (twofaMsg) twofaMsg.textContent = err?.message || "Erreur réseau";
-    }
-  });
-
-  // ---- Renvoyer code ----
-  twofaResendBtn?.addEventListener("click", async () => {
-    try {
-      twofaResendBtn.disabled = true;
-      const res = await fetch(`${API_BASE}/api/auth/2fa/resend`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const body = await res.json().catch(() => ({} as any));
-      if (!res.ok || !body.ok) {
-        if (twofaMsg) twofaMsg.textContent = body?.error || `Erreur ${res.status}`;
-      } else {
-        if (twofaMsg) twofaMsg.textContent = "Code renvoyé.";
-      }
-    } finally {
-      setTimeout(() => {
-        twofaResendBtn.disabled = false;
-      }, 15000);
-    }
-  });
-
-  // ---- Retour ----
-  twofaBackBtn?.addEventListener("click", () => {
-    hideTwofaPanel();
   });
 }
