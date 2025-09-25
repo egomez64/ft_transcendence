@@ -94,7 +94,7 @@ export function initPongPage() {
   const isVsAI = params.get("mode") == "ai";
 
   const lm = readLocalMatch();
-  if (lm) {
+  if (lm && !isVsAI) {
     mountPlayerHUD(canvas, lm.p1.username, lm.p2.username);
   } else if (isVsAI){
     const me = currentUser()?.username || "joueur 1";

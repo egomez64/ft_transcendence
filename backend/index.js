@@ -9,6 +9,7 @@ const matchRoutes = require('./match');
 const db = require('./db');
 const game = require('./game/server')
 const historyRoutes = require('./historyRoutes');
+const tournamentRoutes = require('./game/tournament');
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -62,6 +63,8 @@ fastify.register(friendsRoutes, { prefix: '/api' });
 fastify.register(matchRoutes, { prefix: '/api/match' });
 
 fastify.register(historyRoutes, { prefix: '/api' });
+
+fastify.register(tournamentRoutes, { prefix: '/api/tournament' });
 
 game.startGameServer(fastify.server, corsObj);
 

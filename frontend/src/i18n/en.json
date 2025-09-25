@@ -194,5 +194,17 @@
 			"back": "Back"
 		},
 		"resent": "Code resent."
+	},
+	"tournament": {
+		"title": "Tournament (4 players)",
+		"inputs": {
+			"username": "Username",
+			"password": "Password"
+		},
+		"start": "Start the tournament",
+		"errors": {
+			"missing_credentials": "Please enter username and password.",
+			"already_joined": "This player is already registered."
+		}
 	}
 }

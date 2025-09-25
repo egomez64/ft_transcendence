@@ -18,6 +18,7 @@ import { applyTranslations, initI18n } from "../i18n";
 import { initPlayPage } from "./play";
 import { initLocal1v1Page } from "./1vs1";
 import { initTwofaPage } from "./twofa";
+import { initTournamentPage } from "./tournament";
 
 function routeFromLocation(): string {
   const p = window.location.pathname || "/";
@@ -49,16 +50,17 @@ async function loadLayout() {
 
 // Carte des pages
 const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: boolean }> = {
-  home:      { file: "home.html" },
-  login:     { file: "login.html", mount: mountLoginHandlers, protected: false },
-  register:  { file: "register.html", mount: mountRegisterHandlers, protected: false },
-  dashboard: { file: "dashboard.html", mount: () => { mountDashboard(); laodDashboard?.(); paintDashboardUsername(); }, protected: true },
-  play:      { file: "play.html", mount: initPlayPage, protected: false },
-  profils:   { file: "profile.html", mount: mountProfileHandlers, protected: true },
-  friends:   { file: "friends.html", mount: initFriendsPage, protected: false },
-  pong:      { file: "pong.html", mount: initPongPage, protected: false },
-  '1v1':     { file: "1v1.html", mount: initLocal1v1Page, protected : false},
-  twofa:     { file: "twofa.html", mount: initTwofaPage, protected : false},
+  home:       { file: "home.html" },
+  login:      { file: "login.html", mount: mountLoginHandlers, protected: false },
+  register:   { file: "register.html", mount: mountRegisterHandlers, protected: false },
+  dashboard:  { file: "dashboard.html", mount: () => { mountDashboard(); laodDashboard?.(); paintDashboardUsername(); }, protected: true },
+  play:       { file: "play.html", mount: initPlayPage, protected: false },
+  profils:    { file: "profile.html", mount: mountProfileHandlers, protected: true },
+  friends:    { file: "friends.html", mount: initFriendsPage, protected: false },
+  pong:       { file: "pong.html", mount: initPongPage, protected: false },
+  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : false},
+  twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
+  tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
 };
 
 // --------- ROUTER ---------

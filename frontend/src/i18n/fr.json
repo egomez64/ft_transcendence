@@ -194,5 +194,17 @@
 			"back": "Retour"
 		},
 		"resent": "Code renvoyé."
+	},
+	"tournament": {
+		"title": "Tournoi (4 joueurs)",
+		"inputs": {
+			"username": "Nom d'utilisateur",
+			"password": "Mot de passe"
+		},
+		"start": "Lancer le tournoi",
+		"errors": {
+			"missing_credentials": "Veuillez saisir le nom d'utilisateur et le mot de passe.",
+			"already_joined": "Ce joueur est déjà inscrit."
+		}
 	}
 }

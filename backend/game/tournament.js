@@ -1,134 +1,52 @@
-// Local tournament orchestrator for single-machine Transcendence (pure JavaScript)
-// Runs on the same Node process & port as your HTTP + WS server (e.g., 3000)
+// backend/game/tournament.js
+const bcrypt = require('bcrypt');
+const db = require('../db');
 
-
-/**
-* @typedef {('REGISTRATION'|'READY'|'IN_PROGRESS'|'COMPLETED')} TournamentStatus
-* @typedef {('PENDING'|'READY'|'LIVE'|'DONE')} MatchStatus
-*
-* @typedef {Object} Player
-* @property {string} id
-* @property {string} nickname
-* @property {boolean=} isAI
-* @property {boolean} ready
-* @property {import('ws').WebSocket=} socket
-*
-* @typedef {Object} Match
-* @property {string} id
-* @property {number} round
-* @property {number} index
-* @property {MatchStatus} status
-* @property {Player=} left
-* @property {Player=} right
-* @property {string} roomId
-*/
-
-const crypto = require('crypto');
-
-function uid()
-{
-    return crypto.randomBytes(4).toString('hex');
+function dbGet(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
+  });
 }
 
-function safeJsonParse(raw)
-{
-    try { return JSON.parse(raw); } catch { return null; }
-}
+async function tournamentRoutes(fastify, opts) {
+  // POST /api/tournament/login
+  fastify.post('/login', async (req, reply) => {
+    try {
+      let { username, password } = req.body || {};
+      username = String(username || '').trim();
+      password = String(password || '');
 
-function isLobbyMsg(msg)
-{
-    if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') return false;
-    switch (msg.type)
-    {
-        case 'lobby:join':
-            return msg.payload && typeof msg.payload.nickname === 'string' &&
-            msg.payload.nickname.length > 0 && msg.payload.nickname.length <= 16;
-        case 'lobby:leave':
-            return true;
-        case 'lobby:leave':
-            return msg.payload && typeof msg.payload.ready === 'boolean';
-        case 'lobby:lock':
-        case 'loby:start':
-            return true;
-        default:
-            return false;
-    }
-}
-
-class LocalTournament
-{
-    /**@param {import('ws').WebSocketServer} */
-    constructor(wss)
-    {
-        /** @type {string} */ this.id = 'local-1';
-        /** @type {TournamentStatus} */ this.status = 'REGISTARTION';
-        /** @type {Player[]} */ this.players = [];
-        /** @type {Match[]} */ this.matches = [];
-        /** @type {number} */ this.winTarget = 10;
-        this.wss = wss;
-        this.lobyyClients = new Set();
-    }
-
-    /** @param {import('ws').WebSocket} ws @param {any} msg */
-    send(ws, msg)
-    {
-        try { ws.send(JSON.stringify(msg)); } catch(_) {}
-    }
-
-    /** @param {any} msg */
-    broadcastLobby(msg)
-    {
-        this.lobbyClients.forEach(ws => this.send(ws, msg));
-    }
-
-    bracketReady()
-    {
-        return this.players.length >= 4 && this.players.every (p => p.ready);
-    }
-
-    /** Attach a lobby client (ws://...:3000?room=lobby:local-1) */
-    attachLobby(ws)
-    {
-        this.lobbyClients.add(ws);
-        this.send(ws, { type: 'error', playload: { players: this.viewPlayers(), status: this.status } });
-        ws.on('message', (raw) => {
-            const data = safeJsonParse(raw.toString());
-            if (!isLobbyMsg(data))
-            {
-                this.send(ws, { type: 'error', payload: { message: 'Invalid message' } });
-                return;
-            }
-            const { type, payload } = data;
-            if (type === 'lobby:join' && this.status === 'REGISTRATION')
-            {
-                /** @type {Player} */
-                const p = { id: uid(), nickname: payload.nickname.slice(0, 16), isAI: !!payload.isAI, ready: false, socket: ws };
-                ws.__playerId = p.id;
-                this.players.push(p);
-                this.broadcastLobby({ type: 'lobby:update', payload: { players: this.viewPlayers(), status: this.status } });
-                return;
-            }
-            if (type === 'lobby:leave')
-            {
-                this.removePlayer(ws.__playerId);
-                return;
-            }
-            if (type === 'lobby:ready' && this.status == 'REGISTRATION')
-            {
-                const me = this.players.find(x => x.id === ws.__playerId);
-                if (me) me.ready = !!payload.ready;
-                this.broadcastLobby({ type: 'lobby:update', payload: { players:this.viewPlayers(), status: this.status } });
-                return;
-            }
-            if (type === 'lobby:lock')
-            {
-                if (this.status !== 'REGISTRATION') return;
-                if (!this.bracketReady()) return;
-                this.status = 'READY';
-                this.generateBracket();
-                this.broadcastLobby({ type: 'lobby:update', payload: { palyers: this.viewPlayers() } });
-                return;
-            }
+      if (!username || !password) {
+        return reply.code(400).send({
+          ok: false,
+          error_key: 'tournament.errors.missing_credentials',
         });
+      }
+
+      const u = username.includes('@') ? username.toLowerCase() : username;
+
+      const user = await dbGet(
+        'SELECT id, username, email, password FROM users WHERE username = ? OR email = ?',
+        [u, u]
+      );
+
+      if (!user) {
+        return reply.code(400).send({ ok: false, error_key: 'login.invalid_credentials' });
+      }
+
+      const ok = await bcrypt.compare(password, user.password || '');
+      if (!ok) {
+        return reply.code(400).send({ ok: false, error_key: 'login.invalid_credentials' });
+      }
+
+      // Pas de session/cookie ici : on renvoie juste un mini profil
+      const userMini = { id: user.id, username: user.username, email: user.email };
+      return reply.send({ ok: true, user: userMini });
+    } catch (err) {
+      req.log?.error?.({ at: 'tournament/login', err: err?.message || err });
+      return reply.code(500).send({ ok: false, error: 'INTERNAL_ERROR' });
     }
+  });
 }
+
+module.exports = tournamentRoutes;

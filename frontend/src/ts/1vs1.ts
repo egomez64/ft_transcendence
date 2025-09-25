@@ -74,7 +74,8 @@ export function initLocal1v1Page() {
         })
       );
 
-      window.location.href = "/pong";
+      history.pushState({}, "", "/pong");
+      window.dispatchEvent(new PopStateEvent("popstate"));
     } catch (err:any) {
       if (cancelled || err?.name === "AbortError")
         return;
