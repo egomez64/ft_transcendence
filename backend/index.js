@@ -66,6 +66,8 @@ fastify.register(historyRoutes, { prefix: '/api' });
 
 fastify.register(tournamentRoutes, { prefix: '/api/tournament' });
 
+fastify.register(require('./leaderboard'));
+
 game.startGameServer(fastify.server, corsObj);
 
 // demarrage du serveur sur le port 3000

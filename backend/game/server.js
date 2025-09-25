@@ -52,11 +52,10 @@ function startGameServer(server, cors) {
 	const RIGHT_PADDLE_X = GAME_WIDTH / 2 - PADDLE_HEIGHT;
 	const BALL_RADIUS = 10;
 	const WIN_SCORE = 10;
-   // let lastAIUpdate = Date.now() - 1000;
-    let targetY = 0;
+	let lastAIUpdate = Date.now() - 1000;
 	const AI = {
-		reactMs: 0,
-		speedMul: 1.35,
+		reactMs: 1000,
+		speedMul: 1,
 		anticipate: 0.9,
 		jitter: 6,
 		errorRate: 0.01,
@@ -256,20 +255,23 @@ function startGameServer(server, cors) {
         return clamp(y, minY, maxY);
     }
 
+	let target = 0;
+
 	function updateAI() {
 
+		const now = Date.now();
 		const paddleX = RIGHT_PADDLE_X;
 		const H = GAME_HEIGHT;
-
 		const leadTicks = Math.round(AI.reactMs / TICK_MS);
-
 		const predictedY = predictBallYAtX_simCentered(state.ball, paddleX, {
 			H, ballRadius: BALL_RADIUS, leadTicks, stepLimit: 2000
 		});
-
-		let target = (state.ball.vx > 0) ? predictedY : 0;
-		target += (Math.random() * 2 - 1 ) * AI.jitter;
-        
+		if (now - lastAIUpdate >= AI.reactMs)
+		{
+			lastAIUpdate = now;
+			
+			target = (state.ball.vx > 0) ? predictedY : 0;
+		}
 		const step = PADDLE_SPEED * AI.speedMul;
 		/*const diff = targetY - state.right.y;*/
 		if (target > state.right.y + 3) {
