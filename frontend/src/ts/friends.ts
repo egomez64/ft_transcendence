@@ -39,14 +39,15 @@ function getEl<T extends HTMLElement = HTMLElement>(sel: string): T | null {
 const setMsg = makeSetMsg('#friendsMsg');
 
 async function listFriends(): Promise<Friend[]> {
-  const res = await fetch(`${API}/api/me/friends?limit=50&offset=0`, {
-    credentials: 'include'
-  });
+  const res = await fetch(`${API}/api/me/friends?limit=50&offset=0`, { credentials: 'include' });
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) throw new Error('auth.must_login');
-    throw new Error(t('friends.load_error'));
+    const key =
+      res.status === 401 ? 'auth.must_login' :
+      res.status === 404 ? 'friends.user_not_found' :
+      'friends.load_error';
+    throw Object.assign(new Error(key), { _params: data?.params });
   }
-  const data = await res.json();
   return data.friends || [];
 }
 
@@ -57,13 +58,23 @@ async function addFriend(handle: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ friend: handle })
   });
+
   const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    const msg = data?.error_key || data?.error || 'friends.add_error';
-    const err: ErrorWithParams = new Error(msg);
-    err._params = data?.params || {};
+    // Mappe explicitement les erreurs courantes
+    let key = 'friends.add_error';
+    if (res.status === 401) key = 'auth.must_login';
+    else if (res.status === 404) key = 'friends.user_not_found';   // profil inexistant
+    else if (res.status === 409) key = t("friends.already", { name: handle });          // déjà amis
+    else if (res.status === 400) key = data?.error_key || 'friends.cannot_add_self';
+
+    const err: ErrorWithParams = new Error(key);
+    err._params = data?.params || { handle };
     throw err;
   }
+
+  // Succès 201
   return data as { ok: true; friend: Friend; already?: boolean };
 }
 
@@ -140,8 +151,8 @@ async function refreshList() {
 export async function initFriendsPage() {
   // Sélecteurs
   const form = await waitEl<HTMLFormElement>('#friendsSearchForm');
-  const input = await waitEl<HTMLFormElement>('#friendsSearchInput');
-  const btn = await waitEl<HTMLFormElement>('#friendsAddBtn');
+  const input = await waitEl<HTMLInputElement>('#friendsSearchInput');
+  const btn = await waitEl<HTMLButtonElement>('#friendsAddBtn');
 
   try {
     await refreshList();

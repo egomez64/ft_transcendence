@@ -8,7 +8,7 @@ function startGameServer(server, cors) {
 	wss = new io.Server(server, { cors: cors, path: "/ws" });
 	wss.on("connection", (ws) => {
 		console.log("Client connecté Pong WS");
-
+		
 		ws.on("setAi", (payload) => {
 			const enabled = !!(payload && payload.enabled);
 			state.aiEnabled = enabled;
@@ -41,7 +41,7 @@ function startGameServer(server, cors) {
 		ws.on("error", (err) => console.log("Client déconnecté Pong WS", err));
 		clients.push(ws);
 	});
-
+	
 	const GAME_WIDTH = 800;
 	const GAME_HEIGHT = 400;
 	const PADDLE_LENGTH = 80;
@@ -52,6 +52,7 @@ function startGameServer(server, cors) {
 	const RIGHT_PADDLE_X = GAME_WIDTH / 2 - PADDLE_HEIGHT;
 	const BALL_RADIUS = 10;
 	const WIN_SCORE = 10;
+	let RightorLeft = 0;
 	let lastAIUpdate = Date.now() - 1000;
 	const AI = {
 		reactMs: 1000,
@@ -60,19 +61,19 @@ function startGameServer(server, cors) {
 		jitter: 6,
 		errorRate: 0.01,
 	};
-
+	
 	// ---- Game State ----
 	state = createInitialState();
 	// ---- Init ----
 	resetBall(state);
-
+	
 	// ---- Game loop ----
 	setInterval(() => gameLoop(state, wss), TICK_MS);
-
+	
 	/* ========================== //
 	//       Sous-fonctions	  	  //
 	// ========================== */
-
+	
 	function createInitialState() {
 		return {
 			status: "idle",
@@ -84,44 +85,44 @@ function startGameServer(server, cors) {
 			aiEnabled: false,
 		};
 	}
-
+	
 	function resetGame(state) {
 		state.status = "idle";
 		state.score.left = 0;
 		state.score.right = 0;
 		state.winner = null;
-		resetBall(state);
+		resetBall(state, RightorLeft);
 	}
-
-	function resetBall(state) {
+	
+	function resetBall(state, RightorLeft) {
 		state.ball.x = 0;
 		state.ball.y = 0;
 		state.ball.vx = 0;
 		state.ball.vy = 0;
 		state.ball.speed = 0;
-
+		
 		if (state.status === "playing") {
 			setTimeout(() => {
 				state.ball.speed = 5;
-				state.ball.vx = state.ball.speed * (Math.random() > 0.5 ? 1 : -1);
+				state.ball.vx = state.ball.speed * (RightorLeft == 0 ? 1 : -1);
 				state.ball.vy = (Math.random() - 0.5) * 4;
 			}, 1000);
 		}
 	}
-
+	
 	function updatePaddles(state) {
 		[state.left, state.right].forEach((p) => {
 			if (p.up && p.y + PADDLE_LENGTH / 2 < GAME_HEIGHT / 2) p.y += PADDLE_SPEED;
 			if (p.down && p.y - PADDLE_LENGTH / 2 > -GAME_HEIGHT / 2) p.y -= PADDLE_SPEED;
 		});
 	}
-
+	
 	function updateBall(state) {
 		const steps = Math.ceil(state.ball.speed / 5);
 		for (let i = 0; i < steps; i++) {
 			state.ball.x += state.ball.vx / steps;
 			state.ball.y += state.ball.vy / steps;
-
+			
 			// Up/Down bounces
 			if (
 				state.ball.y > GAME_HEIGHT / 2 - PADDLE_HEIGHT ||
@@ -129,11 +130,11 @@ function startGameServer(server, cors) {
 			) {
 				state.ball.vy *= -1;
 			}
-
+			
 			handleCollisions(state);
 		}
 	}
-
+	
 	function handleCollisions(state) {
 		// left paddle
 		if (
@@ -148,7 +149,7 @@ function startGameServer(server, cors) {
 			const hitPos = (state.ball.y - state.left.y) / (PADDLE_LENGTH / 2);
 			state.ball.vy = hitPos * 5;
 		}
-
+		
 		// right paddle
 		if (
 			state.ball.x + BALL_RADIUS > RIGHT_PADDLE_X &&
@@ -163,19 +164,22 @@ function startGameServer(server, cors) {
 			state.ball.vy = hitPos * 5;
 		}
 	}
+	
 
 	function handleScore(state) {
 		if (state.status !== "playing") return;
 
 		if (state.ball.x < -GAME_WIDTH / 2) {
 			state.score.right++;
+			RightorLeft = 1;
 			checkWin(state);
-			resetBall(state);
+			resetBall(state, RightorLeft);
 		}
 		if (state.ball.x > GAME_WIDTH / 2) {
 			state.score.left++;
+			RightorLeft = 0;
 			checkWin(state);
-			resetBall(state);
+			resetBall(state, RightorLeft);
 		}
 	}
 
@@ -273,7 +277,6 @@ function startGameServer(server, cors) {
 			target = (state.ball.vx > 0) ? predictedY : 0;
 		}
 		const step = PADDLE_SPEED * AI.speedMul;
-		/*const diff = targetY - state.right.y;*/
 		if (target > state.right.y + 3) {
 			state.right.y = Math.min(state.right.y + step, H/2 - PADDLE_LENGTH/2);
 		} else if (target < state.right.y - 3) {

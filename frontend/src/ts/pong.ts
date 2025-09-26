@@ -308,9 +308,11 @@ function wireNetwork(
       ball.position.set(0, 0, 0);
       explodeBall(scene, ball, trail, winnerColor);
       ballHiddenForWin = true;
+      disableGameInput() 
 
       // Overlay avec le score final
       showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");
+
     }
 
     // Nouvelle manche (scores remis à 0) → on réaffiche la balle/trail
@@ -563,6 +565,11 @@ function explodeBall(scene: Scene, ball: any, trail: any, color: Color3) {
 // 8) CONTROLES
 // ─────────────────────────────────────────────────────────────────────────────
 
+const KEY_LIST = ['w', 's', 'ArrowUp', 'ArrowDown', ' '] as const;
+type GameKey = (typeof KEY_LIST)[number];
+
+let controller: AbortController | null = null;
+
 function setupControls(
   ws: any,
   scene: Scene,
@@ -571,27 +578,64 @@ function setupControls(
   gameCam: FreeCamera,
   isVsAI: boolean
 ) {
-  const keysToLock = ["w", "s", "ArrowUp", "ArrowDown", " "];
+    controller?.abort();
+    controller = new AbortController();
 
-  document.addEventListener("keydown", (e) => {
-    if (keysToLock.includes(e.key)) e.preventDefault();
+      const keysToLock = new Set<GameKey>(KEY_LIST);
 
-    if (e.key === "1") scene.activeCamera = mainCam;
-    if (e.key === "2") scene.activeCamera = secondCam;
-    if (e.key === "3") scene.activeCamera = gameCam;
+    const onKeyDown = (e: KeyboardEvent) => {
+      // e.key (pas e.code) car tu utilisais "w" etc.
+      if (keysToLock.has(e.key as GameKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
-    if (e.key === "w" || e.key === "s")
-      ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
-    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown"))
-      ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down" });
-  });
+      // switch cam si tu veux garder ces raccourcis
+      if (scene) {
+        if (e.key === "1") scene.activeCamera = mainCam;
+        if (e.key === "2") scene.activeCamera = secondCam;
+        if (e.key === "3") scene.activeCamera = gameCam;
+      }
 
-  document.addEventListener("keyup", (e) => {
-    if (keysToLock.includes(e.key)) e.preventDefault();
+      if (e.key === "w" || e.key === "s") {
+        ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
+      }
+      if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        ws.emit("move", {
+          side: "right",
+          dir: e.key === "ArrowUp" ? "up" : "down",
+        });
+      }
+    };
 
-    if (e.key === "w" || e.key === "s") ws.emit("move", { side: "left", dir: "stop" });
-    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) ws.emit("move", { side: "right", dir: "stop" });
-  });
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (keysToLock.has(e.key as GameKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (e.key === "w" || e.key === "s") {
+        ws.emit("move", { side: "left", dir: "stop" });
+      }
+      if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        ws.emit("move", { side: "right", dir: "stop" });
+      }
+    };
+
+    // capture:true -> on intercepte avant le reste (utile pour bloquer la barre d'espace/scroll)
+    document.addEventListener("keydown", onKeyDown, {
+      capture: true,
+      signal: controller.signal,
+    });
+    document.addEventListener("keyup", onKeyUp, {
+      capture: true,
+      signal: controller.signal,
+    });
+  }
+
+function disableGameInput() 
+{
+    controller?.abort(); // retire tous les listeners ajoutés
+    controller = null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

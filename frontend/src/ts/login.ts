@@ -151,6 +151,11 @@ export function mountLoginHandlers() {
       password: String(data.get("password") || ""),
     };
 
+    if (!payload.username || !payload.password) {
+      setMsg('auth.missing_credentials', 'err');
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -160,8 +165,13 @@ export function mountLoginHandlers() {
       });
       const body = await res.json().catch(() => ({} as any));
 
-      if (!res.ok || !body.ok) {
-        setMsg(body?.error || `Erreur ${res.status}`, "err");
+      if (!res.ok || !body?.ok) {
+        // <- CLEF NORMALISÉE EN PROVENANCE DU BACK
+        const key =
+          body?.error_key
+            ?? (res.status === 500 ? 'common.internal_error' : 'auth.login_failed');
+
+        setMsg(key, "err", body?.params);
         return;
       }
 
@@ -179,7 +189,7 @@ export function mountLoginHandlers() {
         window.dispatchEvent(new PopStateEvent("popstate"));
       }
     } catch (err: any) {
-      setMsg(err?.message || "Erreur réseau", "err");
+      setMsg("common.network_error", "err");
     }
   });
 }
