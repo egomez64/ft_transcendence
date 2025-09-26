@@ -1,4 +1,5 @@
 import { initI18n, t } from "../i18n";
+import { fetchWithAuth } from './utils';
 
 type MatchApiResponse =
   | { ok: true; match_id: number; player1: { id: number; username: string }; player2: { id: number; username: string } }
@@ -45,12 +46,13 @@ export function initLocal1v1Page() {
     currentAbort = new AbortController();
 
     try {
-      const res = await fetch(MATCH_API, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: userEl.value.trim(), password: passEl.value }),
-        signal: currentAbort.signal
+      const res = await fetchWithAuth(MATCH_API, {
+        method: 'POST',
+        json: {
+          username: userEl.value.trim(),
+          password: passEl.value,
+        },
+        signal: currentAbort.signal,
       });
 
       if (cancelled) return;
@@ -81,10 +83,12 @@ export function initLocal1v1Page() {
         return;
       errEl.textContent = t("local1v1.errors.login_failed");
     } finally {
-      if (!cancelled)   
-        btn.disabled = false; btn.textContent = t("local1v1.actions.continue");
-      currentAbort = null;
-    }
+        if (!cancelled) {
+          btn.disabled = false;
+          btn.textContent = t("local1v1.actions.continue");
+        }
+        currentAbort = null;
+      }
   };
 }
 

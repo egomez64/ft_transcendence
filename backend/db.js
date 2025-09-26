@@ -68,6 +68,19 @@ db.run(`
   }
 });
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    revoked_at DATETIME,
+    UNIQUE(token_hash),
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )
+`);
+
 db.serialize(() => {
   db.get(`SELECT id FROM users WHERE username = 'AI'`, (err, row) => {
     if (err) {

@@ -1,5 +1,5 @@
 import { t, applyTranslations } from "../i18n";
-import { makeSetMsg } from "./utils";
+import { makeSetMsg, fetchWithAuth } from "./utils";
 
 type ErrorWithParams = Error & { _params?: Record<string, any> };
 
@@ -39,7 +39,7 @@ function getEl<T extends HTMLElement = HTMLElement>(sel: string): T | null {
 const setMsg = makeSetMsg('#friendsMsg');
 
 async function listFriends(): Promise<Friend[]> {
-  const res = await fetch(`${API}/api/me/friends?limit=50&offset=0`, { credentials: 'include' });
+  const res = await fetchWithAuth(`${API}/api/me/friends?limit=50&offset=0`);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const key =
@@ -52,11 +52,9 @@ async function listFriends(): Promise<Friend[]> {
 }
 
 async function addFriend(handle: string) {
-  const res = await fetch(`${API}/api/me/friends`, {
+  const res = await fetchWithAuth(`${API}/api/me/friends`, {
     method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ friend: handle })
+    json: { friend: handle },
   });
 
   const data = await res.json().catch(() => ({}));
@@ -79,9 +77,8 @@ async function addFriend(handle: string) {
 }
 
 async function removeFriend(id: number) {
-  const res = await fetch(`${API}/api/me/friends/${id}`, {
+  const res = await fetchWithAuth(`${API}/api/me/friends/${id}`, {
     method: 'DELETE',
-    credentials: 'include'
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

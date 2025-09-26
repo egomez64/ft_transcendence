@@ -240,6 +240,7 @@
 // src/pages/dashboard.ts
 
 import { applyTranslations, t } from "../i18n";
+import { fetchWithAuth } from "./utils";
 
 // ---- Types & helpers ----
 type Stats = { wins: number; losses: number; played: number; winRate: number };
@@ -291,7 +292,7 @@ function statsView() {
 //No Trad
 async function loadHistory(userId: number) {
   try {
-    const res = await fetch(`/api/history/${userId}`);
+    const res = await fetchWithAuth(`/api/history/${userId}`);
     const matches = await res.json();
 
     const container = document.getElementById('history-list');

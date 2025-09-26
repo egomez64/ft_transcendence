@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
-
 const oauth2 = require('@fastify/oauth2');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -8,8 +6,24 @@ const crypto = require('crypto');
 const db = require('./db');
 const { sendMail } = require('./mailer');
 
+// ====== Config & ENV ======
+// Secret utilisé UNIQUEMENT pour le cookie pré-2FA (temporaire)
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+// Secrets & TTL pour le duo Access/Refresh
+const ACCESS_JWT_SECRET = process.env.ACCESS_JWT_SECRET || process.env.JWT_SECRET || 'dev-access';
+const ACCESS_TOKEN_TTL_MIN = Number(process.env.ACCESS_TOKEN_TTL_MIN || 15);
+const REFRESH_TOKEN_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 7);
+
 const PUBLIC_BACKEND_BASE = process.env.PUBLIC_BACKEND_BASE || 'http://localhost:3000';
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${PUBLIC_BACKEND_BASE}/api/auth/google/callback`;
+
+// Cookies httpOnly
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: (process.env.COOKIE_SAMESITE || 'lax'),
+  secure: process.env.COOKIE_SECURE === 'true',
+  path: '/',
+};
 
 // ---------- Helpers DB promisifiés ----------
 function dbGet(sql, params = []) {
@@ -31,15 +45,9 @@ function dbRun(sql, params = []) {
   });
 }
 
-// ---------- Constantes 2FA e-mail ----------
+// ---------- 2FA e-mail ----------
 const TWOFA_TTL_SEC = Number(process.env.TWOFA_TTL_SEC || 300);           // validité du code (5 min)
 const TWOFA_RESEND_MIN_SEC = Number(process.env.TWOFA_RESEND_MIN_SEC || 60); // délai mini entre 2 envois
-const COOKIE_OPTS = {
-  httpOnly: true,
-  sameSite: 'lax',
-  secure: process.env.COOKIE_SECURE === 'true',
-  path: '/',
-};
 const nowSec = () => Math.floor(Date.now() / 1000);
 function generateCode6() {
   const n = crypto.randomInt(0, 1_000_000);
@@ -66,9 +74,45 @@ async function createAndSend2fa(user) {
   await sendMail({ to: user.email, subject, text, html });
 }
 
+// ---------- Access/Refresh helpers ----------
+function issueAccessToken(uid) {
+  return jwt.sign({ uid }, ACCESS_JWT_SECRET, { expiresIn: `${ACCESS_TOKEN_TTL_MIN}m` });
+}
+function clearAuthCookies(reply) {
+  reply.clearCookie('access', { path: '/' });
+  reply.clearCookie('refresh', { path: '/' });
+  reply.clearCookie('pre2fa', { path: '/' });
+}
+async function createAndStoreRefreshToken(userId) {
+  // token opaque aléatoire (256 bits)
+  const raw = crypto.randomBytes(32).toString('hex');
+  const hash = await bcrypt.hash(raw, 10);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 3600 * 1000).toISOString();
+
+  await dbRun(
+    `CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token_hash TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME NOT NULL,
+      revoked_at DATETIME,
+      UNIQUE(token_hash),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`
+  );
+
+  await dbRun(
+    `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
+    [userId, hash, expiresAt]
+  );
+
+  return raw; // retourne la valeur à mettre en cookie
+}
+
 // ---------- Plugin de routes ----------
-async function authRoute(fastify, options) {
-  // Google OAuth: on garde le flux, mais on NE pose PAS la session ici (2FA obligatoire ensuite)
+async function authRoute(fastify) {
+  // Google OAuth: on garde le flux, mais on NE pose PAS l’auth finale ici (2FA obligatoire ensuite)
   fastify.register(oauth2, {
     name: 'googleOAuth2',
     scope: ['openid', 'email', 'profile'],
@@ -131,7 +175,7 @@ async function authRoute(fastify, options) {
     const ok = await bcrypt.compare(String(password), user.password);
     if (!ok) return reply.code(400).send({ ok: false, error_key: 'login.invalid_credentials' });
 
-    // 2FA OBLIGATOIRE : on envoie le code et on pose un cookie temporaire "pre2fa"
+    // 2FA OBLIGATOIRE : envoi du code + cookie temporaire "pre2fa"
     await createAndSend2fa(user);
     const pre = jwt.sign({ uid: user.id, stage: 'pre2fa' }, JWT_SECRET, { expiresIn: '10m' });
     reply.setCookie('pre2fa', pre, { ...COOKIE_OPTS, maxAge: 600 });
@@ -168,24 +212,21 @@ async function authRoute(fastify, options) {
       // 3) Upsert user depuis Google
       const user = await upsertUserFromGoogle({ googleEmail, googleName, googleId, googleAvatar });
 
-      // 4) 2FA obligatoire : envoi code + cookie pre2fa (PAS de session ici)
+      // 4) 2FA obligatoire : envoi code + cookie pre2fa (PAS d’auth finale ici)
       await createAndSend2fa(user);
       const pre = jwt.sign({ uid: user.id, stage: 'pre2fa' }, JWT_SECRET, { expiresIn: '10m' });
       reply.setCookie('pre2fa', pre, { ...COOKIE_OPTS, maxAge: 600 });
 
-      // 5) Redirection front STABLE (basée sur ENV, pas sur req.headers.host)
+      // 5) Redirection front stable
       const FRONT_REDIRECT_URI = process.env.FRONT_REDIRECT_URI || 'http://localhost:5173/login';
       const PUBLIC_FRONT_BASE  = process.env.PUBLIC_FRONT_BASE  || 'http://localhost:5173';
 
       let redirectUrl;
       try {
-        // Si FRONT_REDIRECT_URI est absolue → URL la prend telle quelle.
-        // Si elle est relative (/login) → résolue sur PUBLIC_FRONT_BASE.
         const u = new URL(FRONT_REDIRECT_URI, PUBLIC_FRONT_BASE);
         u.searchParams.set('mfa', '1'); // le front affiche l’écran de saisie du code
         redirectUrl = u.toString();
       } catch {
-        // Fallback robuste si FRONT_REDIRECT_URI est bizarre
         redirectUrl = FRONT_REDIRECT_URI + (FRONT_REDIRECT_URI.includes('?') ? '&' : '?') + 'mfa=1';
       }
 
@@ -226,12 +267,17 @@ async function authRoute(fastify, options) {
     const match = await bcrypt.compare(code, user.twofa_code_hash);
     if (!match) return reply.code(400).send({ ok: false, error: 'CODE_INVALID' });
 
-    // OK → on nettoie le challenge et on émet la session
+    // OK → on nettoie le challenge et on émet les cookies d’auth
     await dbRun('UPDATE users SET twofa_code_hash=NULL, twofa_code_expires=NULL WHERE id=?', [user.id]);
     reply.clearCookie('pre2fa', { path: '/' });
 
-    const token = jwt.sign({ uid: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    reply.setCookie('session', token, { ...COOKIE_OPTS, maxAge: 60 * 60 * 24 * 7 });
+    // Access (15 min)
+    const access = issueAccessToken(user.id);
+    reply.setCookie('access', access, { ...COOKIE_OPTS, maxAge: ACCESS_TOKEN_TTL_MIN * 60 });
+
+    // Refresh (7 jours par défaut)
+    const refresh = await createAndStoreRefreshToken(user.id);
+    reply.setCookie('refresh', refresh, { ...COOKIE_OPTS, maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 3600 });
 
     return reply.send({
       ok: true,
@@ -270,13 +316,47 @@ async function authRoute(fastify, options) {
     return reply.send({ ok: true, message: 'Code renvoyé' });
   });
 
+  // ---------- Refresh token (rotation) ----------
+  fastify.post('/token/refresh', async (req, reply) => {
+    const raw = req.cookies?.refresh;
+    if (!raw) return reply.code(401).send({ ok: false, error: 'NO_REFRESH' });
+
+    // Cherche un refresh valide correspondant (revoked_at NULL et non expiré)
+    const rows = await dbAll(
+      `SELECT id, user_id, token_hash, expires_at, revoked_at
+       FROM refresh_tokens
+       WHERE revoked_at IS NULL AND datetime(expires_at) > datetime('now')`,
+      []
+    );
+
+    let rec = null;
+    for (const r of rows) {
+      const ok = await bcrypt.compare(raw, r.token_hash);
+      if (ok) { rec = r; break; }
+    }
+    if (!rec) return reply.code(401).send({ ok: false, error: 'INVALID_REFRESH' });
+
+    // Rotation : révoquer l’ancien
+    await dbRun(`UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?`, [rec.id]);
+
+    // Émettre un nouvel access + refresh
+    const newAccess = issueAccessToken(rec.user_id);
+    const newRefresh = await createAndStoreRefreshToken(rec.user_id);
+
+    reply.setCookie('access', newAccess, { ...COOKIE_OPTS, maxAge: ACCESS_TOKEN_TTL_MIN * 60 });
+    reply.setCookie('refresh', newRefresh, { ...COOKIE_OPTS, maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 3600 });
+
+    return reply.send({ ok: true });
+  });
+
   // ---------- Me ----------
   fastify.get('/me', async (req, reply) => {
-    const raw = req.cookies?.session;
+    // Ici on lit le cookie access directement (pour rester auto-suffisant),
+    // ou idéalement tu utilises le preHandler verifySession
+    const raw = req.cookies?.access;
     if (!raw) return reply.code(401).send({ error: 'Not authenticated' });
-
     try {
-      const { uid } = jwt.verify(raw, JWT_SECRET);
+      const { uid } = jwt.verify(raw, ACCESS_JWT_SECRET);
       const me = await dbGet(
         'SELECT id, email, username, alias, avatar_url, wins, losses FROM users WHERE id = ?',
         [uid]
@@ -290,8 +370,25 @@ async function authRoute(fastify, options) {
 
   // ---------- Logout ----------
   fastify.post('/logout', async (req, reply) => {
-    reply.clearCookie('session', { path: '/' });
-    reply.clearCookie('pre2fa', { path: '/' });
+    const raw = req.cookies?.refresh;
+
+    if (raw) {
+      // Essaie de retrouver & révoquer le refresh courant
+      const rows = await dbAll(
+        `SELECT id, token_hash FROM refresh_tokens
+         WHERE revoked_at IS NULL AND datetime(expires_at) > datetime('now')`,
+        []
+      );
+      for (const r of rows) {
+        const ok = await bcrypt.compare(raw, r.token_hash);
+        if (ok) {
+          await dbRun(`UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?`, [r.id]);
+          break;
+        }
+      }
+    }
+
+    clearAuthCookies(reply);
     return reply.send({ ok: true });
   });
 }

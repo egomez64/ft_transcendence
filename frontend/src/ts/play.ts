@@ -1,4 +1,5 @@
 import { applyTranslations } from "../i18n";
+import { fetchWithAuth } from "./utils";
 
 export async function initPlayPage() {
 	applyTranslations(document);
@@ -13,9 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopImmediatePropagation(); // ⬅️ important : empêche le router global d'intercepter le clic
 
       try {
-        const res = await fetch("http://localhost:3000/api/match/ai", {
+        const res = await fetchWithAuth("http://localhost:3000/api/match/ai", {
           method: "POST",
-          credentials: "include",
         });
         const data = await res.json();
         if (!data.ok) {
@@ -58,9 +58,8 @@ document.addEventListener("click", async (ev) => {
 
   try {
     // Appel backend pour enregistrer le match IA
-    const res = await fetch("http://localhost:3000/api/match/ai", {
+    const res = await fetchWithAuth("http://localhost:3000/api/match/ai", {
       method: "POST",
-      credentials: "include",
     });
     const data = await res.json().catch(() => ({} as any));
 

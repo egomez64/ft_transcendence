@@ -1,4 +1,4 @@
-import { makeSetMsg } from "./utils";
+import { makeSetMsg, fetchWithAuth } from "./utils";
 
 //politique avatar
 const AVATAR = {
@@ -205,11 +205,13 @@ export function mountProfileHandlers() {
 
     //appel API
     try {
-      const res = await fetch(`/api/users/${user.id}`, {
+      const res = await fetchWithAuth(`/api/users/${user.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', //utile pour cookie
-        body: JSON.stringify(updated),
+        json: {
+          username: updated.username,
+          alias: updated.alias,
+          avatar_url: updated.avatar_url,
+        },
       });
 
       const data = await res.json().catch(() => ({}));
