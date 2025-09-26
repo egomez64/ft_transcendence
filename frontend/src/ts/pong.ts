@@ -252,6 +252,40 @@ function createCameras(scene: Scene) {
 // 5) RÉSEAU (WS) + TRIGGERS D'EFFETS
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function finishGame(scoreP1: number, scoreP2: number) {
+  try {
+    // 1️⃣ Récupérer le dernier match du joueur
+    const res = await fetch("/api/match/latest", { credentials: "include" });
+    const data = await res.json();
+
+    if (!data.ok || !data.match_id) {
+      console.error("Impossible de récupérer le match :", data);
+      return;
+    }
+
+    const matchId = data.match_id;
+
+    // 2️⃣ Terminer le match
+    const finishRes = await fetch(`/api/match/${matchId}/finish`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ score_p1: scoreP1, score_p2: scoreP2 })
+    });
+
+    const finishData = await finishRes.json();
+
+    if (!finishData.ok) {
+      console.error("Impossible de finir le match :", finishData.error);
+      return;
+    }
+
+    console.log("Match terminé :", finishData.match);
+  } catch (err) {
+    console.error("Erreur lors de la fin du match :", err);
+  }
+}
+
 function wireNetwork(
   scene: Scene,
   world: { leftPaddle: any; rightPaddle: any; ball: any; trail: any },
@@ -352,6 +386,7 @@ function wireNetwork(
       disableGameInput();
 
       gameEnded = true;
+		finishGame(s.score.left, s.score.right); // Async API call
 
       // Overlay i18n + redirection (ajouts toi)
       showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");

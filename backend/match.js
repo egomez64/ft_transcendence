@@ -167,6 +167,25 @@ async function matchRoutes(fastify) {
       return reply.code(500).send({ ok: false, error: "MATCH_FINISH_FAILED" });
     }
   });
+
+   fastify.get("/latest", { preHandler: fastify.verifySession }, async (req, reply) => {
+		try {	
+			const user = req.user;
+			if (!user?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
+
+			const match = await dbGet(
+				`SELECT * FROM matches WHERE player1_id = ? OR player2_id = ? ORDER BY id DESC LIMIT 1`,
+				[user.id, user.id]
+			);
+
+			if (!match) return reply.code(404).send({ ok: false, error: "NO_MATCH_FOUND" });
+
+			reply.send({ ok: true, match_id: match.id, match });
+		}	catch (err) {
+			req.log?.error?.({ at: "match/latest", err: err?.message || err });
+			return reply.code(500).send({ ok: false, error: "LATEST_MATCH_FETCH_FAILED" });
+		}
+	});
 }
 
 module.exports = matchRoutes;
