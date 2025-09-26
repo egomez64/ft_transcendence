@@ -159,6 +159,14 @@
 			"tournament": {"title": "Tournoi", "desc": "Organise un bracket et enchaîne les matchs."}
 		}
 	},
+	"pong": {
+		"win": {
+			"title": "{name} a gagné !",
+			"subtitle": "Partie terminée",
+			"countdown_play": "Retour au menu Play dans {s}s..",
+			"countdown_bracket": "Retour au bracket dans {s}s.."
+		}
+	},
  	"local1v1": {
     	"title": "Local 1 vs 1",
     	"intro": "Le joueur 1 est déjà connecté dans cet onglet. Connecte le joueur 2 pour jouer sur le même PC.",
@@ -205,6 +213,15 @@
 		"errors": {
 			"missing_credentials": "Veuillez saisir le nom d'utilisateur et le mot de passe.",
 			"already_joined": "Ce joueur est déjà inscrit."
-		}
+		},
+		"bracket_title": "Arbre du tournoi",
+		"semi_a": "Demi-final A",
+		"semi_b": "Demi-final B",
+		"final": "Finale",
+		"play_match": "Jouer (local 1v1)",
+		"play_final": "Jouer la finale",
+		"result": "Résultat",
+		"winner": "Vainqueur",
+		"winner_prefix": "Vainqueur :"
 	}
 }

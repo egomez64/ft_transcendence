@@ -1,0 +1,50 @@
+<section class="max-w-5xl mx-auto mt-16">
+  <h2 class="text-4xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-[#ff4500] via-[#ff1493] to-[#4b0082]" data-i18n="tournament.bracket_title">
+    Arbre du tournoi
+  </h2>
+
+  <div id="t-bracket" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Demi-finale A -->
+    <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon">
+      <h3 class="text-xl font-bold text-pink-300 mb-3" data-i18n="tournament.semi_a">Demi-finale A</h3>
+      <div class="space-y-2">
+        <div id="sf1-p1" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="sf1-p2" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="sf1-res" class="text-pink-200 text-sm h-5"></div>
+        <button id="sf1-play" class="w-full py-3 rounded-full font-bold bg-slate-600 text-white opacity-70 cursor-not-allowed" disabled data-i18n="tournament.play_match">
+          Jouer (local 1v1)
+        </button>
+      </div>
+    </div>
+
+    <!-- Finale (au centre sur desktop) -->
+    <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon md:order-none order-last">
+      <h3 class="text-xl font-bold text-pink-300 mb-3" data-i18n="tournament.final">Finale</h3>
+      <div class="space-y-2">
+        <div id="f-p1" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="f-p2" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="f-res" class="text-pink-200 text-sm h-5"></div>
+        <button id="f-play" class="w-full py-3 rounded-full font-bold bg-slate-600 text-white opacity-70 cursor-not-allowed" disabled data-i18n="tournament.play_final">
+          Jouer la finale
+        </button>
+      </div>
+    </div>
+
+    <!-- Demi-finale B -->
+    <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon">
+      <h3 class="text-xl font-bold text-pink-300 mb-3" data-i18n="tournament.semi_b">Demi-finale B</h3>
+      <div class="space-y-2">
+        <div id="sf2-p1" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="sf2-p2" class="p-3 rounded-md bg-[#0f1022]/70 text-white">—</div>
+        <div id="sf2-res" class="text-pink-200 text-sm h-5"></div>
+        <button id="sf2-play" class="w-full py-3 rounded-full font-bold bg-slate-600 text-white opacity-70 cursor-not-allowed" disabled data-i18n="tournament.play_match">
+          Jouer (local 1v1)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="t-winner" class="text-center mt-10 text-2xl font-extrabold text-white hidden">
+    🏆 <span data-i18n="tournament.winner_prefix">Vainqueur :</span> <span id="t-winner-name" class="text-pink-300">—</span>
+  </div>
+</section>

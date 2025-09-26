@@ -159,6 +159,14 @@
 			"tournament": {"title": "Tournament", "desc": "Create a bracket and chain matches."}
 		}
 	},
+	"pong": {
+		"win": {
+			"title": "{name} won !",
+			"subtitle": "Match over",
+			"countdown_play": "Back to Play in {s}s..",
+			"countdown_bracket": "Back to bracket in {s}s.."
+		}
+	},
  	"local1v1": {
     	"title": "Local 1 vs 1",
     	"intro": "Player 1 is already signed in on this tab. Sign in Player 2 to play on the same PC.",
@@ -205,6 +213,15 @@
 		"errors": {
 			"missing_credentials": "Please enter username and password.",
 			"already_joined": "This player is already registered."
-		}
+		},
+		"bracket_title": "Tournament tree",
+		"semi_a": "Semi-final A",
+		"semi_b": "Semi-final B",
+		"final": "Final",
+		"play_match": "Play (local 1v1)",
+		"play_final": "Play the final",
+		"result": "Result",
+		"winner": "Winner",
+		"winner_prefix": "Winner :"
 	}
 }

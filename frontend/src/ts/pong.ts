@@ -17,6 +17,12 @@ import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { io } from "socket.io-client";
 import { currentUser } from "./layout";
+import { t } from "../i18n";
+
+/** Informe le bracket si on est en tournoi */
+function notifyTournamentIfAny(winnerName: string, scoreL: number, scoreR: number) {
+  sessionStorage.setItem("tournament:report", JSON.stringify({ winnerName, scoreL, scoreR }));
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) CONSTANTES & THEME
@@ -46,7 +52,11 @@ type LocalMatch = {
   p2: { id:number; username:string};
   controls: {left: "WS"; right:"ARROWS"};
   mode: "local-1v1";
+  tournamentReturn?: string;
 };
+
+let tournamentRedirectTimer: ReturnType<typeof setTimeout> | undefined;
+const COUNTDOWN_SECONDS = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2) ENTRY POINT
@@ -56,7 +66,15 @@ export function initPongPage() {
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement | null;
   if (!canvas) return;
 
-  // Canvas/scene transparents pour laisser voir ton fond vidéo/site
+  // Si on n’est pas en tournoi, on purge un éventuel report dormant
+  try {
+    const lm = readLocalMatch();
+    if (!lm?.tournamentReturn) {
+      sessionStorage.removeItem("tournament:report");
+    }
+  } catch {}
+
+  // Canvas/scene transparents
   canvas.style.backgroundColor = "transparent";
   const engine = new Engine(canvas, true, {
     preserveDrawingBuffer: true,
@@ -217,7 +235,7 @@ function createCameras(scene: Scene) {
   cine.setTarget(new Vector3(0, -40, 0));
   cine.fov = 0.8;
 
-  //cam 3  (plat) 
+  //cam 3  (plat)
   const persp = new FreeCamera("gameCam", new Vector3(0, 0, -1000), scene);
   persp.mode = Camera.ORTHOGRAPHIC_CAMERA;
   persp.orthoLeft = -GAME.WIDTH / 2;
@@ -245,16 +263,33 @@ function wireNetwork(
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
   const ws = io("http://localhost:3000", { path: "/ws", transports: ["websocket"] });
+
+  // Gestion d’epoch (anti mélange d’états si le serveur redémarre/restart une partie)
+  let expectedEpoch: number | null = null;
+  let armed = false;
+
   ws.on("connect", () => {
     ws.emit("restart");
-    ws.emit("setAi", {enabled: isVsAI});
+    ws.emit("setAi", { enabled: isVsAI });
+  });
+
+  ws.on("restarted", (payload: any) => {
+    expectedEpoch = Number(payload?.epoch) || 0;
+    armed = true;
   });
 
   // Mémoire du tick précédent pour détecter inversions et scores
   let prev = { vx: 0, vy: 0, bx: 0, by: 0, sl: 0, sr: 0 };
   let ballHiddenForWin = false;
+  let gameEnded = false;
+  let lastStatus: "init" | "idle" | "playing" | "finished" = "init";
 
   ws.on("state", (s: any) => {
+    // Blocages anti-ghost
+    if (!armed) return;
+    if (expectedEpoch !== null && s.epoch !== undefined && expectedEpoch !== s.epoch) return;
+    if (gameEnded) return;
+
     // Sync transforms
     leftPaddle.position.y = s.left.y;
     rightPaddle.position.y = s.right.y;
@@ -265,21 +300,20 @@ function wireNetwork(
     setScore(s.score.left, s.score.right);
 
     // Rebond paddle (vx inverse)
-    if (prev.vx !== 0 && s.ball.vx !== 0 && (prev.vx * s.ball.vx) < 0) {
+    if (prev.vx !== 0 && s.ball.vx !== 0 && prev.vx * s.ball.vx < 0) {
       const col = s.ball.x >= 0 ? THEME.neonSecondary : THEME.neonPrimary;
       playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), col);
       ball.position.z = 8; // pop
     }
 
     // Rebond mur (vy inverse)
-    if (prev.vy !== 0 && s.ball.vy !== 0 && (prev.vy * s.ball.vy) < 0) {
+    if (prev.vy !== 0 && s.ball.vy !== 0 && prev.vy * s.ball.vy < 0) {
       playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), THEME.white);
     }
 
-    // But marque : explosion au point d’impact sur le bord correspondant
+    // Buts → impacts
     const scoredLeft = s.score.left > prev.sl;
     const scoredRight = s.score.right > prev.sr;
-
     if (scoredLeft) {
       const impact = computeGoalImpact(prev, "right");
       playHitParticles(scene, impact, THEME.neonPrimary, 20);
@@ -289,13 +323,11 @@ function wireNetwork(
       playHitParticles(scene, impact, THEME.neonSecondary, 20);
     }
 
-    // Fin de partie (atteint WIN_SCORE) : explosion centrale & disparition balle
-    const finishedNow =
-      (s.score.left >= GAME.WIN_SCORE || s.score.right >= GAME.WIN_SCORE) &&
-      (prev.sl < GAME.WIN_SCORE && prev.sr < GAME.WIN_SCORE);
+    // Fin de partie : basé sur status (évite le bug de carry-over)
+    const finishedNow = s.status === "finished" && lastStatus !== "finished";
 
     if (finishedNow) {
-      const leftWins  = s.score.left >= GAME.WIN_SCORE;
+      const leftWins = s.score.left >= GAME.WIN_SCORE;
       let winnerName = "Left";
       if (isVsAI) {
         winnerName = leftWins ? meName : "IA";
@@ -303,16 +335,26 @@ function wireNetwork(
         const lm = readLocalMatch();
         winnerName = lm ? (leftWins ? lm.p1.username : lm.p2.username) : (leftWins ? "Left" : "Right");
       }
-      const winnerColor = leftWins ? THEME.neonPrimary : THEME.neonSecondary;
+
+      // Informe le bracket si besoin
+      const lm = readLocalMatch();
+      if (lm && lm.tournamentReturn) {
+        notifyTournamentIfAny(winnerName, s.score.left, s.score.right);
+      }
+
       // FX + disparition balle
+      const winnerColor = leftWins ? THEME.neonPrimary : THEME.neonSecondary;
       ball.position.set(0, 0, 0);
       explodeBall(scene, ball, trail, winnerColor);
       ballHiddenForWin = true;
-      disableGameInput() 
 
-      // Overlay avec le score final
+      // Couper tous les inputs clavier (ajout pote)
+      disableGameInput();
+
+      gameEnded = true;
+
+      // Overlay i18n + redirection (ajouts toi)
       showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");
-
     }
 
     // Nouvelle manche (scores remis à 0) → on réaffiche la balle/trail
@@ -322,20 +364,24 @@ function wireNetwork(
       ball.scaling.set(1, 1, 1);
       ballHiddenForWin = false;
 
-      // on masque l'overlay si visible
       const wrap = document.getElementById("pong-win-overlay");
       if (wrap) wrap.classList.add("hidden");
     }
 
-    // Save prev
+    // Save prev + status
     prev = { vx: s.ball.vx, vy: s.ball.vy, bx: s.ball.x, by: s.ball.y, sl: s.score.left, sr: s.score.right };
+    lastStatus = (s.status as "idle" | "playing" | "finished") || "idle";
   });
 
-  // Contrôles clavier (changement de caméra + mouvements)
-  setupControls(ws, scene, scene.getCameraByName("mainCam") as FreeCamera,
-                      scene.getCameraByName("secondCam") as FreeCamera,
-                      scene.getCameraByName("gameCam") as FreeCamera,
-                      isVsAI);
+  // Contrôles clavier (changement de caméra + mouvements) — version pote (AbortController)
+  setupControls(
+    ws,
+    scene,
+    scene.getCameraByName("mainCam") as FreeCamera,
+    scene.getCameraByName("secondCam") as FreeCamera,
+    scene.getCameraByName("gameCam") as FreeCamera,
+    isVsAI
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -389,7 +435,8 @@ function mountPlayerHUD(canvas: HTMLCanvasElement, p1: string, p2: string) {
     canvas.parentElement!.appendChild(banner);
   }
   banner.textContent = `${p1} (W/S) vs ${p2} (↑/↓)`;
-// labels aux bords (gauche/droite)
+
+  // labels bords
   let left = document.getElementById("pong-left-label") as HTMLDivElement | null;
   if (!left) {
     left = document.createElement("div");
@@ -459,15 +506,12 @@ function ensureWinOverlay(canvas: HTMLCanvasElement) {
       textAlign: "center",
     } as CSSStyleDeclaration);
 
+    // PAS DE BOUTON QUITTER — on affiche un compteur i18n
     card.innerHTML = `
-      <h3 id="win-title" style="font-size:28px;font-weight:900;margin:0 0 6px">Victoire !</h3>
-      <p id="win-sub" style="opacity:.9;margin:0 0 16px">—</p>
+      <h3 id="win-title" style="font-size:28px;font-weight:900;margin:0 0 6px"></h3>
+      <p id="win-sub" style="opacity:.9;margin:0 0 16px"></p>
       <div id="win-score" style="font-size:40px;font-weight:800;margin-bottom:18px">0 - 0</div>
-      <div style="display:flex;gap:12px;justify-content:center">
-        <a id="win-quit" class="py-3 px-6 rounded-full font-bold"
-          style="background:#334155;color:white;text-decoration:none;display:inline-flex;align-items:center;justify-content:center"
-          href="/play">Quitter</a>
-      </div>
+      <div id="win-countdown" style="font-size:14px;opacity:.9"></div>
     `;
     wrap.appendChild(card);
     canvas.parentElement!.style.position ||= "relative";
@@ -479,16 +523,59 @@ function ensureWinOverlay(canvas: HTMLCanvasElement) {
 function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: number, scoreR: number, winnerColor: string) {
   const wrap = ensureWinOverlay(canvas);
   const title = wrap.querySelector("#win-title") as HTMLHeadingElement;
-  const sub   = wrap.querySelector("#win-sub") as HTMLParagraphElement;
-  const sc    = wrap.querySelector("#win-score") as HTMLDivElement;
+  const sub = wrap.querySelector("#win-sub") as HTMLParagraphElement;
+  const sc = wrap.querySelector("#win-score") as HTMLDivElement;
+  const cd = wrap.querySelector("#win-countdown") as HTMLDivElement | null;
 
-  title.textContent = `${winnerName} a gagné !`;
+  // TRAD
+  title.textContent = t("pong.win.title", { name: winnerName });
   title.style.textShadow = `0 0 14px ${winnerColor}`;
-  sub.textContent = "Partie terminée";
+  sub.textContent = t("pong.win.subtitle");
   sc.textContent = `${scoreL} - ${scoreR}`;
 
+  // Redirection : /play ou retour bracket
+  let redirectTo = "/play";
+  let isTournament = false;
+  try {
+    const lmRaw = sessionStorage.getItem("localMatch");
+    if (lmRaw) {
+      const lm = JSON.parse(lmRaw);
+      if (lm?.tournamentReturn) {
+        redirectTo = lm.tournamentReturn;
+        isTournament = true;
+      }
+    }
+  } catch {}
+
+  // Compteur
+  let seconds = COUNTDOWN_SECONDS;
+  const updateCountdown = () => {
+    if (!cd) return;
+    cd.textContent = isTournament
+      ? t("pong.win.countdown_bracket", { s: seconds })
+      : t("pong.win.countdown_play", { s: seconds });
+  };
+  updateCountdown();
+
   wrap.classList.remove("hidden");
+
+  if (tournamentRedirectTimer) clearTimeout(tournamentRedirectTimer);
+
+  const tick = () => {
+    seconds -= 1;
+    updateCountdown();
+    if (seconds <= 0) {
+      sessionStorage.removeItem("localMatch");
+      history.pushState({}, "", redirectTo);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      return;
+    }
+    tournamentRedirectTimer = setTimeout(tick, 1000);
+  };
+
+  tournamentRedirectTimer = setTimeout(tick, 1000);
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 7) EFFETS — matériaux, particules, “grosse explosion” de fin
 // ─────────────────────────────────────────────────────────────────────────────
@@ -517,7 +604,6 @@ function makeCircleDataURL(size = 32) {
 }
 
 function playHitParticles(scene: Scene, pos: Vector3, color: Color3, strength = 5) {
-  // Capacité proportionnelle (évite les limites trop basses)
   const max = Math.round(600 * Math.min(2, strength));
   const ps = new ParticleSystem(`burst-${Math.random().toString(36).slice(2)}`, max, scene);
 
@@ -562,7 +648,7 @@ function explodeBall(scene: Scene, ball: any, trail: any, color: Color3) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8) CONTROLES
+// 8) CONTROLES — version pote (AbortController + capture:true)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const KEY_LIST = ['w', 's', 'ArrowUp', 'ArrowDown', ' '] as const;
@@ -578,64 +664,51 @@ function setupControls(
   gameCam: FreeCamera,
   isVsAI: boolean
 ) {
-    controller?.abort();
-    controller = new AbortController();
+  controller?.abort();
+  controller = new AbortController();
 
-      const keysToLock = new Set<GameKey>(KEY_LIST);
+  const keysToLock = new Set<GameKey>(KEY_LIST);
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      // e.key (pas e.code) car tu utilisais "w" etc.
-      if (keysToLock.has(e.key as GameKey)) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (keysToLock.has(e.key as GameKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-      // switch cam si tu veux garder ces raccourcis
-      if (scene) {
-        if (e.key === "1") scene.activeCamera = mainCam;
-        if (e.key === "2") scene.activeCamera = secondCam;
-        if (e.key === "3") scene.activeCamera = gameCam;
-      }
+    if (scene) {
+      if (e.key === "1") scene.activeCamera = mainCam;
+      if (e.key === "2") scene.activeCamera = secondCam;
+      if (e.key === "3") scene.activeCamera = gameCam;
+    }
 
-      if (e.key === "w" || e.key === "s") {
-        ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
-      }
-      if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-        ws.emit("move", {
-          side: "right",
-          dir: e.key === "ArrowUp" ? "up" : "down",
-        });
-      }
-    };
+    if (e.key === "w" || e.key === "s") {
+      ws.emit("move", { side: "left", dir: e.key === "w" ? "up" : "down" });
+    }
+    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      ws.emit("move", { side: "right", dir: e.key === "ArrowUp" ? "up" : "down" });
+    }
+  };
 
-    const onKeyUp = (e: KeyboardEvent) => {
-      if (keysToLock.has(e.key as GameKey)) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (e.key === "w" || e.key === "s") {
-        ws.emit("move", { side: "left", dir: "stop" });
-      }
-      if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-        ws.emit("move", { side: "right", dir: "stop" });
-      }
-    };
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (keysToLock.has(e.key as GameKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (e.key === "w" || e.key === "s") {
+      ws.emit("move", { side: "left", dir: "stop" });
+    }
+    if (!isVsAI && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      ws.emit("move", { side: "right", dir: "stop" });
+    }
+  };
 
-    // capture:true -> on intercepte avant le reste (utile pour bloquer la barre d'espace/scroll)
-    document.addEventListener("keydown", onKeyDown, {
-      capture: true,
-      signal: controller.signal,
-    });
-    document.addEventListener("keyup", onKeyUp, {
-      capture: true,
-      signal: controller.signal,
-    });
-  }
+  document.addEventListener("keydown", onKeyDown, { capture: true, signal: controller.signal });
+  document.addEventListener("keyup", onKeyUp, { capture: true, signal: controller.signal });
+}
 
-function disableGameInput() 
-{
-    controller?.abort(); // retire tous les listeners ajoutés
-    controller = null;
+function disableGameInput() {
+  controller?.abort();
+  controller = null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -665,11 +738,10 @@ function computeGoalImpact(
   return new Vector3(boundaryX, clamp(y, minY, maxY), 0);
 }
 
-
 function readLocalMatch(): LocalMatch | null {
   try {
     const raw = sessionStorage.getItem("localMatch");
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch { return null;}
+  } catch { return null; }
 }

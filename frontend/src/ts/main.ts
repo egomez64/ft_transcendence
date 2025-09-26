@@ -19,6 +19,7 @@ import { initPlayPage } from "./play";
 import { initLocal1v1Page } from "./1vs1";
 import { initTwofaPage } from "./twofa";
 import { initTournamentPage } from "./tournament";
+import { initTournamentBracketPage } from "./tournament-bracket";
 
 function routeFromLocation(): string {
   const p = window.location.pathname || "/";
@@ -61,6 +62,7 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : false},
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
   tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
+  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
 };
 
 // --------- ROUTER ---------

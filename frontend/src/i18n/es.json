@@ -159,6 +159,14 @@
 			"tournament": {"title": "Torneo", "desc": "Organiza un cuadro y encadena partidos."}
 		}
 	},
+	"pong": {
+		"win": {
+			"title": "¡{name} ganó!",
+			"subtitle": "Juego terminado",
+			"countdown_play": "Regresar al menú Reproducir en {s}s..",
+			"countdown_bracket": "De vuelta al corchete en {s}s.."
+		}
+	},
  	"local1v1": {
     	"title": "1 vs 1 local",
     	"intro": "El jugador 1 ya está conectado en esta pestaña. Inicia sesión con el jugador 2 para jugar en el mismo PC.",
@@ -205,6 +213,15 @@
 		"errors": {
 			"missing_credentials": "Por favor, introduzca su nombre de usuario y contraseña.",
 			"already_joined": "Este jugador ya está inscrito."
-		}
+		},
+		"bracket_title": "Árbol de torneos",
+		"semi_a": "Semifinal A",
+		"semi_b": "Semifinal B",
+		"final": "Final",
+		"play_match": "Jugar (local 1v1)",
+		"play_final": "jugar la final",
+		"result": "Resultado",
+		"winner": "Ganador",
+		"winner_prefix": "Ganador :"
 	}
 }

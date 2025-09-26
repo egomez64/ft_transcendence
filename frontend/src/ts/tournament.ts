@@ -16,7 +16,28 @@ type LoginResp =
 
 const SLOT_IDS = [2, 3, 4] as const;
 
+type MaybeCurrentUser = { id?: number; username?: string; email?: string } | null;
+
+function isUserMiniLike(u: any): u is UserMini {
+  return !!u && typeof u.id === "number" && typeof u.username === "string"; 
+}
+
+function resetTournamentState() {
+  sessionStorage.removeItem("tournament:p2");
+  sessionStorage.removeItem("tournament:p3");
+  sessionStorage.removeItem("tournament:p4");
+  sessionStorage.removeItem("tournament:players");
+  //etat du bracket
+  sessionStorage.removeItem("tournament:state");
+  sessionStorage.removeItem("tournament:current");
+  //ancien report
+  sessionStorage.removeItem("tournament:report");
+}
+
 export function initTournamentPage() {
+
+  resetTournamentState();
+
   try {
     const me = currentUser();
     const p1 = document.getElementById("p1-username") as HTMLInputElement | null;
@@ -31,7 +52,7 @@ export function initTournamentPage() {
   startBtn?.addEventListener("click", () => {
     if (!canStart()) return;
     sessionStorage.setItem("tournament:players", JSON.stringify(getPlayers()));
-    history.pushState({}, "", "/pong");
+    history.pushState({}, "", "/tournament/bracket");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
 
@@ -98,13 +119,21 @@ function mountSlotLogin(i: 2 | 3 | 4) {
 }
 
 function getPlayers(): (UserMini | null)[] {
-  const me = currentUser();
-  const arr: (UserMini | null)[] = [
-    me ? { id: me.id, username: me.username, email: me.email } : null,
-  ];
+  const raw = currentUser() as MaybeCurrentUser;
+
+  const p1: UserMini | null = isUserMiniLike(raw)
+    ? {
+      id: raw.id,
+      username: raw.username,
+      email: raw.email ?? undefined,
+    }
+    : null;
+
+  const arr: (UserMini | null)[] = [p1];
+  
   for (const i of SLOT_IDS) {
-    const raw = sessionStorage.getItem(`tournament:p${i}`);
-    arr.push(raw ? (JSON.parse(raw) as UserMini) : null);
+    const rawSlot = sessionStorage.getItem(`tournament:p${i}`);
+    arr.push(rawSlot ? (JSON.parse(rawSlot) as UserMini) : null);
   }
   return arr;
 }
