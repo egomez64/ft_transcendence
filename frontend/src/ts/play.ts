@@ -48,7 +48,7 @@ document.addEventListener("click", async (ev) => {
 
   const href = a.getAttribute("href") || "";
   // On vise uniquement le lien qui lance le mode Pong (vs IA)
-  if (href !== "/pong") return;
+  if (href !== "/pong" && href !== "/pong?mode=ai") return;
 
   // ⚠️ Empêche la navigation SPA et native AVANT tout
   ev.preventDefault();
@@ -72,7 +72,7 @@ document.addEventListener("click", async (ev) => {
     console.log("✅ Match IA créé avec id", data.match_id);
 
     // Seulement après enregistrement, on navigue vers /pong
-    window.location.href = "/pong";
+    window.location.href = "/pong?mode=ai";
   } catch (err) {
     console.error("Erreur /api/match/ai:", err);
     alert("Erreur réseau pendant la création du match IA.");

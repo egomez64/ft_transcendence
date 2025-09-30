@@ -91,6 +91,8 @@ async function matchRoutes(fastify) {
    * =======================================================*/
   fastify.post("/ai", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
+
+		console.log("POST /api/match/ai");
       const p1 = req.user;
       if (!p1?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
 
