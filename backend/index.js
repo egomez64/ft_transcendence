@@ -17,21 +17,6 @@ function dbGet(sql, params = []) {
   });
 }
 
-fastify.get('/api/users/:id/stats', async (req, reply) => {
-  const id = Number(req.params.id);
-  if (!id) return reply.code(400).send({ error: 'Invalid user id' });
-
-  const row = await dbGet('SELECT wins, losses FROM users WHERE id = ?', [id]);
-  if (!row) return reply.code(404).send({ error: 'User not found' });
-
-  const wins   = Number(row.wins || 0);
-  const losses = Number(row.losses || 0);
-  const played = wins + losses;
-  const winRate = played ? Math.round((wins / played) * 1000) / 10 : 0; // 1 décimale
-
-  return { wins, losses, played, winRate }; // <- simple et suffisant
-});
-
 const corsObj = {
     origin: [ "http://localhost:5173" ], // accepte toutes les origines (à restreindre en prod)
     credentials: true,

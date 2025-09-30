@@ -1,598 +1,323 @@
-// export function laodDashboard(): void {
-//     const content = document.getElementById("dashboard-content");
-//     const buttons = document.querySelectorAll(".tab-button");
-    
-//     const views = {
-//         stats: `
-//             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/controller.svg" alt="Partie jouées" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pink-300">Parties jouées</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">128</p>
-//                 </div>
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/trophy.svg" alt="Victoires" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pink-300">Victoires</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">74</p>
-//                 </div>
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/broken-heart.svg" alt="Broken heart" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pinj-300">Loose</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">54</p>             
-//                 </div>
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/bar-chart.svg" alt="Win rate" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pinj-300">Win rate</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">57.8%</p>
-//                 </div>
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/flamme.png" alt="Win rate" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pinj-300">Win streak</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">3</p>
-//                 </div>
-//                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-//                     <img src="assets/dashboard/medal.png" alt="Win rate" class="w-10 h-10 mb-4" />
-//                     <p class="text-xl font-bold text-pinj-300">Rank</p>
-//                     <p class="text-3xl font-extrabold mt-2 text-white">1</p>
-//                 </div>
-//             <div>
-//         `,
-//         history: `
-//             <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
-//                 <h3 class="text-2xl font-bold text-pink-300 mb-4">📝 Historique des parties</h3>
-
-//                 <div class="space-y-4">
-//                 <!-- match 1 -->
-//                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-//                         <div class="flex items-center gap-4">
-//                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
-//                             <div>
-//                                 <p class="text-pink-100 font-semibold">vs CyberAlice</p>
-//                                 <p class="text-sm text-pink-400">2024-01-15</p>
-//                             </div>
-//                         </div>
-//                         <div class="text-right">
-//                             <p class="text-green-400 font-bold text-xl">5 - 3</p>
-//                         </div>
-//                     </div>
-                
-//                 <!-- match 2 -->
-//                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-//                         <div class="flex items-center gap-4">
-//                             <span class="w-3 h-3 rounded-full bg-red-400"></span>
-//                             <div>
-//                                 <p class="text-pink-100 font-semibold">vs CyberBob</p>
-//                                 <p class="text-sm text-pink-400">2024-01-16</p>
-//                             </div>
-//                         </div>
-//                         <div class="text-right">
-//                             <p class="text-red-400 font-bold text-xl">4 - 5</p>
-//                         </div>
-//                     </div>
-                
-//                 <!-- match 3 -->
-//                     <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-//                         <div class="flex items-center gap-4">
-//                             <span class="w-3 h-3 rounded-full bg-green-400"></span>
-//                             <div>
-//                                 <p class="text-pink-100 font-semibold">vs CyberCharlie</p>
-//                                 <p class="text-sm text-pink-400">2024-01-17</p>
-//                             </div>
-//                         </div>
-//                         <div class="text-right">
-//                             <p class="text-green-400 font-bold text-xl">5 - 4</p>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-
-//         `,
-//         ranking: `
-//             <div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
-//                 <h3 class="text-2xl font-bold text-pink-300 mb-4">🏆 Classement</h3>
-
-//                 <div class="space-y-3">
-//                     <!-- rank 1 -->
-//                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-//                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-//                         <div class="flex items-center space-x-4">
-//                             <!-- Rang / Médaille -->
-//                             <div class="text-2xl w-8 text-center">
-//                             🥇
-//                             </div>
-//                             <!-- Nom + Stat -->
-//                             <div class="flex flex-col">
-//                             <span class="font-bold text-pink-100 text-lg">SynthMaster</span>
-//                             <span class="text-sm text-left text-pink-400">145W - 23L</span>
-//                             </div>
-//                         </div>
-
-//                         <!-- Droite : Score + WR -->
-//                         <div class="text-right">
-//                             <div class="text-yellow-400 font-extrabold text-lg">2156 pts</div>
-//                             <div class="text-pink-300 text-sm">86% WR</div>
-//                         </div>
-//                         </div>
-
-//                     <!-- rank 2 -->
-//                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-//                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-//                         <div class="flex items-center space-x-4">
-//                             <!-- Rang / Médaille -->
-//                             <div class="text-2xl w-8 text-center">
-//                             🥈
-//                             </div>
-//                             <!-- Nom + Stat -->
-//                             <div class="flex flex-col">
-//                             <span class="font-bold text-pink-100 text-lg">CyberBob</span>
-//                             <span class="text-sm text-left text-pink-400">115W - 43L</span>
-//                             </div>
-//                         </div>
-
-//                         <!-- Droite : Score + WR -->
-//                         <div class="text-right">
-//                             <div class="text-yellow-400 font-extrabold text-lg">1856 pts</div>
-//                             <div class="text-pink-300 text-sm">70% WR</div>
-//                         </div>
-//                         </div>
-
-//                     <!-- rank 3 -->
-//                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-//                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-//                         <div class="flex items-center space-x-4">
-//                             <!-- Rang / Médaille -->
-//                             <div class="text-2xl w-8 text-center">
-//                             🥉
-//                             </div>
-//                             <!-- Nom + Stat -->
-//                             <div class="flex flex-col">
-//                             <span class="font-bold text-pink-100 text-lg">CyberAlice</span>
-//                             <span class="text-sm text-left text-pink-400">105W - 83L</span>
-//                             </div>
-//                         </div>
-
-//                         <!-- Droite : Score + WR -->
-//                         <div class="text-right">
-//                             <div class="text-yellow-400 font-extrabold text-lg">1406 pts</div>
-//                             <div class="text-pink-300 text-sm">51% WR</div>
-//                         </div>
-//                         </div>
-
-//                     <!-- rank 4-->
-//                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-//                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-//                         <div class="flex items-center space-x-4">
-//                             <!-- Rang / Médaille -->
-//                             <div class="text-2xl w-8 text-center">
-//                             #4
-//                             </div>
-//                             <!-- Nom + Stat -->
-//                             <div class="flex flex-col">
-//                             <span class="font-bold text-pink-100 text-lg">CyberEric</span>
-//                             <span class="text-sm text-left text-pink-400">100W - 83L</span>
-//                             </div>
-//                         </div>
-
-//                         <!-- Droite : Score + WR -->
-//                         <div class="text-right">
-//                             <div class="text-yellow-400 font-extrabold text-lg">1350 pts</div>
-//                             <div class="text-pink-300 text-sm">50% WR</div>
-//                         </div>
-//                         </div>
-
-//                     <!-- rank 5-->
-//                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-//                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-//                         <div class="flex items-center space-x-4">
-//                             <!-- Rang / Médaille -->
-//                             <div class="text-2xl w-8 text-center">
-//                             #5
-//                             </div>
-//                             <!-- Nom + Stat -->
-//                             <div class="flex flex-col">
-//                             <span class="font-bold text-pink-100 text-lg">CyberTeddy</span>
-//                             <span class="text-sm text-left text-pink-400">98W - 83L</span>
-//                             </div>
-//                         </div>
-
-//                         <!-- Droite : Score + WR -->
-//                         <div class="text-right">
-//                             <div class="text-yellow-400 font-extrabold text-lg">1300 pts</div>
-//                             <div class="text-pink-300 text-sm">51% WR</div>
-//                         </div>
-//                         </div>
-
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         `,
-//     };
-
-//     function show(tab: keyof typeof views) {
-//         if (content) content.innerHTML = views[tab];
-//     }
-
-//     buttons.forEach(btn => {
-//         btn.addEventListener("click", () => {
-//             const tab = (btn as HTMLElement).dataset.tab as keyof typeof views;
-//             show(tab);
-//         });
-//     });
-
-//     show("stats");
-// }
-
-// function currentUser(): { username?: string } | null {
-//   try { return JSON.parse(localStorage.getItem('auth') || 'null'); }
-//   catch { return null; }
-// }
-
-// export function paintDashboardUsername() {
-//   const el = document.getElementById('dashUsername');
-//   if (!el) return;
-//   const user = currentUser();
-//   el.textContent = user?.username ?? 'Invité';
-// }
-
-// frontend/src/pages/dashboard.ts (ou ton chemin actuel)
-
-// src/pages/dashboard.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard.ts
+// Gestion du tableau de bord (statistiques, historique, classement)
+// ─────────────────────────────────────────────────────────────────────────────
 
 import { applyTranslations, t } from "../i18n";
 import { fetchWithAuth } from "./utils";
 
-// ---- Types & helpers ----
+// ─────────────────────────────────────────────────────────────────────────────
+// 1) TYPES & HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
 type Stats = { wins: number; losses: number; played: number; winRate: number };
 
+/** Retourne l’utilisateur authentifié (depuis localStorage) */
 function getAuth(): null | { id: number; username: string; email: string } {
-  const raw = localStorage.getItem('auth');
-  try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  const raw = localStorage.getItem("auth");
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
-// ---- Views ----
+/** Retourne uniquement l’id de l’utilisateur courant */
+function getAuthId(): number | null {
+  try {
+    const raw = localStorage.getItem("auth");
+    if (!raw) return null;
+    const parsed: any = JSON.parse(raw);
+    return parsed && typeof parsed.id === "number" ? parsed.id : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2) VUES (HTML bruts injectés dans le dashboard)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Vue statistiques */
 function statsView() {
   return `
-<div id="stats-state" class="text-pink-200 mb-4"></div>
-<div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/controller.svg" alt="Partie jouées" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pink-300 " data-i18n="dashboard.stats.played">Parties jouées</p>
-                     <p id="st-played" class="text-3xl font-extrabold mt-2 text-white">0</p>
-                 </div>
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/trophy.svg" alt="Victoires" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.wins" >Victoires</p>
-                     <p id="st-wins" class="text-3xl font-extrabold mt-2 text-white">74</p>
-                 </div>
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/broken-heart.svg" alt="Broken heart" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.losses">Loose</p>
-                     <p id="st-losses" class="text-3xl font-extrabold mt-2 text-white">54</p>             
-                 </div>
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/bar-chart.svg" alt="Win rate" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.winrate" >Win rate</p>
-                     <p id="st-winrate" class="text-3xl font-extrabold mt-2 text-white">57.8%</p>
-                 </div>
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/flamme.png" alt="Win rate" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.streak">Win streak</p>
-                     <p class="text-3xl font-extrabold mt-2 text-white">3</p>
-                 </div>
-                 <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center transistion-transform transform hover:scale-105 duration-300">
-                     <img src="assets/dashboard/medal.png" alt="Win rate" class="w-10 h-10 mb-4" />
-                     <p class="text-xl font-bold text-pinj-300" data-i18n="dashboard.stats.rank">Rank</p>
-                     <p class="text-3xl font-extrabold mt-2 text-white">1</p>
-                 </div>
-             </div>
+    <div id="stats-state" class="text-pink-200 mb-4"></div>
+    <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+      <!-- Parties jouées -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/controller.svg" alt="Partie jouées" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.played">Parties jouées</p>
+        <p id="st-played" class="text-3xl font-extrabold mt-2 text-white">0</p>
+      </div>
+      <!-- Victoires -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/trophy.svg" alt="Victoires" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.wins">Victoires</p>
+        <p id="st-wins" class="text-3xl font-extrabold mt-2 text-white">0</p>
+      </div>
+      <!-- Défaites -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/broken-heart.svg" alt="Défaites" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.losses">Défaites</p>
+        <p id="st-losses" class="text-3xl font-extrabold mt-2 text-white">0</p>
+      </div>
+      <!-- Taux de victoire -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/bar-chart.svg" alt="Win rate" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.winrate">Win rate</p>
+        <p id="st-winrate" class="text-3xl font-extrabold mt-2 text-white">0%</p>
+      </div>
+      <!-- Streak -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/flamme.png" alt="Streak" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.streak">Win streak</p>
+        <p id="st-streak" class="text-3xl font-extrabold mt-2 text-white">0</p>
+      </div>
+      <!-- Rang -->
+      <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon flex flex-col items-center">
+        <img src="assets/dashboard/medal.png" alt="Rank" class="w-10 h-10 mb-4" />
+        <p class="text-xl font-bold text-pink-300" data-i18n="dashboard.stats.rank">Rank</p>
+        <p id="st-rank" class="text-3xl font-extrabold mt-2 text-white">-</p>
+      </div>
+    </div>
   `;
 }
 
-//No Trad
+/** Vue historique */
+function historyView() {
+  return `
+    <div class="bg-black/30 p-6 rounded-xl shadow-neon">
+      <h3 class="text-2xl font-bold text-pink-200">Historique</h3>
+      <div id="history-list" class="mt-4 space-y-4 text-white"></div>
+    </div>`;
+}
+
+/** Vue classement */
+function rankingView() {
+  return `
+    <div id="ranking-state" class="text-pink-200 mb-4"></div>
+    <div id="ranking-list" class="space-y-3"></div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3) DATA LOADERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Charge l’historique des matchs */
 async function loadHistory(userId: number) {
   try {
     const res = await fetchWithAuth(`/api/history/${userId}`);
     const matches = await res.json();
 
-    const container = document.getElementById('history-list');
+    const container = document.getElementById("history-list");
     if (!container) return;
 
     if (matches.length === 0) {
-      container.innerHTML = `<p class="text-pink-300/80">Aucun match pour l’instant</p>`; //here
+      container.innerHTML = `<p class="text-pink-300/80">Aucun match pour l’instant</p>`;
       return;
     }
 
-    container.innerHTML = matches.map((m: any) => `
-      <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
-        <div class="flex items-center gap-4">
-          <span class="w-3 h-3 rounded-full ${
-            m.result === 'win' ? 'bg-green-400' :
-            m.result === 'lose' ? 'bg-red-400' :
-            'bg-yellow-400'
-          }"></span>
-          <div>
-            <p class="text-pink-100 font-semibold"> ${m.player} vs ${m.opponent}</p>
-            <p class="text-sm text-pink-400">${new Date(m.played_at).toLocaleString()}</p>
+    container.innerHTML = matches
+      .map(
+        (m: any) => `
+        <div class="bg-[#1a0020]/80 p-4 rounded-xl flex justify-between items-center shadow-inner">
+          <div class="flex items-center gap-4">
+            <span class="w-3 h-3 rounded-full ${
+              m.result === "win"
+                ? "bg-green-400"
+                : m.result === "lose"
+                ? "bg-red-400"
+                : "bg-yellow-400"
+            }"></span>
+            <div>
+              <p class="text-pink-100 font-semibold">${m.player} vs ${m.opponent}</p>
+              <p class="text-sm text-pink-400">${new Date(m.played_at).toLocaleString()}</p>
+            </div>
           </div>
-        </div>
-        <div class="text-right">
-          <p class="${
-            m.result === 'win' ? 'text-green-400' :
-            m.result === 'lose' ? 'text-red-400' :
-            'text-yellow-400'
-          } font-bold text-xl">${m.score}</p>
-        </div>
-      </div>
-    `).join('');
+          <div class="text-right">
+            <p class="${
+              m.result === "win"
+                ? "text-green-400"
+                : m.result === "lose"
+                ? "text-red-400"
+                : "text-yellow-400"
+            } font-bold text-xl">${m.score}</p>
+          </div>
+        </div>`
+      )
+      .join("");
   } catch (err) {
-    console.error('Erreur chargement historique :', err);
+    console.error("Erreur chargement historique :", err);
   }
 }
 
-function historyView() {
-  return `
-    <div class="bg-black/30 p-6 rounded-xl shadow-neon">
-      <h3 class="text-2xl font-bold text-pink-200">Historique</h3>
-      <div id="history-list" class="mt-4 space-y-4 text-white">
-      </div>
-    </div>`;
-}
-
-function rankingView() {
-  return `<div class="bg-black/30 p-6 rounded-xl shadow-neon w-full mx-auto space-y-4">
-                 <h3 class="text-2xl font-bold text-pink-300 mb-4">🏆 Classement</h3>
-
-                 <div class="space-y-3">
-                     <!-- rank 1 -->
-                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-                         <div class="flex items-center space-x-4">
-                             <!-- Rang / Médaille -->
-                             <div class="text-2xl w-8 text-center">
-                             🥇
-                             </div>
-                             <!-- Nom + Stat -->
-                             <div class="flex flex-col">
-                             <span class="font-bold text-pink-100 text-lg">SynthMaster</span>
-                             <span class="text-sm text-left text-pink-400">145W - 23L</span>
-                             </div>
-                         </div>
-
-                         <!-- Droite : Score + WR -->
-                         <div class="text-right">
-                             <div class="text-yellow-400 font-extrabold text-lg">2156 pts</div>
-                             <div class="text-pink-300 text-sm">86% WR</div>
-                         </div>
-                         </div>
-
-                     <!-- rank 2 -->
-                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-                         <div class="flex items-center space-x-4">
-                             <!-- Rang / Médaille -->
-                             <div class="text-2xl w-8 text-center">
-                             🥈
-                             </div>
-                             <!-- Nom + Stat -->
-                             <div class="flex flex-col">
-                             <span class="font-bold text-pink-100 text-lg">CyberBob</span>
-                             <span class="text-sm text-left text-pink-400">115W - 43L</span>
-                             </div>
-                         </div>
-
-                         <!-- Droite : Score + WR -->
-                         <div class="text-right">
-                             <div class="text-yellow-400 font-extrabold text-lg">1856 pts</div>
-                             <div class="text-pink-300 text-sm">70% WR</div>
-                         </div>
-                         </div>
-
-                     <!-- rank 3 -->
-                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-                         <div class="flex items-center space-x-4">
-                             <!-- Rang / Médaille -->
-                             <div class="text-2xl w-8 text-center">
-                             🥉
-                             </div>
-                             <!-- Nom + Stat -->
-                             <div class="flex flex-col">
-                             <span class="font-bold text-pink-100 text-lg">CyberAlice</span>
-                             <span class="text-sm text-left text-pink-400">105W - 83L</span>
-                             </div>
-                         </div>
-
-                         <!-- Droite : Score + WR -->
-                         <div class="text-right">
-                             <div class="text-yellow-400 font-extrabold text-lg">1406 pts</div>
-                             <div class="text-pink-300 text-sm">51% WR</div>
-                         </div>
-                         </div>
-
-                     <!-- rank 4-->
-                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-                         <div class="flex items-center space-x-4">
-                             <!-- Rang / Médaille -->
-                             <div class="text-2xl w-8 text-center">
-                             #4
-                             </div>
-                             <!-- Nom + Stat -->
-                             <div class="flex flex-col">
-                             <span class="font-bold text-pink-100 text-lg">CyberEric</span>
-                             <span class="text-sm text-left text-pink-400">100W - 83L</span>
-                             </div>
-                         </div>
-
-                         <!-- Droite : Score + WR -->
-                         <div class="text-right">
-                             <div class="text-yellow-400 font-extrabold text-lg">1350 pts</div>
-                             <div class="text-pink-300 text-sm">50% WR</div>
-                         </div>
-                         </div>
-
-                     <!-- rank 5-->
-                     <div class="flex items-center justify-between bg-[#1a1a2e]/70 rounded-xl px-6 py-4 shadow-lg">
-                         <!-- Gauche : Rang + Pseudo + Win/Loss -->
-                         <div class="flex items-center space-x-4">
-                             <!-- Rang / Médaille -->
-                             <div class="text-2xl w-8 text-center">
-                             #5
-                             </div>
-                             <!-- Nom + Stat -->
-                             <div class="flex flex-col">
-                             <span class="font-bold text-pink-100 text-lg">CyberTeddy</span>
-                             <span class="text-sm text-left text-pink-400">98W - 83L</span>
-                             </div>
-                         </div>
-
-                         <!-- Droite : Score + WR -->
-                         <div class="text-right">
-                             <div class="text-yellow-400 font-extrabold text-lg">1300 pts</div>
-                             <div class="text-pink-300 text-sm">51% WR</div>
-                         </div>
-                         </div>
-
-                         </div>
-                     </div>
-                 </div>
-             </div>`;
-}
-
-// ---- Data loader ----
+/** Charge les stats d’un joueur et met à jour le dashboard */
 async function loadStats(userId: number) {
   const state = document.getElementById("stats-state")!;
-  const grid  = document.getElementById("stats-grid")!;
+  const grid = document.getElementById("stats-grid")!;
 
-  const showRetry = (msgKey: string, vars?: Record<string, any>) => {
-    state.innerHTML = `${t(msgKey, vars)} <button id="retry" class="underline" data-i18n="common.retry">Reessayer</button>`
+  const showRetry = (msgKey: string) => {
+    state.innerHTML = `${t(msgKey)} <button id="retry" class="underline" data-i18n="common.retry">Reessayer</button>`;
     applyTranslations(state);
     grid.classList.add("hidden");
     document.getElementById("retry")?.addEventListener("click", () => loadStats(userId));
   };
 
   try {
-    state.textContent = t('common.loading');
+    state.textContent = t("common.loading");
     grid.classList.add("hidden");
 
-    // (1) Validation basique de l’id
+    // 1) Validation de l’id
     if (!Number.isFinite(Number(userId))) {
       showRetry("dashboard.invalid_user_id");
       return;
     }
 
-    // (2) Appel API
-    const url = `/api/users/${Number(userId)}/stats`;
-    const res = await fetch(url);
-
-    // (3) HTTP non-OK → essayer d’afficher un message backend
+    // 2) Récup stats
+    const res = await fetch(`/api/users/${userId}/stats`);
     if (!res.ok) {
-      let key = res.status === 401 ? 'auth.must_login'
-              : res.status === 404 ? 'users.not_found'
-              : 'common.server_error';
-      try {
-        const body = await res.json();
-        key = body?.error_key || key;
-      } catch {}
-      showRetry(key);
+      showRetry("common.server_error");
       return;
     }
+    const s: any = await res.json();
 
-    // (4) JSON attendu
-    let s: any;
-    try {
-      s = await res.json();
-    } catch (e) {
-      showRetry('dashboard.invalid_response');
-      return;
-    }
+    // 3) Normalisation
+    const wins = Number(s?.wins) || 0;
+    const losses = Number(s?.losses) || 0;
+    const played = Number(s?.played) || wins + losses;
+    const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
 
-    // (5) Tolérance aux null/undefined et types
-    const wins    = Number(s?.wins)    || 0;
-    const losses  = Number(s?.losses)  || 0;
-    const played  = Number(s?.played)  || (wins + losses);
-    const winRate = Number.isFinite(Number(s?.winRate))
-      ? Number(s.winRate)
-      : (played ? Math.round((wins / played) * 100) : 0);
-
-    // (6) Affichage
-    (document.getElementById("st-wins")!).textContent    = String(wins);
-    (document.getElementById("st-losses")!).textContent  = String(losses);
-    (document.getElementById("st-played")!).textContent  = String(played);
+    // 4) MAJ DOM
+    (document.getElementById("st-wins")!).textContent = String(wins);
+    (document.getElementById("st-losses")!).textContent = String(losses);
+    (document.getElementById("st-played")!).textContent = String(played);
     (document.getElementById("st-winrate")!).textContent = `${winRate}%`;
+    (document.getElementById("st-streak")!).textContent = String(s?.streak || 0);
 
+    // 5) Récup du rang via /ranking
+    try {
+      const resRank = await fetch("/api/users/ranking");
+      if (resRank.ok) {
+        const data = await resRank.json();
+        const me = data?.ranking?.find((u: any) => u.id === userId);
+        if (me) {
+          (document.getElementById("st-rank")!).textContent = `#${me.rank}`;
+        }
+      }
+    } catch (e) {
+      console.warn("Impossible de charger le rang :", e);
+      (document.getElementById("st-rank")!).textContent = "-";
+    }
+
+    // Succès
     state.textContent = "";
     grid.classList.remove("hidden");
-  } catch (e: any) {
-    showRetry('common.network_error');
+  } catch (e) {
+    showRetry("common.network_error");
   }
 }
 
-// ---- Controller ----
+/** Charge et affiche le classement complet */
+async function loadRanking() {
+  const state = document.getElementById("ranking-state")!;
+  const list = document.getElementById("ranking-list")!;
+  const currentUserId = getAuthId();
+
+  try {
+    state.textContent = t("common.loading");
+    list.innerHTML = "";
+
+    const res = await fetch("/api/users/ranking");
+    if (!res.ok) {
+      state.textContent = t("common.server_error");
+      return;
+    }
+
+    const data = await res.json();
+    state.textContent = "";
+
+    list.innerHTML = data.ranking
+      .map((u: any) => {
+        const isMe = currentUserId && u.id === currentUserId;
+        return `
+          <div class="flex items-center justify-between rounded-xl px-6 py-4 shadow-lg
+            ${isMe ? "bg-[#2a004f]/90 border-2 border-cyan-400" : "bg-[#1a1a2e]/70"}">
+            <div class="flex items-center space-x-4">
+              <div class="text-2xl w-8 text-center">
+                ${u.rank === 1 ? "🥇" : u.rank === 2 ? "🥈" : u.rank === 3 ? "🥉" : "#" + u.rank}
+              </div>
+              <div class="flex flex-col">
+                <span class="font-bold ${isMe ? "text-cyan-300" : "text-pink-100"} text-lg">${u.username}</span>
+                <span class="text-sm text-left text-pink-400">${u.wins}W - ${u.losses}L</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-yellow-400 font-extrabold text-lg">${u.elo} pts</div>
+              <div class="text-pink-300 text-sm">${u.winRate}% WR</div>
+            </div>
+          </div>`;
+      })
+      .join("");
+  } catch (err) {
+    console.error("Erreur chargement ranking :", err);
+    state.textContent = t("common.network_error");
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4) CONTROLLER (navigation entre onglets + init dashboard)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Change d’onglet et charge la vue correspondante */
 function setActiveTab(name: "stats" | "history" | "ranking") {
   const content = document.getElementById("dashboard-content")!;
-  content.innerHTML =
-    name === "stats"   ? statsView() :
-    name === "history" ? historyView() :
-                         rankingView();
+  content.innerHTML = name === "stats" ? statsView() : name === "history" ? historyView() : rankingView();
   applyTranslations(content);
 
+  const raw = localStorage.getItem("auth");
+  let user: any = null;
+  try {
+    user = raw ? JSON.parse(raw) : null;
+  } catch {}
+
   if (name === "stats") {
-    const raw = localStorage.getItem("auth");
-    let user: any = null;
-    try { user = raw ? JSON.parse(raw) : null; } catch {}
-    
-    const state = document.getElementById("stats-state");
-    if (!user?.id) {
-        if (state) state.textContent = "Veuillez vous connecter.";
-        return;
-    }
-    loadStats(Number(user.id));
+    if (user?.id) loadStats(Number(user.id));
+    else document.getElementById("stats-state")!.textContent = "Veuillez vous connecter.";
   }
 
   if (name === "history") {
-    const raw = localStorage.getItem("auth");
-    let user: any = null;
-    try { user = raw ? JSON.parse(raw) : null; } catch {}
-    
-    const container = document.getElementById("history-list");
-    if (!user?.id) {
-      if (container) container.textContent = "Veuillez vous connecter.";
-      return;
-    }
-    loadHistory(Number(user.id));
+    if (user?.id) loadHistory(Number(user.id));
+    else document.getElementById("history-list")!.textContent = "Veuillez vous connecter.";
+  }
+
+  if (name === "ranking") {
+    loadRanking();
   }
 }
 
-
-// Public: appelé après injection de dashboard.html
+/** Point d’entrée public : appelé après injection de dashboard.html */
 export function mountDashboard() {
-  // 1) Pseudo (dans <span id="dashUsername">…</span>)
+  // Nom utilisateur
   const user = getAuth();
   const nameEl = document.getElementById("dashUsername");
   if (user && nameEl) nameEl.textContent = user.username;
 
-  // 2) Tabs click
-  document.querySelectorAll<HTMLButtonElement>(".tab-button").forEach(btn => {
+  // Tabs
+  document.querySelectorAll<HTMLButtonElement>(".tab-button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tab = btn.dataset.tab as "stats"|"history"|"ranking";
+      const tab = btn.dataset.tab as "stats" | "history" | "ranking";
       setActiveTab(tab);
     });
   });
 
-  // 3) Onglet par défaut
+  // Onglet par défaut
   setActiveTab("stats");
 }
 
-// Compat: certains imports existants utilisent ce nom
-export const laodDashboard = mountDashboard;
-
-// Utilisé par main.ts pour mettre à jour le header du dashboard
+/** Utilisé par main.ts pour mettre à jour le header */
 export function paintDashboardUsername() {
-  const el = document.getElementById('dashUsername');
+  const el = document.getElementById("dashUsername");
   if (!el) return;
   const user = getAuth();
-  el.textContent = user?.username ?? 'Invité';
+  el.textContent = user?.username ?? "Invité";
 }
-

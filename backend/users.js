@@ -80,18 +80,6 @@ async function usersRoutes(fastify) {
       );
 
       return reply.send({ ok: true, user: updated });
-//     } catch (err) {
-//       // Gestion des contraintes uniques SQLite
-//       if (String(err.message || '').includes('UNIQUE constraint failed')) {
-//         // on détecte si c’est username ou alias
-//         const field = err.message.includes('.username') ? 'username'
-//                     : err.message.includes('.alias') ? 'alias'
-//                     : 'unique';
-//         return reply.code(409).send({ error: `This ${field} is already taken.` });
-//       }
-//       fastify.log.error(err);
-//       return reply.code(500).send({ error: 'Internal server error' });
-//     }
       } catch (err) {
         fastify.log.error({
           msg: 'UPDATE users failed',
@@ -110,6 +98,76 @@ async function usersRoutes(fastify) {
         }
         return replyError(reply, 'UNKNOWN');
       }
+  });
+
+  fastify.get('/:id/stats', async (request, reply) => {
+    const id = Number(request.params.id);
+    if (!id) return replyError(reply, 'INVALID_USER_ID');
+
+    try {
+      const row = await dbGet(
+        `SELECT wins, losses, games_played, win_streak, elo
+        FROM users
+        WHERE id = ?`,
+        [id]
+      );
+
+      if (!row) return replyError(reply, 'USER_NOT_FOUND');
+
+      const { wins, losses, games_played, win_streak, elo } = row;
+      const winRate = games_played > 0 ? Math.round((wins / games_played) * 100) : 0;
+
+      return reply.send({
+        ok: true,
+        wins,
+        losses,
+        played: games_played,
+        winRate,
+        streak: win_streak,
+        elo
+      });
+    } catch (err) {
+      request.log.error({ msg: 'GET /users/:id/stats failed', err});
+      return replyError(reply, 'UNKNOWN');
+    }
+  });
+
+  fastify.get('/ranking', async (request, reply) => {
+    try {
+      const rows = await new Promise((resolve, reject) => {
+        db.all(
+          `SELECT id, username, wins, losses, elo
+          FROM users
+          WHERE username != 'AI'
+          ORDER BY elo DESC
+          LIMIT 50`,
+          [],
+          (err, result) => (err ? reject(err) : resolve(result))
+        );
+      });
+
+      const ranking = rows.map((u, idx) => {
+        const wins = Number(u.wins || 0);
+        const losses = Number(u.losses || 0);
+        const played = wins + losses;
+        const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
+
+        return {
+          id: u.id,
+          rank: idx + 1,
+          username: u.username,
+          wins,
+          losses,
+          elo: u.elo,
+          winRate
+        };
+      });
+      
+      return reply.send({ ok: true, ranking});
+    } catch(err) {
+      request.log.error({ msg: 'GET /users/ranking failed', err });
+      return replyError(reply, 'UNKNOWN');
+    }
   });
 }
 
