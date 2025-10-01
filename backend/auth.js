@@ -110,6 +110,29 @@ async function createAndStoreRefreshToken(userId) {
   return raw; // retourne la valeur à mettre en cookie
 }
 
+function passwordPolicyErrors(password, { username, email }) {
+  const errs = [];
+  const pw = String(password || '');
+
+  if (pw.length < 6) errs.push('Le mot de passe doit contenir au moins 6 caractères.');
+  if (!/[a-z]/.test(pw)) errs.push('Le mot de passe doit contenir au moins une minuscule.');
+  if (!/[A-Z]/.test(pw)) errs.push('Le mot de passe doit contenir au moins une majuscule.');
+  if (!/\d/.test(pw)) errs.push('Le mot de passe doit contenir au moins un chiffre.');
+  if (!/[^A-Za-z0-9]/.test(pw)) errs.push('Le mot de passe doit contenir au moins un caractère spécial.');
+
+  // Interdits : username et email (insensibles à la casse)
+  const uname = String(username || '').toLowerCase();
+  const mail  = String(email || '').toLowerCase();
+  const local = mail.split('@')[0] || '';
+  const pwLower = pw.toLowerCase();
+
+  if (uname && pwLower.includes(uname)) errs.push("Le mot de passe ne doit pas contenir le nom d’utilisateur.");
+  if (mail  && pwLower.includes(mail))  errs.push("Le mot de passe ne doit pas contenir votre e-mail.");
+  if (local && pwLower.includes(local)) errs.push("Le mot de passe ne doit pas contenir la partie locale de votre e-mail.");
+
+  return errs;
+}
+
 // ---------- Plugin de routes ----------
 async function authRoute(fastify) {
   // Google OAuth: on garde le flux, mais on NE pose PAS l’auth finale ici (2FA obligatoire ensuite)
@@ -145,6 +168,15 @@ async function authRoute(fastify) {
     );
     if (exists) {
       return reply.code(400).send({ ok: false, error_key: 'auth.user_exists' });
+    }
+
+    const policyErrors = passwordPolicyErrors(password, { username, email });
+    if (policyErrors.length) {
+      return reply.code(400).send({
+        ok: false,
+        error_key: 'auth.weak_password',
+        details: policyErrors,
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
