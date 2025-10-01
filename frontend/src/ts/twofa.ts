@@ -1,9 +1,10 @@
 import { t } from "../i18n";
 import { fetchWithAuth } from "./utils";
+import { navigate } from "./main";
 
 const API_BASE =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    ? "http://localhost:3000"
+    ? "https://localhost:8443"
     : "";
 
 export function initTwofaPage() {
@@ -14,8 +15,7 @@ export function initTwofaPage() {
     const back = document.getElementById("twofaBackBtn") as HTMLButtonElement | null;
 
     if (!sessionStorage.getItem("2fa:pending")) {
-        history.replaceState({}, "", "/login");
-        window.dispatchEvent(new PopStateEvent("popstate"));
+        navigate("/login", true);
         return;
     }
 
@@ -41,8 +41,7 @@ export function initTwofaPage() {
         localStorage.setItem("auth", JSON.stringify(body.user));
         sessionStorage.removeItem("2fa:pending");
         window.dispatchEvent(new CustomEvent("auth:changed"));
-        history.pushState({}, "", "/dashboard");
-        window.dispatchEvent(new PopStateEvent("popstate"));
+        await navigate("/dashboard");
     } catch {
         msg && (msg.textContent = t("common.network_error"));
      }
@@ -63,7 +62,6 @@ export function initTwofaPage() {
 
     back?.addEventListener("click", () => {
         sessionStorage.removeItem("2fa:pending");
-        history.pushState({}, "", "/login");
-        window.dispatchEvent(new PopStateEvent("popstate"));
+        navigate("/login");
     });
 }
