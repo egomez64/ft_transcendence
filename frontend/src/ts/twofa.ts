@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { fetchWithAuth } from "./utils";
 
 const API_BASE =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
@@ -25,11 +26,9 @@ export function initTwofaPage() {
         const code = (codeEl?.value || "").trim();
 
     try {
-        const res = await fetch(`${API_BASE}/api/auth/2fa/verify`, {
+        const res = await fetchWithAuth("/api/auth/2fa/verify", {
             method: "POST",
-            headers: { "Content-Type": "application/json"},
-            credentials: "include",
-            body: JSON.stringify({ code }),
+            json: { code },
         });
         const body = await res.json().catch(() => ({} as any));
 
@@ -52,9 +51,8 @@ export function initTwofaPage() {
     resend?.addEventListener("click", async () => {
         try {
             resend.disabled = true;
-            const res = await fetch(`${API_BASE}/api/auth/2fa/resend`, {
+            const res = await fetchWithAuth("/api/auth/2fa/resend", {
                 method: "POST",
-                credentials: "include",
             });
             const body = await res.json().catch(() => ({} as any));
             msg && (msg.textContent = res.ok && body.ok ? t("twofa.resent") : (body?.error || t("common.server_error")));

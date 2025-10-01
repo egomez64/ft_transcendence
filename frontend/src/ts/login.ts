@@ -1,5 +1,6 @@
 import { makeSetMsg } from "./utils";
 import { initI18n, setLang, applyTranslations, t } from "../i18n";
+import { fetchWithAuth } from "./utils";
 
 /*export function mountLoginHandlers() {
   if (handleOAuthRedirectFromGoogle()) return;
@@ -157,11 +158,9 @@ export function mountLoginHandlers() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetchWithAuth("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // important pour les cookies
-        body: JSON.stringify(payload),
+        json: payload,
       });
       const body = await res.json().catch(() => ({} as any));
 

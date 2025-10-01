@@ -1,5 +1,6 @@
 import {t} from "../i18n";
 import { makeSetMsg } from "./utils";
+import { fetchWithAuth } from "./utils";
 
 export function mountRegisterHandlers() {
   const form = document.getElementById('registerForm') as HTMLFormElement | null;
@@ -30,10 +31,9 @@ export function mountRegisterHandlers() {
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetchWithAuth('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        json: payload,
       });
 
       const body = await res.json().catch(() => ({}));

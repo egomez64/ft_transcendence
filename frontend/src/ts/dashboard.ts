@@ -174,7 +174,7 @@ async function loadStats(userId: number) {
     }
 
     // 2) Récup stats
-    const res = await fetch(`/api/users/${userId}/stats`);
+    const res = await fetchWithAuth(`/api/users/${userId}/stats`);
     if (!res.ok) {
       showRetry("common.server_error");
       return;
@@ -196,7 +196,7 @@ async function loadStats(userId: number) {
 
     // 5) Récup du rang via /ranking
     try {
-      const resRank = await fetch("/api/users/ranking");
+      const resRank = await fetchWithAuth("/api/users/ranking");
       if (resRank.ok) {
         const data = await resRank.json();
         const me = data?.ranking?.find((u: any) => u.id === userId);
@@ -227,7 +227,7 @@ async function loadRanking() {
     state.textContent = t("common.loading");
     list.innerHTML = "";
 
-    const res = await fetch("/api/users/ranking");
+    const res = await fetchWithAuth("/api/users/ranking");
     if (!res.ok) {
       state.textContent = t("common.server_error");
       return;

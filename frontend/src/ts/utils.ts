@@ -49,23 +49,48 @@ export function clearMsg(target?: string | HTMLElement | null) {
 }
 
 export async function fetchWithAuth(input: RequestInfo | URL, init: any = {}) {
-	const headers = new Headers(init.headers || {});
-	if (init.json !== undefined) {
-		headers.set('Content-Type', 'application/json');
-		init = { ...init, body: JSON.stringify(init.json) };
-	}
-	const opts: RequestInit = { credentials: 'include', ...init, headers };
+  // --- normalise l'URL : retire localhost:3000/5173 pour passer par Nginx ---
+  function normalize(u: string): string {
+    try {
+      const abs = new URL(u.toString());
+      if (abs.host === "localhost:3000" || abs.host === "localhost:5173") {
+        return abs.pathname + abs.search + abs.hash;
+      }
+      return u.toString();
+    } catch {
+      return u
+        .toString()
+        .replace(/^https?:\/\/localhost:3000/, "")
+        .replace(/^https?:\/\/localhost:5173/, "");
+    }
+  }
 
-	let res = await fetch(input as any, opts);
-	if (res.status !== 401) return res;
+  const normalized =
+    typeof input === "string" || input instanceof URL
+      ? normalize(input.toString())
+      : (input as any);
 
-	// Tente un refresh
-	const refreshRes = await fetch('/api/auth/token/refresh', {
-	method: 'POST',
-	credentials: 'include',
-	});
-	if (refreshRes.ok) {
-		res = await fetch(input as any, opts);
-	}
-	return res;
+  // --- JSON helper ---
+  const headers = new Headers(init.headers || {});
+  if (init.json !== undefined) {
+    headers.set("Content-Type", "application/json");
+    init = { ...init, body: JSON.stringify(init.json) };
+  }
+
+  const opts: RequestInit = { credentials: "include", ...init, headers };
+
+  // --- 1er appel ---
+  let res = await fetch(normalized as any, opts);
+  if (res.status !== 401) return res;
+
+  // --- refresh token ---
+  const refreshRes = await fetch("/api/auth/token/refresh", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (refreshRes.ok) {
+    res = await fetch(normalized as any, opts);
+  }
+  return res;
 }

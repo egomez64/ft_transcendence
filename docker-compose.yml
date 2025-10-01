@@ -14,7 +14,8 @@ services:
       - ./backend:/app
       - /app/node_modules
       - sqlite_data:/data/app.sqlite
-    networks: [ftnet]
+    networks:
+      - ftnet
     command: npm run dev
 
   frontend:
@@ -30,8 +31,25 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    networks: [ftnet]
+    networks:
+      - ftnet
     command: npm run dev -- --host 0.0.0.0
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    restart: always
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - ftnet
 
 networks:
   ftnet:

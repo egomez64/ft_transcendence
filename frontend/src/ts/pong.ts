@@ -18,6 +18,7 @@ import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { io } from "socket.io-client";
 import { currentUser } from "./layout";
 import { t } from "../i18n";
+import { fetchWithAuth } from "./utils";
 
 /** Informe le bracket si on est en tournoi */
 function notifyTournamentIfAny(winnerName: string, scoreL: number, scoreR: number) {
@@ -255,7 +256,7 @@ function createCameras(scene: Scene) {
 async function finishGame(scoreP1: number, scoreP2: number) {
   try {
     // 1️⃣ Récupérer le dernier match du joueur
-    const res = await fetch("/api/match/latest", { credentials: "include" });
+    const res = await fetchWithAuth("/api/match/latest");
     const data = await res.json();
 
     if (!data.ok || !data.match_id) {
@@ -266,11 +267,9 @@ async function finishGame(scoreP1: number, scoreP2: number) {
     const matchId = data.match_id;
 
     // 2️⃣ Terminer le match
-    const finishRes = await fetch(`/api/match/${matchId}/finish`, {
+    const finishRes = await fetchWithAuth(`/api/match/${matchId}/finish`, {
       method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ score_p1: scoreP1, score_p2: scoreP2 })
+      json: { score_p1: scoreP1, score_p2: scoreP2 },
     });
 
     const finishData = await finishRes.json();

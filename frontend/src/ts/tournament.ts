@@ -1,13 +1,13 @@
 // src/ts/tournament.ts
 import { applyTranslations, t } from "../i18n";
 import { currentUser } from "./layout";
+import { fetchWithAuth } from "./utils";
 
 const API_BASE =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
     ? "http://localhost:3000"
     : "";
 
-const TOURNAMENT_LOGIN = `${API_BASE}/api/tournament/login`;
 
 type UserMini = { id: number; username: string; email?: string };
 type LoginResp =
@@ -75,11 +75,9 @@ function mountSlotLogin(i: 2 | 3 | 4) {
     b.disabled = true;
 
     try {
-      const res = await fetch(TOURNAMENT_LOGIN, {
+      const res = await fetchWithAuth("/api/tournament/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // pas nécessaire ici, mais ok
-        body: JSON.stringify({ username: u.value.trim(), password: p.value }),
+        json: { username: u.value.trim(), password: p.value },
       });
       const body = (await res.json().catch(() => ({}))) as LoginResp;
 
