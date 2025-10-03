@@ -14,6 +14,7 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
+    "@fastify/multipart": "^9.2.1",
     "@fastify/oauth2": "^8.1.2",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.1",
