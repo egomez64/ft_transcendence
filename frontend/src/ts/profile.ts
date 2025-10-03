@@ -6,11 +6,9 @@ const AVATAR = {
   MAX_URL_LEN: 1000,
   ALLOWED_PROTOCOLS: new Set<'http:' | 'https:'>(['http:', 'https:']),
   EXT_WHITELIST: /\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i,
-  //bloque ip/localhost 
   BLOCK_HOST_RE: /^(localhost|127\.0\.0\.1|0\.0\.0\.0|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|192\.168\.\d+\.\d+)$/i,
 };
 
-//utils
 function pageIsHttps() {
   return location.protocol === 'https:';
 }
@@ -35,36 +33,23 @@ function parseUrlSafe(raw: string): URL | null {
 
 function isAllowedUrl(u: URL): string | true {
   const proto = u.protocol.toLowerCase();
-
-  // Protocoles autorisés
   if (!(proto === 'http:' || proto === 'https:')) {
-    return "profile.avatar.invalid_scheme";
+    return "Protocole non autorisé (http ou https uniquement).";
   }
-
-  // https obligatoire si ta page est servie en https
   if (location.protocol === 'https:' && proto !== 'https:') {
-    return "profile.avatar.invalid_scheme";
+    return "En HTTPS, l'avatar doit être en https://";
   }
-
-  // Hôtes interdits (localhost, LAN…)
   if (AVATAR.BLOCK_HOST_RE.test(u.hostname)) {
-    return "profile.avatar.invalid_url";
+    return "Hôte interdit (IP/localhost).";
   }
-
-  // Longueur max
   if (u.href.length > AVATAR.MAX_URL_LEN) {
-    return "profile.avatar.invalid_url";
+    return "URL trop longue.";
   }
-
-  // Extension indicative
   if (!AVATAR.EXT_WHITELIST.test(u.pathname)) {
-    return true; // tolérant : avertir mais pas bloquer
+    return true;
   }
-
   return true;
 }
-
-//Test changement d'image
 
 function testImage(url: string, timeoutMs = 5000): Promise<boolean> {
   return new Promise((resolve) => {
@@ -90,20 +75,20 @@ function testImage(url: string, timeoutMs = 5000): Promise<boolean> {
       resolve(false);
     };
 
-    //cache-buster (evite le 404 cache)
     const sep = url.includes('?') ? '&' : '?';
     img.src = url + sep + '_cb=' + Date.now();
   });
 }
 
-// Integration 
-
-export function mountProfileHandlers() {
+// ================================
+// Profil utilisateur
+// ================================
+export async function mountProfileHandlers() {
   const form = document.getElementById('profileForm') as HTMLFormElement | null;
   const msg = document.getElementById('profileMsg') as HTMLParagraphElement | null;
   const avatarPreview = document.getElementById('profileAvatarPreview') as HTMLImageElement | null;
   if (!form) return;
-  if (form.dataset.bound === '1') return; //evite le double binding
+  if (form.dataset.bound === '1') return;
   form.dataset.bound = '1';
 
   const emailIn     = form.querySelector<HTMLInputElement>('input[name="email"]');
@@ -111,24 +96,27 @@ export function mountProfileHandlers() {
   const aliasIn     = form.querySelector<HTMLInputElement>('input[name="alias"]');
   const avatarUrlIn = form.querySelector<HTMLInputElement>('input[name="avatar_url"]');
 
+  // 🔑 récupère l'utilisateur via /me
   let user: any = null;
-  try { user = JSON.parse(localStorage.getItem('auth') || 'null'); } catch {}
-  if (!user) { 
+  try {
+    const res = await fetchWithAuth("/api/auth/me");
+    if (!res.ok) throw new Error("Not authenticated");
+    const data = await res.json();
+    if (!data.ok || !data.user) throw new Error("No user");
+    user = data.user;
+  } catch {
+    // si pas connecté → redirige vers login
     history.replaceState({}, '', '/login');
     window.dispatchEvent(new PopStateEvent('popstate'));
     return;
   }
 
-  //email lecture seule
   if (emailIn) { emailIn.value = user.email ?? ''; emailIn.disabled = true; }
   if (usernameIn) usernameIn.value = user.username ?? '';
   if (aliasIn) aliasIn.value = user.alias ?? '';
   if (avatarUrlIn) avatarUrlIn.value = user.avatar_url ?? '';
-
-  //preview
   if (avatarPreview) avatarPreview.src = user.avatar_url || AVATAR.FALLBACK;
 
-  //verif
   let debounceTimer: number | undefined;
 
   async function applyAvatar(raw: string) {
@@ -156,7 +144,6 @@ export function mountProfileHandlers() {
       return;
     }
 
-    //test reel
     setMsg(msg, "profile.avatar.checking", true);
     markError(avatarUrlIn, false);
 
@@ -178,8 +165,8 @@ export function mountProfileHandlers() {
   });
   avatarUrlIn?.addEventListener('blur', () => applyAvatar(avatarUrlIn!.value));
 
-  //submit
-  form.addEventListener('submit', async(e) => {
+  // submit
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const newAvatar = (avatarUrlIn?.value || '').trim();
@@ -194,7 +181,6 @@ export function mountProfileHandlers() {
       }
     }
 
-    // maj user
     const updated = {
       ...user,
       username: (usernameIn?.value || '').trim(),
@@ -203,26 +189,18 @@ export function mountProfileHandlers() {
     };
     setMsg(msg, "profile.saving");
 
-    //appel API
     try {
       const res = await fetchWithAuth(`/api/users/${user.id}`, {
         method: 'PUT',
-        json: {
-          username: updated.username,
-          alias: updated.alias,
-          avatar_url: updated.avatar_url,
-        },
+        json: updated,
       });
 
       const data = await res.json().catch(() => ({}));
-
-      //gestion erreur
 
       if (!res.ok) {
         markError(usernameIn, false);
         markError(aliasIn, false);
 
-        //conflits (username/alias pris)
         if (res.status === 409) {
           const err = (data?.error || '').toLowerCase();
           if (err.includes('username')) {
@@ -239,10 +217,8 @@ export function mountProfileHandlers() {
           }
         }
 
-        //erreur de validation
         if (res.status === 400 && Array.isArray(data?.details) && data.details.length) {
           setMsg(msg, data.details[0], false);
-          //surligner
           if (String(data.details[0]).toLowerCase().includes('username')) {
             markError(usernameIn, true);
             usernameIn?.focus();
@@ -258,28 +234,20 @@ export function mountProfileHandlers() {
         return;
       }
 
-    //succes on recupere l'utilisateur
-    const updateUser = data?.user || {};
-    if (usernameIn) usernameIn.value = updateUser.username ?? updated.username;
-    if (aliasIn) aliasIn.value = updateUser.alias ?? (updated.alias || '');
-    if (avatarUrlIn) avatarUrlIn.value = updateUser.avatar_url ?? (updated.avatar_url || '');
-    const avatarPreview = document.getElementById('profileAvatarPreview') as HTMLImageElement | null;
-    if (avatarPreview) avatarPreview.src = updateUser.avatar_url || AVATAR.FALLBACK;
+      const updateUser = data?.user || {};
+      if (usernameIn) usernameIn.value = updateUser.username ?? updated.username;
+      if (aliasIn) aliasIn.value = updateUser.alias ?? (updated.alias || '');
+      if (avatarUrlIn) avatarUrlIn.value = updateUser.avatar_url ?? (updated.avatar_url || '');
+      if (avatarPreview) avatarPreview.src = updateUser.avatar_url || AVATAR.FALLBACK;
 
-    //maj du localstorage
-    const next = { ...user, ...updateUser};
-    localStorage.setItem('auth', JSON.stringify(next));
-
-    //feedback global event
-    setMsg(msg, 'profile.saved', true);
-    window.dispatchEvent(new CustomEvent('auth:changed'));
+      setMsg(msg, 'profile.saved', true);
+      window.dispatchEvent(new CustomEvent('auth:changed'));
     }
     catch (err) {
       setMsg(msg, 'common.network_error', false);
     }
   });
-  
-  //reset bouton
+
   const cancel = document.getElementById('profileCancel') as HTMLButtonElement | null;
   cancel?.addEventListener('click', () => {
     if (usernameIn) usernameIn.value = user.username ?? '';
