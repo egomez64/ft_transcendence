@@ -98,7 +98,7 @@
 		"email_label": "Correo electrónico (solo lectura)",
 		"username_label": "nombre de usuario",
 		"alias_label": "Alias  (público)",
-		"avatar_url_label": "URL de avatar",
+		"avatar_file_label": "Subir avatar",
 		"avatar" : {
 			"invalid_scheme" : "URL no válida: utilice https://",
 			"checking": "Comprobando la imagen…",
