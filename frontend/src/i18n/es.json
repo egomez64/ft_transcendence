@@ -80,7 +80,9 @@
 		"network_error": "Error de red. Revisa tu conexión.",
 		"server_error" : "Se ha producido un error. Inténtalo de nuevo.",
 		"loading": "Cargando...",
-		"retry": "Reintentar"
+		"retry": "Reintentar",
+		"save": "ahorrar",
+		"cancel": "Cancelar"
 	},
 	"profile": {
 		"saving": "Copia de seguridad en progreso...",
@@ -88,6 +90,11 @@
 		"update_error": "Error al actualizar.",
 		"username_taken": "Este nombre de usuario ya está tomado.",
 		"alias_taken": "Este alias ya está tomado.",
+		"avatar_preview": "Vista previa de tu imagen de perfil",
+		"email_label": "Correo electrónico (solo lectura)",
+		"username_label": "nombre de usuario",
+		"alias_label": "Alias  (público)",
+		"avatar_url_label": "URL de avatar",
 		"avatar" : {
 			"invalid_scheme" : "URL no válida: utilice https://",
 			"checking": "Comprobando la imagen…",

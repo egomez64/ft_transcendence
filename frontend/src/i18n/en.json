@@ -80,7 +80,9 @@
 		"network_error": "Network error. Check your connection.",
 		"server_error" : "An error has occurred. Please try again.",
 		"loading": "Loading...",
-		"retry": "Retry"
+		"retry": "Retry",
+		"save": "Save",
+		"cancel": "Cancel"
 	},
 	"profile": {
 		"saving": "Backup in progress...",
@@ -88,6 +90,11 @@
 		"update_error": "Error while updating.",
 		"username_taken": "This username is already taken.",
 		"alias_taken": "This alias is already taken.",
+		"avatar_preview": "Preview of your profile picture",
+		"email_label": "Email (read-only)",
+		"username_label": "Username",
+		"alias_label": "Alias (public)",
+		"avatar_url_label": "Avatar URL",
 		"avatar" : {
 			"invalid_scheme" : "Invalid URL: Use https://",
 			"checking": "Checking the image…",

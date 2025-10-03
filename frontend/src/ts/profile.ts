@@ -38,22 +38,22 @@ function isAllowedUrl(u: URL): string | true {
 
   // Protocoles autorisés
   if (!(proto === 'http:' || proto === 'https:')) {
-    return "Protocole non autorisé (http ou https uniquement).";
+    return "profile.avatar.invalid_scheme";
   }
 
   // https obligatoire si ta page est servie en https
   if (location.protocol === 'https:' && proto !== 'https:') {
-    return "En HTTPS, l'avatar doit être en https://";
+    return "profile.avatar.invalid_scheme";
   }
 
   // Hôtes interdits (localhost, LAN…)
   if (AVATAR.BLOCK_HOST_RE.test(u.hostname)) {
-    return "Hôte interdit (IP/localhost).";
+    return "profile.avatar.invalid_url";
   }
 
   // Longueur max
   if (u.href.length > AVATAR.MAX_URL_LEN) {
-    return "URL trop longue.";
+    return "profile.avatar.invalid_url";
   }
 
   // Extension indicative

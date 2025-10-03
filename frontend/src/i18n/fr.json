@@ -80,7 +80,9 @@
 		"server_error" : "Une erreur est survenue. Réessayez.",
 		"loading": "Chargement...",
 		"retry": "Réessayer",
-		"http_error": "Erreur {status}"
+		"http_error": "Erreur {status}",
+		"save": "sauvegardé",
+		"cancel": "Annuler"
 	},
 	"profile": {
 		"saving": "Sauvegarde en cours...",
@@ -88,6 +90,11 @@
 		"update_error": "Erreur lors de la mise à jour.",
 		"username_taken": "Ce nom d'utilisateur est déjà pris.",
 		"alias_taken": "Cet alias est déjà pris.",
+		"avatar_preview": "Aperçu de votre image de profil",
+		"email_label": "Email (lecture seulement",
+		"username_label": "Nom d’utilisateur",
+		"alias_label": "Alias (publique)",
+		"avatar_url_label": "URL de l'avatar",
 		"avatar" : {
 			"invalid_scheme" : "URL invalide : utilise https://",
 			"checking": "Vérification de l’image…",

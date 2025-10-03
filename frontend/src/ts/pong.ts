@@ -295,7 +295,7 @@ function wireNetwork(
 ) {
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
-  const ws = io("http://localhost:3000", { path: "/ws", transports: ["websocket"] });
+  const ws = io("https://localhost:3000", { path: "/ws", transports: ["websocket"] });
 
   // Gestion d’epoch (anti mélange d’états si le serveur redémarre/restart une partie)
   let expectedEpoch: number | null = null;

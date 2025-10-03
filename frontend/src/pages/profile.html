@@ -1,5 +1,6 @@
 <section class="max-w-3xl mx-auto mt-20 bg-gradient-to-br from-[#581c87b3] via-[#be185d99] to-[#581c87b3] p-8 sm:p-12 rounded-2xl shadow-2xl text-pink-100 space-y-8">
-    <h2 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#00ffd5] via-[#ff00c8] to-[#7f00ff] drop-shadow">
+    <h2 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#00ffd5] via-[#ff00c8] to-[#7f00ff] drop-shadow"
+        data-i18n="nav.profile">
         Profil
     </h2>
 
@@ -9,35 +10,37 @@
             <div class="w-32 h-32 rounded-full border border-pink-500/40 shadow-[0_0_20px_#ff00c8] overflow-hidden bg-black/40">
                 <img id="profileAvatarPreview" src="/assets/login.png" alt="Avatar" class="w-full h-full object-cover">
             </div>
-            <p class="text-sm text-pink-200/80 text-center">Apercu de votre image de profil</p>  
+            <p class="text-sm text-pink-200/80 text-center" data-i18n="profile.avatar_preview">Apercu de votre image de profil</p>  
         </div>
 
         <form id="profileForm" class="md:col-span-2 grid gap-4">
             <div class="grid gap-2">
-                <label class="text-pink-200/90 text-sm">Email (lecture seule)</label>
+                <label class="text-pink-200/90 text-sm" data-i18n="profile.email_label">Email (lecture seule)</label>
                 <input name="email" type="email" disabled class="px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 placeholder-pink-300 focus:outline-none" />
             </div>
 
             <div class="grid gap-2">
-                <label class="text-pink-200/90 text-sm">Nom d'utilisateur</label>
-                <input name="username" type="text" placeholder="Nom d'utilisateur" class="px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 placeholder-pink-300 focus:outline-none" />
+                <label class="text-pink-200/90 text-sm" data-i18n="profile.username_label">Nom d'utilisateur</label>
+                <input name="username" type="text" placeholder="" class="px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 placeholder-pink-300 focus:outline-none" />
             </div>
 
             <div class="grid gap-2">
-                <label class="text-pink-200/80 text-sm">Alias (public)</label>
+                <label class="text-pink-200/80 text-sm" data-i18n="profile.alias_label">Alias (public)</label>
                 <input name="alias" type="text" placeholder="Ex: neoWave" class="px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 placeholder-pink-300 focus:outline-none" />
             </div>
 
             <div class="grid gap-2">
-                <label class="text-pink-200/90 text-sm">URL de l'avatar</label>
+                <label class="text-pink-200/90 text-sm" data-i18n="profile.avatar_url_label">URL de l'avatar</label>
                 <input name="avatar_url" type="url" placeholder="https://..." class="px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 placeholder-pink-300 focus:outline-none" />
             </div>
 
             <div class="flex items-center gap-3 pt-2">
-                <button type="submit" class="rounded-full px-6 py-3 bg-pink-600 hover:bg-pink-700 hover:scale-105 transition shadow-[0_0_15px_theme(colors.pink.500)] font-semibold">
+                <button type="submit" class="rounded-full px-6 py-3 bg-pink-600 hover:bg-pink-700 hover:scale-105 transition shadow-[0_0_15px_theme(colors.pink.500)] font-semibold"
+                    data-i18n="common.save">
                     💾 Enregistrer
                 </button>
-                <button type="button" id="profileCancel" class="rounded-full px-6 py-3 bg-black/40 border border-pink-500/30 hover:bg-black/60 transition">
+                <button type="button" id="profileCancel" class="rounded-full px-6 py-3 bg-black/40 border border-pink-500/30 hover:bg-black/60 transition"
+                    data-i18n="common.cancel">
                     Annuler
                 </button>
                 <p id="profileMsg" class="ml-auto text-sm text-pink-200"></p>
