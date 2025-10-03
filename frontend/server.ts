@@ -61,6 +61,12 @@ await app.register(cookie);
 
 await app.register(staticPlugin, { root: PUBLIC, prefix: '/', decorateReply: false });
 
+await app.register(staticPlugin, {
+    root: path.join(ROOT, 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false
+});
+
 for ( const route of Object.keys(ROUTES)) {
     app.get(route, async (req, rep) => {
         const def = ROUTES[route];
