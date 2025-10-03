@@ -21,7 +21,10 @@
 	},
 	"register": {
 		"register": "Registro",
-		"succes": "¡Cuenta creada!"
+		"succes": "¡Cuenta creada!",
+		"username": "Nombre de usuario",
+		"email": "Email",
+		"password": "Contraseña"
 	},
 	"dashboard": {
 		"stat": "estadística",
