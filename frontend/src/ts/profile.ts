@@ -67,8 +67,8 @@ export async function mountProfileHandlers() {
     setMsg(msg, "profile.saving");
 
     try {
-      const res = await fetchWithAuth(`/api/users/${user.id}/avatar`, {
-        method: 'POST',
+      const res = await fetchWithAuth(`/api/users/${user.id}`, {
+        method: 'PUT',
         body: formData,
       });
       const data = await res.json().catch(() => ({}));

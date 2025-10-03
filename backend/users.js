@@ -3,7 +3,6 @@ const { replyError } = require('./i18n_errors');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const multipart = require('@fastify/multipart');
-const { default: fastifyOauth2 } = require('@fastify/oauth2');
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -25,7 +24,7 @@ function validateAlias(alias) {
   if (a.length < 2 || a.length > 24) {
     return { ok: false, errors: ['alias.length'] };
   }
-  return { ok: true, value: a};
+  return { ok: true, value: a };
 }
 
 function validateUsername(username) {
@@ -41,31 +40,55 @@ function validateUsername(username) {
 async function usersRoutes(fastify) {
   await fastify.register(multipart);
 
-  //PUT /api/users/:id
+  // --- REPLACE: fusion avatar + infos dans un seul PUT
   fastify.put('/:id', async (request, reply) => {
     const id = Number(request.params.id);
     if (!id) return replyError(reply, 'INVALID_USER_ID');
 
-    const { username, alias, avatar_url } = request.body || {};
+    const parts = request.parts();
+    let fields = {};
+    let filePart = null;
 
+    for await (const part of parts) {
+      if (part.file && part.fieldname === 'avatar') {
+        filePart = part;
+      } else if (part.type === 'field') {
+        fields[part.fieldname] = part.value;
+      }
+    }
+
+    const username = fields.username || '';
+    const alias = fields.alias || '';
+
+    // validations
     const user = validateUsername(username);
     if (!user.ok)
-        return reply.code(400).send({ ok: false, error_key: 'auth.invalid_username', details: user.errors });
+      return reply.code(400).send({ ok: false, error_key: 'auth.invalid_username', details: user.errors });
 
     const ali = validateAlias(alias);
     if (!ali.ok)
-        return reply.code(400).send({ ok: false, error_key: 'users.invalid_alias', details: ali.errors });
+      return reply.code(400).send({ ok: false, error_key: 'users.invalid_alias', details: ali.errors });
 
     const newUsername = user.value;
     const newAlias = ali.value === '' ? null : ali.value;
-    const newAvatar = (avatar_url && String(avatar_url).trim()) || null;
+    let newAvatar = null;
+
+    // --- si avatar uploadé
+    if (filePart) {
+      const filename = `avatar_${id}_${Date.now()}${path.extname(filePart.filename)}`;
+      const dest = path.join(__dirname, '..', 'uploads', 'avatars', filename);
+      await fs.mkdir(path.dirname(dest), { recursive: true });
+      const buf = await filePart.toBuffer();
+      await fs.writeFile(dest, buf);
+      newAvatar = `/uploads/avatars/${filename}`;
+    }
 
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
     if (!existing) return replyError(reply, 'USER_NOT_FOUND');
 
     try {
       await dbRun(
-        `UPDATE users SET username = ?, alias = ?, avatar_url = ? WHERE id = ?`,
+        `UPDATE users SET username = ?, alias = ?, avatar_url = COALESCE(?, avatar_url) WHERE id = ?`,
         [newUsername, newAlias, newAvatar, id]
       );
 
@@ -73,6 +96,7 @@ async function usersRoutes(fastify) {
         'SELECT id, email, username, alias, avatar_url, wins, losses FROM users WHERE id = ?',
         [id]
       );
+
       return reply.send({ ok: true, user: updated });
     } catch (err) {
       fastify.log.error({ msg: 'UPDATE users failed', err });
@@ -87,7 +111,7 @@ async function usersRoutes(fastify) {
     }
   });
 
-  //GET /api/users/:id/stats
+  // --- Stats
   fastify.get('/:id/stats', async (request, reply) => {
     const id = Number(request.params.id);
     if (!id) return replyError(reply, 'INVALID_USER_ID');
@@ -99,14 +123,14 @@ async function usersRoutes(fastify) {
       if (!row) return replyError(reply, 'USER_NOT_FOUND');
       const { wins, losses, games_played, win_streak, elo } = row;
       const winRate = games_played > 0 ? Math.round((wins / games_played) * 100) : 0;
-      return reply.send({ ok: true, wins, losses, played: games_played, winRate, streak: win_streak, elo }); 
+      return reply.send({ ok: true, wins, losses, played: games_played, winRate, streak: win_streak, elo });
     } catch (err) {
       request.log.error({ msg: 'GET /users/:id/stats failed', err });
       return replyError(reply, 'UNKNOWN');
     }
   });
 
-  //get /api/users/ranking
+  // --- Ranking
   fastify.get('/ranking', async (request, reply) => {
     try {
       const rows = await new Promise((resolve, reject) => {
@@ -125,44 +149,13 @@ async function usersRoutes(fastify) {
         const losses = Number(u.losses || 0);
         const played = wins + losses;
         const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
-        return { id: u.id, rank: idx + 1, username: u.username, wins, losses, elo: u.elo, winRate};
+        return { id: u.id, rank: idx + 1, username: u.username, wins, losses, elo: u.elo, winRate };
       });
-      return reply.send({ ok: true, ranking});
+      return reply.send({ ok: true, ranking });
     } catch (err) {
       request.log.error({ msg: 'GET /users/ranking failed', err });
       return replyError(reply, 'UNKNOWN');
     }
-  });
-
-  // POST /api/users/:id/avatar
-  fastify.post('/:id/avatar', async (request, reply) => {
-    const id = Number(request.params.id);
-    if (!id) return replyError(reply, 'INVALID_USER_ID');
-
-    const parts = request.parts();
-    let filePart = null;
-
-    for await (const part of parts) {
-      if (part.file && part.fieldname === 'avatar') {
-        filePart = part;
-        break;
-      }
-    }
-    if (!filePart) {
-      return reply.code(400).send({ ok: false, error: 'NO_FILE' });
-    }
-
-    const filename = `avatar_${id}_${Date.now()}${path.extname(filePart.filename)}`;
-    const dest = path.join(__dirname, '..', 'uploads', 'avatars', filename);
-    await fs.mkdir(path.dirname(dest), { recursive: true });
-    const buf = await filePart.toBuffer();
-    await fs.writeFile(dest, buf);
-
-    const url = `/uploads/avatars/${filename}`;
-    await dbRun(`UPDATE users SET avatar_url = ? WHERE id = ?`, [url, id]);
-
-    const updated = await dbGet(`SELECT id, username, email, alias, avatar_url FROM users WHERE id = ?`, [id]);
-    return reply.send({ ok: true, user: updated });
   });
 }
 
