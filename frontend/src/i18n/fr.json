@@ -59,7 +59,8 @@
 		"friend_not_found": "Ami introuvable.",
 		"not_friends" : "Vous ne suivez pas cet utilisateur",
 		"add_error": "Impossible d'ajouter cet amis",
-		"remove_error": "Impossible de retirer cet ami."
+		"remove_error": "Impossible de retirer cet ami.",
+		"cannot_add_ai": "Vous ne pouvez pas ajouter l'IA comme ami."
 	},
 	"nav": {
 		"home": "Acceuil",

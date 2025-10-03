@@ -166,6 +166,12 @@ export async function initFriendsPage() {
       setMsg('friends.enter_handle', 'info');
       return;
     }
+
+    if (handle.toLowerCase() === 'ai') {
+    setMsg('friends.cannot_add_ai', 'err');
+    return;
+    }
+    
     try {
       btn.disabled = true;
       const res = await addFriend(handle);

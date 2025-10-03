@@ -59,7 +59,8 @@
 		"friend_not_found": "Friend not found.",
 		"not_friends" : "You are not following this user",
 		"add_error": "Unable to add this friend",
-		"remove_error": "Couldn't remove this friend"
+		"remove_error": "Couldn't remove this friend",
+		"cannot_add_ai": "You cannot add AI as a friend."
 	},
 	"nav": {
 		"home": "Home",

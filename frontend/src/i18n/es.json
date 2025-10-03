@@ -59,7 +59,8 @@
 		"friend_not_found": "Amigo no encontrado.",
 		"not_friends" : "No estás siguiendo a este usuario",
 		"add_error": "No se puede agregar a este amigo",
-		"remove_error": "No se pudo eliminar a este amigo."
+		"remove_error": "No se pudo eliminar a este amigo.",
+		"cannot_add_ai": "No se puede añadir la IA como amigo."
 	},
 	"nav": {
 		"home": "Hogar",
