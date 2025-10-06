@@ -28,8 +28,19 @@ export function currentUser(): Me {
   return AUTH_CACHE;
 }
 
-export function isAuthed(): boolean {
-  return !!AUTH_CACHE;
+export async function isAuthed(): Promise<boolean> {
+  try {
+    const res = await fetchWithAuth("/api/auth/me", {
+      method: "GET",
+      Credential: "include",
+      cache: "no-store",
+    });
+    if(!res.ok) return false;
+    const data = await res.json().catch(() => ({} as any));
+    return !!data?.ok;
+  } catch {
+    return false;
+  }
 }
 
 /* Gestion du menu de langue (inchangé) */

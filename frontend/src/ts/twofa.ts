@@ -39,7 +39,19 @@ export function initTwofaPage() {
 
       // ✅ Succès : le back a posé les cookies. On ne stocke plus rien dans localStorage.
       sessionStorage.removeItem("2fa:pending");
+
+      try {
+        const meRes = await fetchWithAuth("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        await meRes.text().catch(() => "");
+      } catch{}
+
       window.dispatchEvent(new CustomEvent("auth:changed"));
+      
+      await new Promise((r) => setTimeout(r, 0));
       await navigate("/dashboard");
     } catch {
       if (msg) msg.textContent = t("common.network_error");

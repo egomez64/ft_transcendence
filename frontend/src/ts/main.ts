@@ -74,11 +74,16 @@ export async function loadPage() {
   const key = routeFromLocation();
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
-  // guard d’accès
-  if (def.protected && !await isAuthed()) {
-    // on redirige vers /login UNE SEULE FOIS
-    await navigate("/login", true);
-    return;
+  if (def.protected) {
+    let authed = await isAuthed();
+    if (!authed) {
+      await new Promise((r) => setTimeout(r, 25));
+      authed = await isAuthed();
+    }
+    if (!authed) {
+      await navigate("/login", true);
+      return;
+    }
   }
 
   const app = document.getElementById("app");
@@ -93,7 +98,7 @@ export async function loadPage() {
       html = `<section class="max-w-xl mx-auto mt-24 bg-black/60 text-pink-100 rounded-xl p-6 border border-pink-500/30">
         <h2 class="text-2xl mb-2">Oups</h2>
         <p>Impossible de charger <code>${def.file}</code>.</p>
-      </section>`;
+        </section>`;
     }
     if (app) {
       app.innerHTML = html;
@@ -101,10 +106,9 @@ export async function loadPage() {
     }
   } else {
     app?.removeAttribute("data-ssr");
-    if (app) applyTranslations(app);
+    if (app) applyTranslations;
   }
 
-  // Attendre un élément clé si besoin (évite les handlers sur DOM pas prêt)
   const keyElMap: Record<string, string> = {
     friends: "#friendSearchForm",
   };
@@ -114,7 +118,11 @@ export async function loadPage() {
   await Promise.resolve();
   await new Promise(requestAnimationFrame);
 
-  try { def.mount?.(); } catch (e) { console.error("[mount]", key, e); }
+  try {
+    def.mount?.();
+  } catch (e) {
+    console.error("[mount]", key, e);
+  }
 
   setupAuthMenu();
 }
