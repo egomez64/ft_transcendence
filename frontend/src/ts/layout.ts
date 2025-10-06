@@ -1,14 +1,18 @@
-// layout.ts — version corrigée (affichage du username/avatar + menu réactif sans localStorage)
+// layout.ts — version synchronisée avec ton layout.html (langues + profil + logout)
 
 import { fetchWithAuth } from "./utils";
-import { t, applyTranslations } from "../i18n";
+import { t, applyTranslations, setLang } from "../i18n";
 
 /* Sélecteurs du layout */
 const SEL = {
-  authMenu: "#authMenu",
-  authBadgeName: "#authBadgeName",
+  authBtn: "#authBtn",
+  authUsername: "#authUsername",
+  authAvatarImg: "#authBtn img",
+  authDropdown: "#authDropdown",
+  profilsLink: "#profilsLink",
   logoutBtn: "#logoutBtn",
-  authAvatar: "#authAvatar", // ajouté pour gérer l’image du profil
+  langBtn: "#langDropdownBtn",
+  langMenu: "#langDropdownMenu",
 };
 
 /* Type utilisateur */
@@ -43,32 +47,44 @@ export async function isAuthed(): Promise<boolean> {
   }
 }
 
-/* Gestion du menu de langue (inchangé) */
+/* -------------------------------
+   🗣️ MENU LANGUE
+-------------------------------- */
 export function setupLangDropdown() {
-  const btn = document.getElementById("langDropdownBtn");
-  const menu = document.getElementById("langDropdownMenu");
+  const btn = document.querySelector(SEL.langBtn) as HTMLButtonElement | null;
+  const menu = document.querySelector(SEL.langMenu) as HTMLElement | null;
   if (!btn || !menu) return;
 
-  const openClass = "dropdown-open";
-
+  // Toggle d’ouverture
   btn.addEventListener("click", (e) => {
     e.preventDefault();
-    menu.classList.toggle(openClass);
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
   });
 
-  document.addEventListener(
-    "click",
-    (e) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest("#langDropdown")) menu.classList.remove(openClass);
-    },
-    { capture: true }
-  );
+  // Fermeture en cliquant ailleurs
+  document.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest("#langDropdown")) menu.classList.add("hidden");
+  });
+
+  // Sélection d'une langue
+  menu.querySelectorAll("[data-lang]").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      const lang = (e.currentTarget as HTMLElement).dataset.lang;
+      if (!lang) return;
+      menu.classList.add("hidden");
+      await setLang(lang);
+      applyTranslations(document.body);
+    });
+  });
 }
 
-/* --- Auth logic --- */
+/* -------------------------------
+   👤 AUTHENTIFICATION
+-------------------------------- */
 
-/** Recharge l'utilisateur depuis /api/auth/me et met à jour le cache */
+/** Recharge /api/auth/me et met à jour le cache */
 async function refreshAuth(): Promise<Me> {
   try {
     const res = await fetchWithAuth("/api/auth/me");
@@ -85,86 +101,98 @@ async function refreshAuth(): Promise<Me> {
   }
 }
 
-/** Met à jour le nom et l'avatar dans le header */
+/** Met à jour le header utilisateur sans recréer le HTML */
 export function renderAuthBadge() {
-  const nameEl = document.querySelector(SEL.authBadgeName) as HTMLElement | null;
-  const avatarEl = document.querySelector(SEL.authAvatar) as HTMLImageElement | null;
-  const menuEl = document.querySelector(SEL.authMenu) as HTMLElement | null;
+  const user = AUTH_CACHE;
+  const usernameEl = document.querySelector(SEL.authUsername) as HTMLElement | null;
+  const avatarEl = document.querySelector(SEL.authAvatarImg) as HTMLImageElement | null;
+  const authBtn = document.querySelector(SEL.authBtn) as HTMLAnchorElement | null;
+  const dropdown = document.querySelector(SEL.authDropdown) as HTMLElement | null;
 
-  if (!nameEl && !avatarEl && !menuEl) return;
+  if (!usernameEl || !authBtn || !avatarEl || !dropdown) return;
 
-  const u = currentUser();
-
-  if (!u) {
-    // Utilisateur non connecté → affichage du lien Login
-    if (menuEl) {
-      menuEl.innerHTML = `
-        <a href="/login" class="text-pink-300 hover:text-pink-100 transition">
-          ${t("login")}
-        </a>`;
-    }
+  if (!user) {
+    // Non connecté
+    usernameEl.classList.add("hidden");
+    avatarEl.src = "/assets/login.png";
+    authBtn.setAttribute("href", "/login");
+    dropdown.classList.add("hidden");
     return;
   }
 
-  // Utilisateur connecté → affichage nom + avatar + dropdown
-  if (menuEl) {
-    menuEl.innerHTML = `
-      <div id="authDropdownTrigger" class="flex items-center gap-2 cursor-pointer select-none relative">
-        <img id="authAvatar" src="${u.avatar_url || "/assets/login.png"}"
-          alt="avatar" class="w-8 h-8 rounded-full object-cover border border-pink-400/40" />
-        <span id="authBadgeName" class="font-semibold text-pink-200">${u.alias || u.username}</span>
-      </div>
-      <div id="authDropdown" class="hidden absolute mt-10 right-0 bg-[#1a1a2e]/95 rounded-lg shadow-lg border border-pink-500/20 py-2 w-40">
-        <a href="/profils" class="block px-4 py-2 hover:bg-pink-500/10 text-pink-200">${t("profile")}</a>
-        <button id="logoutBtn" class="block w-full text-left px-4 py-2 hover:bg-pink-500/10 text-pink-200">${t("logout")}</button>
-      </div>
-    `;
-
-    applyTranslations(menuEl);
-    setupDropdown();
-  }
+  // Connecté
+  usernameEl.textContent = user.alias || user.username;
+  usernameEl.classList.remove("hidden");
+  avatarEl.src = user.avatar_url || "/assets/login.png";
+  authBtn.setAttribute("href", "javascript:void(0)");
 }
 
-/** Gestion du dropdown utilisateur */
-function setupDropdown() {
-  const trigger = document.getElementById("authDropdownTrigger");
-  const dropdown = document.getElementById("authDropdown");
-  if (!trigger || !dropdown) return;
+/** Active le dropdown profil/logout */
+function setupAuthDropdown() {
+  const authBtn = document.querySelector(SEL.authBtn) as HTMLElement | null;
+  const dropdown = document.querySelector(SEL.authDropdown) as HTMLElement | null;
+  if (!authBtn || !dropdown) return;
 
-  trigger.addEventListener("click", (e) => {
+  authBtn.addEventListener("click", (e) => {
+    e.preventDefault();
     e.stopPropagation();
     dropdown.classList.toggle("hidden");
   });
 
-  document.addEventListener("click", () => dropdown.classList.add("hidden"));
+  document.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest("#authMenu")) dropdown.classList.add("hidden");
+  });
 }
 
-/** Ferme le dropdown utilisateur */
-export function closeAuthDropdown() {
-  const dropdown = document.getElementById("authDropdown");
-  if (dropdown) dropdown.classList.add("hidden");
+/** Gère le bouton logout */
+function setupLogout() {
+  const logoutBtn = document.querySelector(SEL.logoutBtn) as HTMLButtonElement | null;
+  if (!logoutBtn) return;
+  logoutBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      await fetchWithAuth("/api/auth/logout", { method: "POST" });
+    } catch {}
+    AUTH_CACHE = null;
+    window.dispatchEvent(new CustomEvent("auth:changed"));
+  });
 }
 
-/** Met à jour tout le menu utilisateur (badge + logout listener) */
+/** Gère le lien profil */
+function setupProfileLink() {
+  const profilsLink = document.querySelector(SEL.profilsLink) as HTMLAnchorElement | null;
+  if (!profilsLink) return;
+  profilsLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.history.pushState({}, "", "/profils");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+}
+
+/* -------------------------------
+   🚀 INITIALISATION GLOBALE
+-------------------------------- */
 export async function setupAuthMenu() {
   await refreshAuth();
   renderAuthBadge();
-
-  const logoutBtn = document.querySelector(SEL.logoutBtn) as HTMLButtonElement | null;
-  if (logoutBtn && !logoutBtn.dataset.bound) {
-    logoutBtn.dataset.bound = "1";
-    logoutBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        await fetchWithAuth("/api/auth/logout", { method: "POST" });
-      } catch {}
-      AUTH_CACHE = null;
-      window.dispatchEvent(new CustomEvent("auth:changed"));
-    });
-  }
+  setupAuthDropdown();
+  setupLogout();
+  setupProfileLink();
+  setupLangDropdown();
 }
 
-/* --- Rafraîchit automatiquement le header quand l’auth change --- */
+/** Ferme le dropdown utilisateur manuellement */
+export function closeAuthDropdown() {
+  const dropdown = document.querySelector(SEL.authDropdown) as HTMLElement | null;
+  if (dropdown) dropdown.classList.add("hidden");
+}
+
+/** Réagit à tout changement d’auth */
 window.addEventListener("auth:changed", () => {
   setupAuthMenu();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupLangDropdown();
 });
