@@ -10,6 +10,18 @@ const db = require('./db');
 const game = require('./game/server')
 const historyRoutes = require('./historyRoutes');
 const tournamentRoutes = require('./game/tournament');
+const fastifyStatic = require('@fastify/static');
+const path = require('node:path');
+const fs = require('node:fs');
+
+const uploadsDir = path.join(__dirname, 'uploads', 'avatars');
+fs.mkdirSync(uploadsDir, { recursive : true });
+console.log('Dossier avatars pret :', uploadsDir);
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, 'uploads'),
+  prefix: '/uploads/',
+});
 
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {

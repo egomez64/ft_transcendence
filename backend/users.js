@@ -4,6 +4,7 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const multipart = require('@fastify/multipart');
 
+
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
@@ -49,10 +50,11 @@ async function usersRoutes(fastify) {
     let fields = {};
     let filePart = null;
 
-    for await (const part of parts) {
-      if (part.file && part.fieldname === 'avatar') {
+    for await(const part of parts) {
+      if (part.file && part.fieldname == 'avatar') {
         filePart = part;
-      } else if (part.type === 'field') {
+      }
+      else if (!part.file) {
         fields[part.fieldname] = part.value;
       }
     }
@@ -76,7 +78,7 @@ async function usersRoutes(fastify) {
     // --- si avatar uploadé
     if (filePart) {
       const filename = `avatar_${id}_${Date.now()}${path.extname(filePart.filename)}`;
-      const dest = path.join(__dirname, '..', 'uploads', 'avatars', filename);
+      const dest = path.join(__dirname, 'uploads', 'avatars', filename);
       await fs.mkdir(path.dirname(dest), { recursive: true });
       const buf = await filePart.toBuffer();
       await fs.writeFile(dest, buf);

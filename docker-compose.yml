@@ -14,6 +14,7 @@ services:
       - ./backend:/app
       - /app/node_modules
       - sqlite_data:/data/app.sqlite
+      - ./backend/uploads:/app/uploads
     networks:
       - ftnet
     command: npm run dev
