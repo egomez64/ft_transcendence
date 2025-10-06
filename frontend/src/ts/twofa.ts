@@ -8,60 +8,62 @@ const API_BASE =
     : "";
 
 export function initTwofaPage() {
-    const form = document.getElementById("twofaForm") as HTMLFormElement | null;
-    const msg = document.getElementById("twofaMsg") as HTMLParagraphElement | null;
-    const codeEl = document.getElementById("twofaCode") as HTMLInputElement | null;
-    const resend = document.getElementById("twofaResendBtn") as HTMLButtonElement | null;
-    const back = document.getElementById("twofaBackBtn") as HTMLButtonElement | null;
+  const form = document.getElementById("twofaForm") as HTMLFormElement | null;
+  const msg = document.getElementById("twofaMsg") as HTMLParagraphElement | null;
+  const codeEl = document.getElementById("twofaCode") as HTMLInputElement | null;
+  const resend = document.getElementById("twofaResendBtn") as HTMLButtonElement | null;
+  const back = document.getElementById("twofaBackBtn") as HTMLButtonElement | null;
 
-    if (!sessionStorage.getItem("2fa:pending")) {
-        navigate("/login", true);
-        return;
-    }
+  if (!sessionStorage.getItem("2fa:pending")) {
+    navigate("/login", true);
+    return;
+  }
 
-    setTimeout(() => codeEl?.focus(), 0);
+  setTimeout(() => codeEl?.focus(), 0);
 
-    form?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const code = (codeEl?.value || "").trim();
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = (codeEl?.value || "").trim();
 
     try {
-        const res = await fetchWithAuth("/api/auth/2fa/verify", {
-            method: "POST",
-            json: { code },
-        });
-        const body = await res.json().catch(() => ({} as any));
+      const res = await fetchWithAuth("/api/auth/2fa/verify", {
+        method: "POST",
+        json: { code },
+      });
+      const body = await res.json().catch(() => ({} as any));
 
-        if (!res.ok || !body.ok) {
-            msg && (msg.textContent = body?.error || t("common.server_error"));
-            return;
-        }
+      if (!res.ok || !body?.ok) {
+        if (msg) msg.textContent = body?.error || t("common.server_error");
+        return;
+      }
 
-        //succes
-        localStorage.setItem("auth", JSON.stringify(body.user));
-        sessionStorage.removeItem("2fa:pending");
-        window.dispatchEvent(new CustomEvent("auth:changed"));
-        await navigate("/dashboard");
+      // ✅ Succès : le back a posé les cookies. On ne stocke plus rien dans localStorage.
+      sessionStorage.removeItem("2fa:pending");
+      window.dispatchEvent(new CustomEvent("auth:changed"));
+      await navigate("/dashboard");
     } catch {
-        msg && (msg.textContent = t("common.network_error"));
-     }
-    });
+      if (msg) msg.textContent = t("common.network_error");
+    }
+  });
 
-    resend?.addEventListener("click", async () => {
-        try {
-            resend.disabled = true;
-            const res = await fetchWithAuth("/api/auth/2fa/resend", {
-                method: "POST",
-            });
-            const body = await res.json().catch(() => ({} as any));
-            msg && (msg.textContent = res.ok && body.ok ? t("twofa.resent") : (body?.error || t("common.server_error")));
-        } finally {
-            setTimeout(() => (resend.disabled = false), 15000);
-        }
-    });
+  resend?.addEventListener("click", async () => {
+    try {
+      resend.disabled = true;
+      const res = await fetchWithAuth("/api/auth/2fa/resend", {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => ({} as any));
+      if (msg) {
+        msg.textContent =
+          res.ok && body?.ok ? t("twofa.resent") : (body?.error || t("common.server_error"));
+      }
+    } finally {
+      setTimeout(() => (resend.disabled = false), 15000);
+    }
+  });
 
-    back?.addEventListener("click", () => {
-        sessionStorage.removeItem("2fa:pending");
-        navigate("/login");
-    });
+  back?.addEventListener("click", () => {
+    sessionStorage.removeItem("2fa:pending");
+    navigate("/login");
+  });
 }

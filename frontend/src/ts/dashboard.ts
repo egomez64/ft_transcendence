@@ -11,24 +11,15 @@ import { fetchWithAuth } from "./utils";
 // ─────────────────────────────────────────────────────────────────────────────
 
 type Stats = { wins: number; losses: number; played: number; winRate: number };
+type Me = { id: number; username: string; email?: string } | null;
 
-/** Retourne l’utilisateur authentifié (depuis localStorage) */
-function getAuth(): null | { id: number; username: string; email: string } {
-  const raw = localStorage.getItem("auth");
+/** Récupère l'utilisateur courant depuis le backend (cookies httpOnly) */
+async function fetchMe(): Promise<Me> {
   try {
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Retourne uniquement l’id de l’utilisateur courant */
-function getAuthId(): number | null {
-  try {
-    const raw = localStorage.getItem("auth");
-    if (!raw) return null;
-    const parsed: any = JSON.parse(raw);
-    return parsed && typeof parsed.id === "number" ? parsed.id : null;
+    const res = await fetchWithAuth("/api/auth/me");
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    return data?.user || null;
   } catch {
     return null;
   }
@@ -221,7 +212,13 @@ async function loadStats(userId: number) {
 async function loadRanking() {
   const state = document.getElementById("ranking-state")!;
   const list = document.getElementById("ranking-list")!;
-  const currentUserId = getAuthId();
+
+  // Id courant (pour surligner la ligne)
+  let currentUserId: number | null = null;
+  try {
+    const me = await fetchMe();
+    currentUserId = me?.id ?? null;
+  } catch {}
 
   try {
     state.textContent = t("common.loading");
@@ -274,33 +271,31 @@ function setActiveTab(name: "stats" | "history" | "ranking") {
   content.innerHTML = name === "stats" ? statsView() : name === "history" ? historyView() : rankingView();
   applyTranslations(content);
 
-  const raw = localStorage.getItem("auth");
-  let user: any = null;
-  try {
-    user = raw ? JSON.parse(raw) : null;
-  } catch {}
+  // On récupère l'utilisateur courant dynamiquement
+  fetchMe().then((user) => {
+    if (name === "stats") {
+      if (user?.id) loadStats(Number(user.id));
+      else document.getElementById("stats-state")!.textContent = "Veuillez vous connecter.";
+    }
 
-  if (name === "stats") {
-    if (user?.id) loadStats(Number(user.id));
-    else document.getElementById("stats-state")!.textContent = "Veuillez vous connecter.";
-  }
+    if (name === "history") {
+      if (user?.id) loadHistory(Number(user.id));
+      else document.getElementById("history-list")!.textContent = "Veuillez vous connecter.";
+    }
 
-  if (name === "history") {
-    if (user?.id) loadHistory(Number(user.id));
-    else document.getElementById("history-list")!.textContent = "Veuillez vous connecter.";
-  }
-
-  if (name === "ranking") {
-    loadRanking();
-  }
+    if (name === "ranking") {
+      loadRanking();
+    }
+  });
 }
 
 /** Point d’entrée public : appelé après injection de dashboard.html */
 export function mountDashboard() {
   // Nom utilisateur
-  const user = getAuth();
-  const nameEl = document.getElementById("dashUsername");
-  if (user && nameEl) nameEl.textContent = user.username;
+  fetchMe().then((user) => {
+    const nameEl = document.getElementById("dashUsername");
+    if (user && nameEl) nameEl.textContent = user.username ?? "Invité";
+  });
 
   // Tabs
   document.querySelectorAll<HTMLButtonElement>(".tab-button").forEach((btn) => {
@@ -318,6 +313,7 @@ export function mountDashboard() {
 export function paintDashboardUsername() {
   const el = document.getElementById("dashUsername");
   if (!el) return;
-  const user = getAuth();
-  el.textContent = user?.username ?? "Invité";
+  fetchMe().then((user) => {
+    el.textContent = user?.username ?? "Invité";
+  });
 }

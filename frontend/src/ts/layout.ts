@@ -1,183 +1,159 @@
-import { initI18n, setLang, lang, applyTranslations } from '../i18n';
+// layout.ts — version corrigée (affichage du username/avatar + menu réactif sans localStorage)
 
-function setupAuthMenu() {
-  const btn = document.getElementById('authBtn') as HTMLAnchorElement | null;
-  const menu = document.getElementById('authDropdown') as HTMLDivElement | null;
-  const profils = document.getElementById('profilsLink') as HTMLAnchorElement | null;
-  const logout = document.getElementById('logoutBtn') as HTMLButtonElement | null;
+import { fetchWithAuth } from "./utils";
+import { t, applyTranslations } from "../i18n";
+
+/* Sélecteurs du layout */
+const SEL = {
+  authMenu: "#authMenu",
+  authBadgeName: "#authBadgeName",
+  logoutBtn: "#logoutBtn",
+  authAvatar: "#authAvatar", // ajouté pour gérer l’image du profil
+};
+
+/* Type utilisateur */
+type Me = {
+  id: number;
+  username: string;
+  email?: string;
+  alias?: string;
+  avatar_url?: string;
+} | null;
+
+/* Cache temporaire en mémoire */
+let AUTH_CACHE: Me = null;
+
+/* --- Fonctions exposées --- */
+export function currentUser(): Me {
+  return AUTH_CACHE;
+}
+
+export function isAuthed(): boolean {
+  return !!AUTH_CACHE;
+}
+
+/* Gestion du menu de langue (inchangé) */
+export function setupLangDropdown() {
+  const btn = document.getElementById("langDropdownBtn");
+  const menu = document.getElementById("langDropdownMenu");
   if (!btn || !menu) return;
 
-  const authed = isAuthed();
+  const openClass = "dropdown-open";
 
-  // reset
-  btn.onclick = null;
-  document.removeEventListener('click', outsideCloser);
-  document.removeEventListener('keydown', escCloser);
-
-  if (!authed) {
-    closeAuthDropdown();
-    btn.setAttribute('href', '/login')
-    btn.title = 'Connexion';
-  } else {
-    btn.setAttribute('href', '/');
-    btn.title = 'Menu du compte';
-
-    //CLICK BTN PROFIL
-    btn.onclick = (e) => {
-      e.preventDefault();
-      e.stopPropagation(); 
-
-      const wasOpen = !menu.classList.contains('hidden');
-      if (wasOpen) {
-        closeAuthDropdown();
-      } else {
-        const langMenu = document.getElementById('lang-menu') as HTMLElement | null;
-        const langBtn  = document.getElementById('lang-btn')  as HTMLElement | null;
-        if (langMenu) langMenu.classList.add('hidden');
-        if (langBtn)  langBtn.setAttribute('aria-expanded', 'false');
-
-        menu.classList.remove('hidden');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    };
-
-    // LIEN PROFIL
-    if (profils) {
-      profils.onclick = () => {
-        closeAuthDropdown();
-        history.pushState({}, '', '/profils');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      };
-    }
-
-    // BOUTON LOGOUT
-    if (logout) {
-      logout.onclick = (e) => {
-        e.preventDefault();
-        localStorage.removeItem('auth');
-        closeAuthDropdown();
-        setupAuthMenu();
-        history.replaceState({}, '', '/login');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      };
-    }
-
-    // FERMETURE : clic extérieur + ESC 
-    document.addEventListener('click', outsideCloser);
-    document.addEventListener('keydown', escCloser);
-  }
-
-  function outsideCloser(ev: MouseEvent) {
-    const target = ev.target as Node;
-    const wrapper = document.getElementById('authMenu');
-    if (wrapper && !wrapper.contains(target)) closeAuthDropdown();
-  }
-  function escCloser(ev: KeyboardEvent) {
-    if (ev.key === 'Escape') closeAuthDropdown();
-  }
-
-  // badge username dans le header
-  renderAuthBadge();
-}
-
-
-// ---- Langue (existant) ----
-function setupLangDropdown() {
-  const dropdowns = [
-    { btn: document.getElementById("lang-btn"), menu: document.getElementById("lang-menu") },
-];
-
-	const authMenu = document.getElementById("authDropdown") as HTMLElement | null;
-	const	authBtn = document.getElementById("authBtn") as HTMLElement | null;
-
-  function closeAll() {
-    dropdowns.forEach(d => {
-      if (d?.menu && d?.btn) {
-        d.menu.classList.add("hidden");
-        d.btn.setAttribute("aria-expanded", "false");
-      }
-    });
-  }
-
-  dropdowns.forEach(d => {
-    if (!d.btn || !d.menu) return;
-
-    d.btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-
-			if (authMenu) authMenu.classList.add("hidden");
-			if (authBtn) authBtn.setAttribute("aria-expanded", "false");
-
-      const isHidden = d.menu?.classList.contains("hidden");
-      closeAll();
-      if (isHidden) {
-        d.menu?.classList.remove("hidden");
-        d.btn?.setAttribute("aria-expanded", "true");
-      }
-    });
-
-  d.menu.querySelectorAll<HTMLElement>('[data-lang]').forEach(el => {
-    el.addEventListener('click', async () => {
-      const code = el.getAttribute('data-lang')!;
-      await setLang(code);
-      const label = el.textContent?.trim();
-      d.btn?.querySelector('[data-current-lang]')?.replaceChildren(document.createTextNode(label || code.toUpperCase()));
-      closeAll();
-    });
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    menu.classList.toggle(openClass);
   });
-});
 
-  document.addEventListener("click", closeAll);
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAll();
-  });
+  document.addEventListener(
+    "click",
+    (e) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest("#langDropdown")) menu.classList.remove(openClass);
+    },
+    { capture: true }
+  );
 }
 
-// Menu auth (existant)
-function closeAuthDropdown() {
-  const btn = document.getElementById('authBtn');
-  const menu = document.getElementById('authDropdown');
-  if (btn) btn.setAttribute('aria-expanded', 'false');
-  if (menu) menu.classList.add('hidden');
-}
+/* --- Auth logic --- */
 
-function renderAuthBadge() {
-  const span = document.getElementById('authUsername');
-  if (!span) return;
-  const user = currentUser();
-  if (user?.username) {
-    span.textContent = user.username;
-    span.classList.remove('hidden');
-  } else {
-    span.textContent = '';
-    span.classList.add('hidden');
-  }
-}
-
-function currentUser(): { username?: string } | null {
-  try { return JSON.parse(localStorage.getItem('auth') || 'null'); }
-  catch { return null; }
-}
-
-function isAuthed(): boolean {
+/** Recharge l'utilisateur depuis /api/auth/me et met à jour le cache */
+async function refreshAuth(): Promise<Me> {
   try {
-    const raw = localStorage.getItem('auth');
-    return !!raw && !!JSON.parse(raw);
+    const res = await fetchWithAuth("/api/auth/me");
+    if (!res.ok) {
+      AUTH_CACHE = null;
+      return null;
+    }
+    const data = await res.json().catch(() => null);
+    AUTH_CACHE = data?.user || null;
+    return AUTH_CACHE;
   } catch {
-    return false;
+    AUTH_CACHE = null;
+    return null;
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  initI18n();
-});
+/** Met à jour le nom et l'avatar dans le header */
+export function renderAuthBadge() {
+  const nameEl = document.querySelector(SEL.authBadgeName) as HTMLElement | null;
+  const avatarEl = document.querySelector(SEL.authAvatar) as HTMLImageElement | null;
+  const menuEl = document.querySelector(SEL.authMenu) as HTMLElement | null;
 
-export {
-  setupAuthMenu,
-  closeAuthDropdown,
-  renderAuthBadge,
-  currentUser,
-  isAuthed,
-  setupLangDropdown,
-};
+  if (!nameEl && !avatarEl && !menuEl) return;
+
+  const u = currentUser();
+
+  if (!u) {
+    // Utilisateur non connecté → affichage du lien Login
+    if (menuEl) {
+      menuEl.innerHTML = `
+        <a href="/login" class="text-pink-300 hover:text-pink-100 transition">
+          ${t("login")}
+        </a>`;
+    }
+    return;
+  }
+
+  // Utilisateur connecté → affichage nom + avatar + dropdown
+  if (menuEl) {
+    menuEl.innerHTML = `
+      <div id="authDropdownTrigger" class="flex items-center gap-2 cursor-pointer select-none relative">
+        <img id="authAvatar" src="${u.avatar_url || "/assets/login.png"}"
+          alt="avatar" class="w-8 h-8 rounded-full object-cover border border-pink-400/40" />
+        <span id="authBadgeName" class="font-semibold text-pink-200">${u.alias || u.username}</span>
+      </div>
+      <div id="authDropdown" class="hidden absolute mt-10 right-0 bg-[#1a1a2e]/95 rounded-lg shadow-lg border border-pink-500/20 py-2 w-40">
+        <a href="/profils" class="block px-4 py-2 hover:bg-pink-500/10 text-pink-200">${t("profile")}</a>
+        <button id="logoutBtn" class="block w-full text-left px-4 py-2 hover:bg-pink-500/10 text-pink-200">${t("logout")}</button>
+      </div>
+    `;
+
+    applyTranslations(menuEl);
+    setupDropdown();
+  }
+}
+
+/** Gestion du dropdown utilisateur */
+function setupDropdown() {
+  const trigger = document.getElementById("authDropdownTrigger");
+  const dropdown = document.getElementById("authDropdown");
+  if (!trigger || !dropdown) return;
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("hidden");
+  });
+
+  document.addEventListener("click", () => dropdown.classList.add("hidden"));
+}
+
+/** Ferme le dropdown utilisateur */
+export function closeAuthDropdown() {
+  const dropdown = document.getElementById("authDropdown");
+  if (dropdown) dropdown.classList.add("hidden");
+}
+
+/** Met à jour tout le menu utilisateur (badge + logout listener) */
+export async function setupAuthMenu() {
+  await refreshAuth();
+  renderAuthBadge();
+
+  const logoutBtn = document.querySelector(SEL.logoutBtn) as HTMLButtonElement | null;
+  if (logoutBtn && !logoutBtn.dataset.bound) {
+    logoutBtn.dataset.bound = "1";
+    logoutBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await fetchWithAuth("/api/auth/logout", { method: "POST" });
+      } catch {}
+      AUTH_CACHE = null;
+      window.dispatchEvent(new CustomEvent("auth:changed"));
+    });
+  }
+}
+
+/* --- Rafraîchit automatiquement le header quand l’auth change --- */
+window.addEventListener("auth:changed", () => {
+  setupAuthMenu();
+});

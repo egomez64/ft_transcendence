@@ -12,11 +12,9 @@ type Friend = {
   losses: number;
 };
 
-const API = 'http://localhost:3000';
-
 const state = {
   friends: [] as Friend[],
-}
+};
 
 async function waitEl<T extends HTMLElement = HTMLElement>(sel: string, tries = 10): Promise<T> {
   let el = document.querySelector<T>(sel);
@@ -39,7 +37,7 @@ function getEl<T extends HTMLElement = HTMLElement>(sel: string): T | null {
 const setMsg = makeSetMsg('#friendsMsg');
 
 async function listFriends(): Promise<Friend[]> {
-  const res = await fetchWithAuth(`${API}/api/me/friends?limit=50&offset=0`);
+  const res = await fetchWithAuth(`/api/me/friends?limit=50&offset=0`);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const key =
@@ -52,7 +50,7 @@ async function listFriends(): Promise<Friend[]> {
 }
 
 async function addFriend(handle: string) {
-  const res = await fetchWithAuth(`${API}/api/me/friends`, {
+  const res = await fetchWithAuth(`/api/me/friends`, {
     method: 'POST',
     json: { friend: handle },
   });
@@ -63,8 +61,8 @@ async function addFriend(handle: string) {
     // Mappe explicitement les erreurs courantes
     let key = 'friends.add_error';
     if (res.status === 401) key = 'auth.must_login';
-    else if (res.status === 404) key = 'friends.user_not_found';   // profil inexistant
-    else if (res.status === 409) key = t("friends.already", { name: handle });          // déjà amis
+    else if (res.status === 404) key = 'friends.user_not_found';        // profil inexistant
+    else if (res.status === 409) key = t("friends.already", { name: handle }); // déjà amis
     else if (res.status === 400) key = data?.error_key || 'friends.cannot_add_self';
 
     const err: ErrorWithParams = new Error(key);
@@ -77,7 +75,7 @@ async function addFriend(handle: string) {
 }
 
 async function removeFriend(id: number) {
-  const res = await fetchWithAuth(`${API}/api/me/friends/${id}`, {
+  const res = await fetchWithAuth(`/api/me/friends/${id}`, {
     method: 'DELETE',
   });
   const data = await res.json().catch(() => ({}));
@@ -127,9 +125,9 @@ function renderFriends(items: Friend[]) {
         await removeFriend(f.id);
         state.friends = state.friends.filter(x => x.id !== f.id);
         renderFriends(state.friends);
-        setMsg('friends.removed', 'ok', {name: f.username});
+        setMsg('friends.removed', 'ok', { name: f.username });
         listFriends().then(srv => { state.friends = srv; renderFriends(state.friends); }).catch(() => {});
-      } catch (e:any) {
+      } catch (e: any) {
         setMsg(e.message || 'common.network_error', 'err', e?._params);
       }
     });
@@ -154,7 +152,7 @@ export async function initFriendsPage() {
   try {
     await refreshList();
     setMsg('', 'info');
-  } catch (e:any) {
+  } catch (e: any) {
     setMsg(e.message || 'friends.load_error', 'err', e?._params);
   }
 
@@ -168,10 +166,10 @@ export async function initFriendsPage() {
     }
 
     if (handle.toLowerCase() === 'ai') {
-    setMsg('friends.cannot_add_ai', 'err');
-    return;
+      setMsg('friends.cannot_add_ai', 'err');
+      return;
     }
-    
+
     try {
       btn.disabled = true;
       const res = await addFriend(handle);
@@ -182,7 +180,7 @@ export async function initFriendsPage() {
         { name: res.friend.username }
       );
       input.value = '';
-    } catch (e:any) {
+    } catch (e: any) {
       setMsg(e.message || 'common.network_error', 'err', e?._params);
     } finally {
       btn.disabled = false;

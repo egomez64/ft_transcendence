@@ -1,4 +1,4 @@
-import {t} from "../i18n";
+import { t } from "../i18n";
 import { makeSetMsg } from "./utils";
 import { fetchWithAuth } from "./utils";
 
@@ -45,7 +45,7 @@ export function mountRegisterHandlers() {
           setMsg(body?.error_key || body?.error || `Erreur ${res.status}`, 'err');
         }
         return;
-    }
+      }
 
       setMsg('register.succes', 'ok');
       setTimeout(() => {

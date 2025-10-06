@@ -16,7 +16,7 @@ import { TrailMesh } from "@babylonjs/core/Meshes/trailMesh";
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { io } from "socket.io-client";
-import { currentUser } from "./layout";
+// ❌ import { currentUser } from "./layout";
 import { t } from "../i18n";
 import { fetchWithAuth } from "./utils";
 
@@ -58,6 +58,21 @@ type LocalMatch = {
 
 let tournamentRedirectTimer: ReturnType<typeof setTimeout> | undefined;
 const COUNTDOWN_SECONDS = 3;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fetch user courant (remplace currentUser() synchrone)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchMe(): Promise<{ id:number; username:string; email?:string } | null> {
+  try {
+    const res = await fetchWithAuth("/api/auth/me");
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2) ENTRY POINT
@@ -114,14 +129,20 @@ export function initPongPage() {
 
   const lm = readLocalMatch();
   if (lm && !isVsAI) {
+    // local 1v1 : on a déjà les noms
     mountPlayerHUD(canvas, lm.p1.username, lm.p2.username);
-  } else if (isVsAI){
-    const me = currentUser()?.username || "joueur 1";
-    mountPlayerHUD(canvas, me, "IA");
+    // connexion réseau sans besoin du username courant
+    wireNetwork(scene, world, setScore, canvas, false, lm.p1.username);
+  } else {
+    // IA ou “online” : il nous faut le nom du joueur courant via /me
+    fetchMe().then((me) => {
+      const meName = me?.username || "Joueur 1";
+      if (isVsAI) {
+        mountPlayerHUD(canvas, meName, "IA");
+      }
+      wireNetwork(scene, world, setScore, canvas, isVsAI, meName);
+    });
   }
-
-  // Réseau (WS state) + triggers d’effets
-  wireNetwork(scene, world, setScore, canvas, isVsAI, currentUser()?.username || "Joueur 1");
 
   // Render loop : petit amorti Z pour le “pop” de la balle
   engine.runRenderLoop(() => {
@@ -295,7 +316,8 @@ function wireNetwork(
 ) {
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
-  const ws = io("https://localhost:3000", { path: "/ws", transports: ["websocket"] });
+  // ✅ même origine (nginx gère /ws → backend)
+  const ws = io("/", { path: "/ws", transports: ["websocket"] });
 
   // Gestion d’epoch (anti mélange d’états si le serveur redémarre/restart une partie)
   let expectedEpoch: number | null = null;
@@ -318,7 +340,6 @@ function wireNetwork(
   let lastStatus: "init" | "idle" | "playing" | "finished" = "init";
 
   ws.on("state", (s: any) => {
-    // Blocages anti-ghost
     if (!armed) return;
     if (expectedEpoch !== null && s.epoch !== undefined && expectedEpoch !== s.epoch) return;
     if (gameEnded) return;
@@ -356,9 +377,8 @@ function wireNetwork(
       playHitParticles(scene, impact, THEME.neonSecondary, 20);
     }
 
-    // Fin de partie : basé sur status (évite le bug de carry-over)
+    // Fin de partie
     const finishedNow = s.status === "finished" && lastStatus !== "finished";
-
     if (finishedNow) {
       const leftWins = s.score.left >= GAME.WIN_SCORE;
       let winnerName = "Left";
@@ -381,17 +401,18 @@ function wireNetwork(
       explodeBall(scene, ball, trail, winnerColor);
       ballHiddenForWin = true;
 
-      // Couper tous les inputs clavier (ajout pote)
+      // Couper inputs
       disableGameInput();
 
       gameEnded = true;
-		finishGame(s.score.left, s.score.right); // Async API call
+      // Async API call
+      finishGame(s.score.left, s.score.right);
 
-      // Overlay i18n + redirection (ajouts toi)
+      // Overlay + redirection
       showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");
     }
 
-    // Nouvelle manche (scores remis à 0) → on réaffiche la balle/trail
+    // Nouvelle manche (scores remis à 0) → réaffiche balle/trail
     if (ballHiddenForWin && s.score.left === 0 && s.score.right === 0) {
       ball.isVisible = true;
       if (trail) trail.isVisible = true;
@@ -407,7 +428,7 @@ function wireNetwork(
     lastStatus = (s.status as "idle" | "playing" | "finished") || "idle";
   });
 
-  // Contrôles clavier (changement de caméra + mouvements) — version pote (AbortController)
+  // Contrôles clavier
   setupControls(
     ws,
     scene,

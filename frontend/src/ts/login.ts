@@ -14,7 +14,7 @@ export function mountLoginHandlers() {
 
   const setMsg = makeSetMsg("#loginMsg");
 
-  // ⚠️ Patch : neutraliser l’action native du formulaire
+  // Neutraliser l’action native du formulaire (sécurité)
   if (loginForm) {
     loginForm.setAttribute("action", "");
     loginForm.setAttribute("method", "post");
@@ -24,7 +24,6 @@ export function mountLoginHandlers() {
     googleBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       window.location.assign(`${API_BASE}/api/auth/google`);
     });
   }
@@ -52,15 +51,14 @@ export function mountLoginHandlers() {
       const body = await res.json().catch(() => ({} as any));
 
       if (!res.ok || !body?.ok) {
-        // <- CLEF NORMALISÉE EN PROVENANCE DU BACK
         const key =
           body?.error_key
             ?? (res.status === 500 ? 'common.internal_error' : 'auth.login_failed');
-
         setMsg(key, "err", body?.params);
         return;
       }
 
+      // 2FA requis → on passe à l'écran code
       if (body.step === "2fa_required") {
         sessionStorage.setItem("2fa:pending", "1");
         history.pushState({}, "", "/twofa");
@@ -68,12 +66,20 @@ export function mountLoginHandlers() {
         return;
       }
 
-      if (body.user) {
-        localStorage.setItem("auth", JSON.stringify(body.user));
-        window.dispatchEvent(new CustomEvent("auth:changed"));
-        await navigate("/dashboard");
+      // Pas de 2FA : la session est (normalement) déjà posée en cookie côté back.
+      // On valide et récupère l'utilisateur courant via /api/auth/me pour rafraîchir l’UI.
+      const meRes = await fetchWithAuth("/api/auth/me");
+      if (!meRes.ok) {
+        setMsg("auth.login_failed", "err");
+        return;
       }
-    } catch (err: any) {
+
+      // Émettre l’événement global pour que le header/menu se mette à jour
+      window.dispatchEvent(new CustomEvent("auth:changed"));
+
+      // Rediriger vers le dashboard
+      await navigate("/dashboard");
+    } catch (_err) {
       setMsg("common.network_error", "err");
     }
   });

@@ -20,6 +20,7 @@ import { initLocal1v1Page } from "./1vs1";
 import { initTwofaPage } from "./twofa";
 import { initTournamentPage } from "./tournament";
 import { initTournamentBracketPage } from "./tournament-bracket";
+import { fetchWithAuth } from "./utils";
 
 function routeFromLocation(): string {
   const p = window.location.pathname || "/";
@@ -74,7 +75,7 @@ export async function loadPage() {
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
   // guard d’accès
-  if (def.protected && !isAuthed()) {
+  if (def.protected && !await isAuthed()) {
     // on redirige vers /login UNE SEULE FOIS
     await navigate("/login", true);
     return;
@@ -149,13 +150,15 @@ document.addEventListener("click", (e) => {
   navigate(href);
 });
 
-// Bouton logout (menu header)
-document.addEventListener("click", (e) => {
+// Bouton logout (menu header) — on ne touche plus au localStorage
+document.addEventListener("click", async (e) => {
   const target = e.target as HTMLElement;
   const btn = target.closest("#logoutBtn");
   if (!btn) return;
   e.preventDefault();
-  localStorage.removeItem("auth");
+  try {
+    await fetchWithAuth("/api/auth/logout", { method: "POST" });
+  } catch {}
   closeAuthDropdown();
   setupAuthMenu();
   navigate("/login", true);
