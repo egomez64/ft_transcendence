@@ -1,4 +1,12 @@
+const fs = require('fs');
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+  console.log('Dossier "data" créé.');
+}
 
 const db = new sqlite3.Database('data/app.sqlite', (err) => {
   if (err) {
