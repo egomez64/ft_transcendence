@@ -110,23 +110,34 @@ async function createAndStoreRefreshToken(userId) {
   return raw; // retourne la valeur à mettre en cookie
 }
 
+function validateUsername(username) {
+  const errors = [];
+  const u = String(username || '').trim();
+  if (!u) errors.push('username.required');
+  if (!/^[a-zA-Z0-9._-]{3,20}$/.test(u)) {
+    errors.push('username.format');
+  }
+  return { ok: errors.length === 0, value: u, errors };
+}
+
+
 function passwordPolicyErrors(password, { username, email }) {
   const errs = [];
   const pw = String(password || '');
-
+  
   if (pw.length < 8) errs.push('password.min');
   if (pw.length > 72) errs.push('password.max')
-  if (!/[a-z]/.test(pw)) errs.push('password.lower');
+    if (!/[a-z]/.test(pw)) errs.push('password.lower');
   if (!/[A-Z]/.test(pw)) errs.push('password.upper');
   if (!/\d/.test(pw)) errs.push('password.digit');
   if (!/[^A-Za-z0-9]/.test(pw)) errs.push('password.symbol');
-
+  
   // Interdits : username et email (insensibles à la casse)
   const uname = String(username || '').toLowerCase();
   const mail  = String(email || '').toLowerCase();
   const local = mail.split('@')[0] || '';
   const pwLower = pw.toLowerCase();
-
+  
   if (uname && pwLower.includes(uname)) errs.push('password.no_username');
   if (mail  && pwLower.includes(mail))  errs.push('password.no_email');
   if (local && pwLower.includes(local)) errs.push('password.no_email_local');
@@ -171,6 +182,10 @@ async function authRoute(fastify) {
     if (exists) {
       return reply.code(400).send({ ok: false, error_key: 'auth.user_exists' });
     }
+
+    const user = validateUsername(username);
+    if (!user.ok)
+      return reply.code(400).send({ ok: false, error_key: 'auth.invalid_username', details: user.errors });
 
     const policyErrors = passwordPolicyErrors(password, { username, email });
     if (policyErrors.length) {
