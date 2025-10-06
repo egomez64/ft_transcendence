@@ -128,6 +128,7 @@
 		"symbol": "La contraseña debe incluir un símbolo.",
 		"no_space": "La contraseña no debe contener espacios.",
 		"no_username": "La contraseña no debe contener el nombre de usuario.",
+		"no_email": "La contraseña no debe contener su correo electrónico",
 		"no_email_local": "La contraseña no debe contener partes del email."
 	},
 	"username": {

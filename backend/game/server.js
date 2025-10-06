@@ -10,7 +10,7 @@ let epoch = 0;          // incrémenté à chaque resetGame()
 let serveDir = 0;       // 0 => sert vers la droite (+vx), 1 => sert vers la gauche (-vx)
 
 function startGameServer(server, cors) {
-  wss = new io.Server(server, { cors: cors, path: "/ws" });
+  wss = new io.Server(server, { cors: {origin: ["https://localhost:8443"], credentials: true }, path: "/ws" });
 
   wss.on("connection", (ws) => {
 	console.log("Client connecté Pong WS");

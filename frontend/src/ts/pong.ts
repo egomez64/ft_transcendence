@@ -317,7 +317,7 @@ function wireNetwork(
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
   // ✅ même origine (nginx gère /ws → backend)
-  const ws = io("/", { path: "/ws", transports: ["websocket"] });
+ const ws = io("https://localhost:8443", { path: "/ws", transports: ["websocket"], withCredentials: true });
 
   // Gestion d’epoch (anti mélange d’états si le serveur redémarre/restart une partie)
   let expectedEpoch: number | null = null;

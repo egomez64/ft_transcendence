@@ -88,6 +88,20 @@ async function removeFriend(id: number) {
   return data as { ok: true; removed: number };
 }
 
+function defaultAvatarDataURI(name: string, size = 40) {
+  const initials = (name || '?').trim().slice(0, 2).toUpperCase();
+  const bg = '#1F2937';  // gris foncé (tailwind slate-800)
+  const fg = '#F472B6';  // rose (tailwind pink-400)
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>` +
+    `<rect width='100%' height='100%' rx='8' ry='8' fill='${bg}'/>` +
+    `<text x='50%' y='55%' font-family='Inter,system-ui,-apple-system,Segoe UI,Roboto' ` +
+    `font-size='${Math.round(size*0.45)}' text-anchor='middle' fill='${fg}'>` +
+    `${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// 2) Au rendu, utilise le fallback + onerror
 function renderFriends(items: Friend[]) {
   const ul = getEl<HTMLUListElement>('#friendsList');
   if (!ul) return;
@@ -104,11 +118,19 @@ function renderFriends(items: Friend[]) {
     li.className = 'flex items-center gap-3 p-3';
 
     const img = document.createElement('img');
-    img.src = f.avatar_url || 'https://via.placeholder.com/40?text=?';
     img.alt = f.username;
     img.width = 40;
     img.height = 40;
     img.className = 'rounded-full object-cover w-10 h-10';
+
+    // src principal : avatar DB ; fallback immédiat : data URI local
+    img.src = f.avatar_url || defaultAvatarDataURI(f.username);
+
+    // si l’URL DB est cassée → remplace par data URI (une seule fois)
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = defaultAvatarDataURI(f.username);
+    };
 
     const info = document.createElement('div');
     info.className = 'flex-1';
@@ -125,9 +147,9 @@ function renderFriends(items: Friend[]) {
         await removeFriend(f.id);
         state.friends = state.friends.filter(x => x.id !== f.id);
         renderFriends(state.friends);
-        setMsg('friends.removed', 'ok', { name: f.username });
+        setMsg('friends.removed', 'ok', {name: f.username});
         listFriends().then(srv => { state.friends = srv; renderFriends(state.friends); }).catch(() => {});
-      } catch (e: any) {
+      } catch (e:any) {
         setMsg(e.message || 'common.network_error', 'err', e?._params);
       }
     });

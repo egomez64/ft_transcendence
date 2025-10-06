@@ -128,6 +128,7 @@
 		"symbol": "Le mot de passe doit inclure un symbole.",
 		"no_space": "Le mot de passe ne doit pas contenir d’espace.",
 		"no_username": "Le mot de passe ne doit pas contenir le nom d’utilisateur.",
+		"no_email": "Le mot de passe ne doit pas contenir votre e-mail",
 		"no_email_local": "Le mot de passe ne doit pas contenir la partie locale de l’email."
 	},
 	"username" : {

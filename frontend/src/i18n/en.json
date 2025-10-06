@@ -128,6 +128,7 @@
 		"symbol": "Password must include a symbol.",
 		"no_space": "Password must not contain spaces.",
 		"no_username": "Password must not contain the username.",
+		"no_email": "The password must not contain your email",
 		"no_email_local": "Password must not contain parts of the email."
 	},
 	"username": {
