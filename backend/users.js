@@ -1,8 +1,9 @@
 const db = require('./db');
 const { replyError } = require('./i18n_errors');
 const path = require('node:path');
-const fs = require('node:fs/promises');
-const multipart = require('@fastify/multipart');
+const fs = require('node:fs');
+const fsp = require('node:fs/promises');
+const { pipeline } = require('node:stream/promises');
 
 
 function dbGet(sql, params = []) {
@@ -39,22 +40,39 @@ function validateUsername(username) {
 }
 
 async function usersRoutes(fastify) {
-  await fastify.register(multipart);
 
-  // --- REPLACE: fusion avatar + infos dans un seul PUT
   fastify.put('/:id', async (request, reply) => {
     const id = Number(request.params.id);
     if (!id) return replyError(reply, 'INVALID_USER_ID');
 
     const parts = request.parts();
     let fields = {};
-    let filePart = null;
+    let newAvatar = null;
 
-    for await(const part of parts) {
-      if (part.file && part.fieldname == 'avatar') {
-        filePart = part;
-      }
-      else if (!part.file) {
+    for await (const part of parts) {
+      if (part.file && part.fieldname === 'avatar') {
+        // Whitelist mimetypes
+        const type = String(part.mimetype || '');
+        if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) {
+          try { part.file.resume(); } catch {}
+          return reply.code(415).send({ ok: false, error_key: 'UNSUPPORTED_TYPE' });
+        }
+
+        const filename = `avatar_${id}_${Date.now()}${path.extname(part.filename || '')}`;
+        const dest = path.join(__dirname, 'uploads', 'avatars', filename);
+        try {
+          await fsp.mkdir(path.dirname(dest), { recursive: true });
+
+          // ✅ Consommer le stream immédiatement
+          await pipeline(part.file, fs.createWriteStream(dest));
+
+          newAvatar = `/uploads/avatars/${filename}`;
+        } catch (err) {
+          request.log.error({ at: 'avatar_write', err: err?.message });
+          try { part.file.resume(); } catch {}
+          return reply.code(500).send( { ok: false, error_key:'UPLOAD_FAILED' } );
+        }
+      } else if (!part.file) {
         fields[part.fieldname] = part.value;
       }
     }
@@ -73,17 +91,6 @@ async function usersRoutes(fastify) {
 
     const newUsername = user.value;
     const newAlias = ali.value === '' ? null : ali.value;
-    let newAvatar = null;
-
-    // --- si avatar uploadé
-    if (filePart) {
-      const filename = `avatar_${id}_${Date.now()}${path.extname(filePart.filename)}`;
-      const dest = path.join(__dirname, 'uploads', 'avatars', filename);
-      await fs.mkdir(path.dirname(dest), { recursive: true });
-      const buf = await filePart.toBuffer();
-      await fs.writeFile(dest, buf);
-      newAvatar = `/uploads/avatars/${filename}`;
-    }
 
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
     if (!existing) return replyError(reply, 'USER_NOT_FOUND');

@@ -13,6 +13,14 @@ const tournamentRoutes = require('./game/tournament');
 const fastifyStatic = require('@fastify/static');
 const path = require('node:path');
 const fs = require('node:fs');
+const multipart = require('@fastify/multipart');
+
+fastify.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 1,
+  }
+})
 
 const uploadsDir = path.join(__dirname, 'uploads', 'avatars');
 fs.mkdirSync(uploadsDir, { recursive : true });
