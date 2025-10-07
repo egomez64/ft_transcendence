@@ -9,10 +9,8 @@ import { initPongPage } from "./pong";
 import {
   setupAuthMenu,
   closeAuthDropdown,
-  renderAuthBadge,
-  currentUser,
   isAuthed,
-  setupLangDropdown,
+  bindGlobalMenuOnce,
 } from "./layout";
 import { applyTranslations, initI18n } from "../i18n";
 import { initPlayPage } from "./play";
@@ -106,7 +104,7 @@ export async function loadPage() {
     }
   } else {
     app?.removeAttribute("data-ssr");
-    if (app) applyTranslations;
+    if (app) applyTranslations(app);
   }
 
   const keyElMap: Record<string, string> = {
@@ -183,8 +181,8 @@ window.addEventListener("popstate", () => {
 // Boot
 window.addEventListener("DOMContentLoaded", async () => {
   await loadLayout();
+  bindGlobalMenuOnce();
   await initI18n();
-  setupLangDropdown();
   await loadPage();
 });
 
