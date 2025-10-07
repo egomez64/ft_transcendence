@@ -9,10 +9,18 @@ const API_BASE =
     : '';
 
 export function mountLoginHandlers() {
+  const urlParams = new URLSearchParams(window.location.search);
   const loginForm = document.getElementById("loginForm") as HTMLFormElement | null;
   const googleBtn = document.getElementById("googleLoginBtn") as HTMLButtonElement | null;
 
   const setMsg = makeSetMsg("#loginMsg");
+
+  if (urlParams.get("mfa") === "1") {
+    sessionStorage.setItem("2fa:pending", "1");
+    history.replaceState({}, "", "/twofa");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    return;
+  }
 
   // Neutraliser l’action native du formulaire (sécurité)
   if (loginForm) {
