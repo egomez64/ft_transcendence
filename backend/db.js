@@ -34,7 +34,8 @@ db.run(`
     elo INTEGER NOT NULL DEFAULT 0,
     twofa_code_hash TEXT,
     twofa_code_expires INTEGER,
-    twofa_last_sent INTEGER
+    twofa_last_sent INTEGER,
+    last_seen INTEGER DEFAULT 0
   )
 `, (err) => {
   if (err) {

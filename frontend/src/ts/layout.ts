@@ -253,3 +253,10 @@ export function closeAuthDropdown() {
 window.addEventListener("auth:changed", () => {
   setupAuthMenu();
 });
+
+setInterval(async () => {
+  try {
+    await fetchWithAuth('/api/auth/ping', { method: 'POST' });
+  } catch {
+  }
+}, 60000);

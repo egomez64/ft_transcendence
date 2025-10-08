@@ -166,6 +166,33 @@ async function usersRoutes(fastify) {
       return replyError(reply, 'UNKNOWN');
     }
   });
+
+  fastify.get('/status', async (req, reply) => {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const ACTIVE_WINDOW = 120; // 2 minutes
+      const rows = await new Promise((resolve, reject) => {
+        db.all(
+          `
+          SELECT id, username,
+            CASE WHEN (? - COALESCE(last_seen, 0)) < ? THEN 1 ELSE 0 END AS online
+          FROM users
+          `,
+          [now, ACTIVE_WINDOW],
+          (err, result) => (err ? reject(err) : resolve(result))
+        );
+      });
+
+      return reply.send({ ok: true, users: rows });
+    } catch (err) {
+      req.log?.error?.({ msg: 'GET /users/status failed', err });
+      return reply.code(500).send({ ok: false });
+    }
+  });
+
+  fastify.post('/ping', { preHandler: fastify.verifySession }, async (req, reply) => {
+    return reply.send({ ok: true });
+  });
 }
 
 module.exports = usersRoutes;

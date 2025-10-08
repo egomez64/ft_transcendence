@@ -10,6 +10,7 @@ type Friend = {
   avatar_url: string | null;
   wins: number;
   losses: number;
+  online?: boolean;
 };
 
 const state = {
@@ -101,6 +102,23 @@ function defaultAvatarDataURI(name: string, size = 40) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+async function refreshStatuses() {
+  try {
+    const res = await fetchWithAuth('/api/users/status');
+    if (!res.ok) return;
+    const data = await res.json().catch(() => ({}));
+    if (!data.users) return;
+
+    for (const f of state.friends) {
+      const u = data.users.find((x: any) => x.id === f.id);
+      f.online = !!u?.online;
+    }
+    renderFriends(state.friends);
+  } catch {
+    // silencieux pour éviter le spam
+  }
+}
+
 // 2) Au rendu, utilise le fallback + onerror
 function renderFriends(items: Friend[]) {
   const ul = getEl<HTMLUListElement>('#friendsList');
@@ -117,6 +135,9 @@ function renderFriends(items: Friend[]) {
     const li = document.createElement('li');
     li.className = 'flex items-center gap-3 p-3';
 
+    const avatarWrapper = document.createElement('div');
+    avatarWrapper.className = 'relative w-10 h-10';
+
     const img = document.createElement('img');
     img.alt = f.username;
     img.width = 40;
@@ -131,6 +152,15 @@ function renderFriends(items: Friend[]) {
       img.onerror = null;
       img.src = defaultAvatarDataURI(f.username);
     };
+
+    const statusDot = document.createElement('span');
+    statusDot.className = `
+      absolute bottom-0 right-0 block w-3 h-3 rounded-full border-2 border-[#1a1a2eb3]
+      ${f.online ? 'bg-green-400 shadow-[0_0_6px_#22c55e]' : 'bg-gray-500'}
+    `;
+    statusDot.title = f.online ? 'En ligne' : 'Hors ligne';
+
+    avatarWrapper.append(img, statusDot);
 
     const info = document.createElement('div');
     info.className = 'flex-1';
@@ -154,7 +184,7 @@ function renderFriends(items: Friend[]) {
       }
     });
 
-    li.append(img, info, btn);
+    li.append(avatarWrapper, info, btn);
     ul.appendChild(li);
   }
 }
@@ -173,6 +203,8 @@ export async function initFriendsPage() {
 
   try {
     await refreshList();
+    await refreshStatuses();
+    setInterval(refreshStatuses, 10000);
     setMsg('', 'info');
   } catch (e: any) {
     setMsg(e.message || 'friends.load_error', 'err', e?._params);
