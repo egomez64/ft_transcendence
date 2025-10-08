@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const oauth2 = require('@fastify/oauth2');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const { passwordPolicyErrors } = require('./password-policy');
 
 const db = require('./db');
 const { sendMail } = require('./mailer');
@@ -118,31 +119,6 @@ function validateUsername(username) {
     errors.push('username.format');
   }
   return { ok: errors.length === 0, value: u, errors };
-}
-
-
-function passwordPolicyErrors(password, { username, email }) {
-  const errs = [];
-  const pw = String(password || '');
-  
-  if (pw.length < 8) errs.push('password.min');
-  if (pw.length > 72) errs.push('password.max')
-    if (!/[a-z]/.test(pw)) errs.push('password.lower');
-  if (!/[A-Z]/.test(pw)) errs.push('password.upper');
-  if (!/\d/.test(pw)) errs.push('password.digit');
-  if (!/[^A-Za-z0-9]/.test(pw)) errs.push('password.symbol');
-  
-  // Interdits : username et email (insensibles à la casse)
-  const uname = String(username || '').toLowerCase();
-  const mail  = String(email || '').toLowerCase();
-  const local = mail.split('@')[0] || '';
-  const pwLower = pw.toLowerCase();
-  
-  if (uname && pwLower.includes(uname)) errs.push('password.no_username');
-  if (mail  && pwLower.includes(mail))  errs.push('password.no_email');
-  if (local && pwLower.includes(local)) errs.push('password.no_email_local');
-
-  return errs;
 }
 
 

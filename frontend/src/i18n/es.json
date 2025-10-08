@@ -99,6 +99,20 @@
 		"username_label": "nombre de usuario",
 		"alias_label": "Alias  (público)",
 		"avatar_file_label": "Subir avatar",
+		"MdpChange": "Cambiar la contraseña",
+		"actualMDP": "Contraseña actual",
+		"newMDP": "Nueva contraseña",
+		"confirm": "Confirmar nueva contraseña",
+		"nothing_to_save": "Nada que salvar.",
+		"username_required": "Se requiere nombre de usuario.",
+		"password": {
+			"old_required": "Introduzca su contraseña actual.",
+			"new_required": "Ingrese y confirme la nueva contraseña.",
+			"mismatch": "Las nuevas contraseñas no coinciden",
+			"missing_fields": "Por favor, rellene la contraseña actual y la nueva.",
+			"no_local_password": "Esta cuenta no tiene contraseña local.",
+			"invalid_current" : "La contraseña actual es incorrecta."
+		},
 		"avatar" : {
 			"invalid_scheme" : "URL no válida: utilice https://",
 			"checking": "Comprobando la imagen…",

@@ -99,6 +99,20 @@
 		"username_label": "Nom d’utilisateur",
 		"alias_label": "Alias (publique)",
 		"avatar_file_label": "Télécharger un avatar",
+		"MdpChange": "Changer le mot de passe",
+		"actualMDP": "Mot de passe actuel",
+		"newMDP": "Nouveau mot de passe",
+		"confirm": "Confirmer le nouveau mot de passe",
+		"nothing_to_save": "Rien à sauvegarder.",
+		"username_required": "Le nom d'utilisateur est requis.",
+		"password": {
+			"old_required": "Entrez votre mot de passe actuel.",
+			"new_required": "Entrez et confirmez le nouveau mot de passe.",
+			"mismatch": "Les nouveaux mots de passe ne correspondent pas",
+			"missing_fields": "Veuillez saisir le mot de passe actuel et le nouveau mot de passe.",
+			"no_local_password": "Ce compte n'a pas de mot de passe local.",
+			"invalid_current" : "Current password is incorrect."
+		},
 		"avatar" : {
 			"invalid_scheme" : "URL invalide : utilise https://",
 			"checking": "Vérification de l’image…",
