@@ -266,47 +266,47 @@ async function loadRanking() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Change d’onglet et charge la vue correspondante */
-function setActiveTab(name: "stats" | "history" | "ranking") {
+function setActiveTab(name: "stats" | "history" | "ranking", userIdOverride?: number) {
   const content = document.getElementById("dashboard-content")!;
   content.innerHTML = name === "stats" ? statsView() : name === "history" ? historyView() : rankingView();
   applyTranslations(content);
 
-  // On récupère l'utilisateur courant dynamiquement
   fetchMe().then((user) => {
-    if (name === "stats") {
-      if (user?.id) loadStats(Number(user.id));
-      else document.getElementById("stats-state")!.textContent = "Veuillez vous connecter.";
+    const userId = userIdOverride ?? user?.id;
+
+    if (!userId) {
+      const target = document.getElementById(
+        name === "history" ? "history-list" : "stats-state"
+      );
+      if (target) target.textContent = "Veuillez vous connecter.";
+      return;
     }
 
-    if (name === "history") {
-      if (user?.id) loadHistory(Number(user.id));
-      else document.getElementById("history-list")!.textContent = "Veuillez vous connecter.";
-    }
-
-    if (name === "ranking") {
-      loadRanking();
-    }
+    if (name === "stats") loadStats(userId);
+    if (name === "history") loadHistory(userId);
+    if (name === "ranking") loadRanking();
   });
 }
 
 /** Point d’entrée public : appelé après injection de dashboard.html */
 export function mountDashboard() {
-  // Nom utilisateur
+  const params = new URLSearchParams(window.location.search);
+  const userIdParam = params.get("userId");
+  const tabParam = (params.get("tab") as "stats" | "history" | "ranking") ?? "stats";
+
   fetchMe().then((user) => {
     const nameEl = document.getElementById("dashUsername");
     if (user && nameEl) nameEl.textContent = user.username ?? "Invité";
   });
 
-  // Tabs
   document.querySelectorAll<HTMLButtonElement>(".tab-button").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab as "stats" | "history" | "ranking";
-      setActiveTab(tab);
+      setActiveTab(tab, userIdParam ? Number(userIdParam) : undefined);
     });
   });
 
-  // Onglet par défaut
-  setActiveTab("stats");
+  setActiveTab(tabParam, userIdParam ? Number(userIdParam) : undefined);
 }
 
 /** Utilisé par main.ts pour mettre à jour le header */
