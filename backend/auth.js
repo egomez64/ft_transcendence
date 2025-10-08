@@ -353,13 +353,23 @@ fastify.post('/token/refresh', async (req, reply) => {
     if (!raw) return reply.code(401).send({ error: 'Not authenticated' });
     try {
       const { uid } = jwt.verify(raw, ACCESS_JWT_SECRET);
+
+      await dbRun(`
+        DELETE FROM matches
+        WHERE (player1_id = ? OR player2_id = ?)
+          AND (status = 'pending' OR winner_id IS NULL)
+      `, [uid, uid]);
+      const now = Math.floor(Date.now() / 1000);
+      await dbRun(`UPDATE users SET last_seen = ? WHERE id = ?`, [now, uid]);
+      
       const me = await dbGet(
         'SELECT id, email, username, alias, avatar_url, wins, losses FROM users WHERE id = ?',
         [uid]
       );
       if (!me) return reply.code(401).send({ error: 'Not authenticated' });
       return reply.send({ ok: true, user: me });
-    } catch {
+    } catch (err) {
+      req.log?.error?.({ at: '/me', err: err?.message });
       return reply.code(401).send({ error: 'Not authenticated' });
     }
   });
