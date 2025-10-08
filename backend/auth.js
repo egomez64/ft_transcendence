@@ -336,67 +336,38 @@ async function authRoute(fastify) {
   });
 
   // ---------- Renvoyer un code (anti-spam) ----------
-  fastify.post('/2fa/resend', async (req, reply) => {
-    const pre = req.cookies?.pre2fa;
-    if (!pre) return reply.code(401).send({ ok: false, error: 'NO_PRE2FA' });
+fastify.post('/token/refresh', async (req, reply) => {
+  const raw = req.cookies?.refresh;
+  if (!raw) return reply.code(401).send({ ok: false, error: 'NO_REFRESH' });
 
-    let payload;
-    try {
-      payload = jwt.verify(pre, JWT_SECRET);
-      if (payload.stage !== 'pre2fa') throw new Error('bad stage');
-    } catch {
-      return reply.code(401).send({ ok: false, error: 'INVALID_PRE2FA' });
+  // Cherche un refresh valide correspondant (non expiré, non révoqué)
+  const rows = await dbAll(
+    `SELECT id, user_id, token_hash, expires_at, revoked_at
+     FROM refresh_tokens
+     WHERE revoked_at IS NULL AND datetime(expires_at) > datetime('now')`,
+    []
+  );
+
+  let rec = null;
+  for (const r of rows) {
+    const ok = await bcrypt.compare(raw, r.token_hash);
+    if (ok) {
+      rec = r;
+      break;
     }
+  }
+  if (!rec) return reply.code(401).send({ ok: false, error: 'INVALID_REFRESH' });
 
-    const user = await dbGet(
-      'SELECT id, email, username, twofa_last_sent FROM users WHERE id = ?',
-      [payload.uid]
-    );
-    if (!user) return reply.code(400).send({ ok: false, error: 'USER_NOT_FOUND' });
-
-    const last = Number(user.twofa_last_sent || 0);
-    if (nowSec() - last < TWOFA_RESEND_MIN_SEC) {
-      return reply
-        .code(429)
-        .send({ ok: false, error: 'TOO_SOON', retry_after: TWOFA_RESEND_MIN_SEC - (nowSec() - last) });
-    }
-
-    await createAndSend2fa(user);
-    return reply.send({ ok: true, message: 'Code renvoyé' });
+  // ✅ Ne pas régénérer un refresh — il reste valable jusqu'à son expiration
+  // Juste régénérer le token d'accès (15 min)
+  const newAccess = issueAccessToken(rec.user_id);
+  reply.setCookie('access', newAccess, {
+    ...COOKIE_OPTS,
+    maxAge: ACCESS_TOKEN_TTL_MIN * 60,
   });
 
-  // ---------- Refresh token (rotation) ----------
-  fastify.post('/token/refresh', async (req, reply) => {
-    const raw = req.cookies?.refresh;
-    if (!raw) return reply.code(401).send({ ok: false, error: 'NO_REFRESH' });
-
-    // Cherche un refresh valide correspondant (revoked_at NULL et non expiré)
-    const rows = await dbAll(
-      `SELECT id, user_id, token_hash, expires_at, revoked_at
-       FROM refresh_tokens
-       WHERE revoked_at IS NULL AND datetime(expires_at) > datetime('now')`,
-      []
-    );
-
-    let rec = null;
-    for (const r of rows) {
-      const ok = await bcrypt.compare(raw, r.token_hash);
-      if (ok) { rec = r; break; }
-    }
-    if (!rec) return reply.code(401).send({ ok: false, error: 'INVALID_REFRESH' });
-
-    // Rotation : révoquer l’ancien
-    await dbRun(`UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?`, [rec.id]);
-
-    // Émettre un nouvel access + refresh
-    const newAccess = issueAccessToken(rec.user_id);
-    const newRefresh = await createAndStoreRefreshToken(rec.user_id);
-
-    reply.setCookie('access', newAccess, { ...COOKIE_OPTS, maxAge: ACCESS_TOKEN_TTL_MIN * 60 });
-    reply.setCookie('refresh', newRefresh, { ...COOKIE_OPTS, maxAge: REFRESH_TOKEN_TTL_DAYS * 24 * 3600 });
-
-    return reply.send({ ok: true });
-  });
+  return reply.send({ ok: true });
+});
 
   // ---------- Me ----------
   fastify.get('/me', async (req, reply) => {
