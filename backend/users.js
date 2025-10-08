@@ -4,6 +4,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const { pipeline } = require('node:stream/promises');
+const bcrypt = require('bcrypt');
+const { passwordPolicyErrors } = require('./password-policy');
 
 
 function dbGet(sql, params = []) {
@@ -94,6 +96,37 @@ async function usersRoutes(fastify) {
 
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
     if (!existing) return replyError(reply, 'USER_NOT_FOUND');
+
+    //password change
+    const oldPw = String(fields.old_password || '');
+    const newPw = String(fields.new_password || '');
+
+    if (oldPw || newPw) {
+      if (!oldPw || !newPw) {
+        return reply.code(400).send({ ok: false, error_key: 'password.missing_fields' });
+      }
+
+      const userRow = await dbGet('SELECT username, email, password FROM users WHERE id = ?', [id]);
+      if (!userRow) return replyError(reply, 'USER_NOT_FOUND');
+
+      if (!userRow.password) {
+        return reply.code(400).send({ ok:false, error_key: 'password.no_local_password' });
+      }
+
+      const ok = await bcrypt.compare(oldPw, userRow.password);
+      if (!ok) {
+        return reply.code(400).send({ ok: false, error_key: 'password.invalid_current'});
+      }
+
+      //policy check
+      const policy = passwordPolicyErrors(newPw, { username: userRow.username, email: userRow.email });
+      if (policy.length) {
+        return reply.code(400).send({ ok: false, error_key: 'auth.weak_password', details: policy});
+      }
+
+      const hashed = await bcrypt.hash(newPw, 10);
+      await dbRun('UPDATE users SET password = ? WHERE id = ?', [hashed, id]);
+    }
 
     try {
       await dbRun(

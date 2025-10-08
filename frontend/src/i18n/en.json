@@ -99,6 +99,20 @@
 		"username_label": "Username",
 		"alias_label": "Alias (public)",
 		"avatar_file_label": "Upload avatar",
+		"MdpChange": "Change password",
+		"actualMDP": "Current password",
+		"newMDP": "New Password",
+		"confirm": "Confirm new password",
+		"nothing_to_save": "Nothing to save.",
+		"username_required": "Username is required.",
+		"password": {
+			"old_required": "Enter your current password.",
+			"new_required": "Enter and confirm the new password.",
+			"mismatch": "New passwords do not match",
+			"missing_fields": "Please fill current and new password.",
+			"no_local_password": "This account has no local password.",
+			"invalid_current" : "Current password is incorrect."
+		},
 		"avatar" : {
 			"invalid_scheme" : "Invalid URL: Use https://",
 			"checking": "Checking the image…",
