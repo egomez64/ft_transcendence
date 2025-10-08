@@ -184,9 +184,6 @@ function renderFriends(items: Friend[]) {
       }
     });
 
-    li.append(avatarWrapper, info, btn);
-    ul.appendChild(li);
-
 	const btn_history = document.createElement('button');
    btn_history.className = 'px-3 py-1 rounded-md border border-pink-500/40 hover:bg-pink-500/10 transition';
    btn_history.textContent = t('history');
@@ -194,7 +191,7 @@ function renderFriends(items: Friend[]) {
 		window.location.href = `/dashboard?userId=${encodeURIComponent(f.id)}&tab=history`;
    });
 
-    li.append(img, info, btn_history);
+    li.append(btn, avatarWrapper, info, btn_history);
     ul.appendChild(li);
   }
 }
