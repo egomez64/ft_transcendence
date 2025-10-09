@@ -102,7 +102,7 @@ function mountSlotLogin(i: 2 | 3 | 4) {
       b!.disabled = true;
       b!.classList.add("opacity-60", "cursor-not-allowed");
       if (badge) {
-        badge.textContent = "Connecté";
+        badge.textContent = t("tournament.status_on") || "Connecté";
         badge.className =
           "ml-auto text-xs rounded-full px-2 py-1 bg-green-600/30 text-green-300 font-bold";
       }

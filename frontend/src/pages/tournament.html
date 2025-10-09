@@ -9,8 +9,8 @@
     <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon transition-transform transform hover:scale-105 duration-300">
       <div class="flex items-center gap-3 mb-4">
         <img src="assets/dashboard/trophy.svg" alt="Player" class="w-8 h-8 opacity-90" />
-        <h3 class="text-xl font-bold text-pink-300">Joueur 1</h3>
-        <span class="ml-auto text-xs rounded-full px-2 py-1 bg-green-600/30 text-green-300 font-bold">Connecté</span>
+        <h3 class="text-xl font-bold text-pink-300" data-i18n="tournament.player1">Joueur 1</h3>
+        <span class="ml-auto text-xs rounded-full px-2 py-1 bg-green-600/30 text-green-300 font-bold" data-i18n="tournament.status_on">Connecté</span>
       </div>
       <div class="space-y-3">
         <input id="p1-username" type="text" readonly
@@ -24,8 +24,8 @@
     <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon transition-transform transform hover:scale-105 duration-300">
       <div class="flex items-center gap-3 mb-4">
         <img src="assets/dashboard/trophy.svg" alt="Player" class="w-8 h-8 opacity-90" />
-        <h3 class="text-xl font-bold text-pink-300">Joueur 2</h3>
-        <span id="p2-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200">Hors ligne</span>
+        <h3 class="text-xl font-bold text-pink-300" data-i18n="tournament.player2">Joueur 2</h3>
+        <span id="p2-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200" data-i18n="tournament.status_off">Hors ligne</span>
       </div>
       <div class="space-y-3">
         <input id="p2-username" autocomplete="username" data-i18n="tournament.inputs.username"
@@ -34,7 +34,7 @@
         <input id="p2-password" type="password" autocomplete="current-password"
                data-i18n="tournament.inputs.password" placeholder="Mot de passe"
                class="w-full bg-[#1a1a2e]/90 border border-[#f472b6]/40 p-3 rounded-md text-pink-100 placeholder-pink-300" />
-        <button id="p2-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition">
+        <button id="p2-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition" data-i18n="login.submit">
           Se connecter
         </button>
         <p id="p2-msg" class="text-sm text-pink-200 h-5"></p>
@@ -45,8 +45,8 @@
     <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon transition-transform transform hover:scale-105 duration-300">
       <div class="flex items-center gap-3 mb-4">
         <img src="assets/dashboard/trophy.svg" alt="Player" class="w-8 h-8 opacity-90" />
-        <h3 class="text-xl font-bold text-pink-300">Joueur 3</h3>
-        <span id="p3-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200">Hors ligne</span>
+        <h3 class="text-xl font-bold text-pink-300" data-i18n="login.submit" data-i18n="tournament.player3">Joueur 3</h3>
+        <span id="p3-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200" data-i18n="tournament.status_off">Hors ligne</span>
       </div>
       <div class="space-y-3">
         <input id="p3-username" autocomplete="username" data-i18n="tournament.inputs.username"
@@ -55,7 +55,7 @@
         <input id="p3-password" type="password" autocomplete="current-password"
                data-i18n="tournament.inputs.password" placeholder="Mot de passe"
                class="w-full bg-[#1a1a2e]/90 border border-[#f472b6]/40 p-3 rounded-md text-pink-100 placeholder-pink-300" />
-        <button id="p3-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition">
+        <button id="p3-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition" data-i18n="login.submit">
           Se connecter
         </button>
         <p id="p3-msg" class="text-sm text-pink-200 h-5"></p>
@@ -66,8 +66,8 @@
     <div class="bg-[#1a1a2e]/70 p-6 rounded-xl shadow-neon transition-transform transform hover:scale-105 duration-300">
       <div class="flex items-center gap-3 mb-4">
         <img src="assets/dashboard/trophy.svg" alt="Player" class="w-8 h-8 opacity-90" />
-        <h3 class="text-xl font-bold text-pink-300">Joueur 4</h3>
-        <span id="p4-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200">Hors ligne</span>
+        <h3 class="text-xl font-bold text-pink-300" data-i18n="tournament.player4">Joueur 4</h3>
+        <span id="p4-badge" class="ml-auto text-xs rounded-full px-2 py-1 bg-slate-600/50 text-slate-200" data-i18n="tournament.status_off">Hors ligne</span>
       </div>
       <div class="space-y-3">
         <input id="p4-username" autocomplete="username" data-i18n="tournament.inputs.username"
@@ -76,7 +76,7 @@
         <input id="p4-password" type="password" autocomplete="current-password"
                data-i18n="tournament.inputs.password" placeholder="Mot de passe"
                class="w-full bg-[#1a1a2e]/90 border border-[#f472b6]/40 p-3 rounded-md text-pink-100 placeholder-pink-300" />
-        <button id="p4-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition">
+        <button id="p4-login" class="w-full py-3 rounded-full font-bold bg-gradient-to-r from-[#ff1493] to-[#8b008b] text-white hover:opacity-90 transition" data-i18n="login.submit">
           Se connecter
         </button>
         <p id="p4-msg" class="text-sm text-pink-200 h-5"></p>

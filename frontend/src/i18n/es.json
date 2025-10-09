@@ -233,6 +233,12 @@
 		"resent": "Código reenviado."
 	},
 	"tournament": {
+		"status_off" : "Disconectado",
+		"status_on" : "Conectado",
+		"player1": "Jugador 1",
+		"player2": "Jugador 2",
+		"player4": "Jugador 3",
+		"player3": "Jugador 4",
 		"title": "Torneo (4 jugadores)",
 		"inputs": {
 			"username": "Nombre de usuario",

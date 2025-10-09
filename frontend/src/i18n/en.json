@@ -233,6 +233,12 @@
 		"resent": "Code resent."
 	},
 	"tournament": {
+		"status_off" : "Offline",
+		"status_on" : "Connected",
+		"player1": "Player 1",
+		"player2": "Player 2",
+		"player4": "Player 3",
+		"player3": "Player 4",
 		"title": "Tournament (4 players)",
 		"inputs": {
 			"username": "Username",

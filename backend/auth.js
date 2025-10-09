@@ -311,6 +311,36 @@ async function authRoute(fastify) {
     });
   });
 
+  // ---------- Renvoyer un code 2fa ----------
+ fastify.post('/2fa/resend', async (req, reply) => {
+    const pre = req.cookies?.pre2fa;
+    if (!pre) return reply.code(401).send({ ok: false, error: 'NO_PRE2FA' });
+
+    let payload;
+    try {
+      payload = jwt.verify(pre, JWT_SECRET);
+      if (payload.stage !== 'pre2fa') throw new Error('bad stage');
+    } catch {
+      return reply.code(401).send({ ok: false, error: 'INVALID_PRE2FA' });
+    }
+
+    const user = await dbGet(
+      'SELECT id, email, username, twofa_last_sent FROM users WHERE id = ?',
+      [payload.uid]
+    );
+    if (!user) return reply.code(400).send({ ok: false, error: 'USER_NOT_FOUND' });
+
+    const last = Number(user.twofa_last_sent || 0);
+    if (nowSec() - last < TWOFA_RESEND_MIN_SEC) {
+      return reply
+        .code(429)
+        .send({ ok: false, error: 'TOO_SOON', retry_after: TWOFA_RESEND_MIN_SEC - (nowSec() - last) });
+    }
+
+    await createAndSend2fa(user);
+    return reply.send({ ok: true, message: 'Code renvoyé' });
+  });
+
   // ---------- Renvoyer un code (anti-spam) ----------
 fastify.post('/token/refresh', async (req, reply) => {
   const raw = req.cookies?.refresh;

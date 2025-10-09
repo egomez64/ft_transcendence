@@ -233,6 +233,12 @@
 		"resent": "Code renvoyé."
 	},
 	"tournament": {
+		"status_off" : "Hors ligne",
+		"status_on" : "Connecté",
+		"player1": "Joueur 1",
+		"player2": "Joueur 2",
+		"player4": "Joueur 3",
+		"player3": "Joueur 4",
 		"title": "Tournoi (4 joueurs)",
 		"inputs": {
 			"username": "Nom d'utilisateur",
