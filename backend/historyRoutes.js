@@ -14,33 +14,33 @@ async function historyRoutes(fastify, options) {
     try {
       const rows = await dbAll(
         `SELECT m.id,
-					 m.player1_id,
-					 m.player2_id,
+                m.player1_id,
+                m.player2_id,
                 u1.username AS player1, 
                 u2.username AS player2, 
                 m.score_p1, 
                 m.score_p2, 
                 m.created_at, 
-                m.winner_id
+                m.winner_id,
+                m.status
          FROM matches m
          JOIN users u1 ON m.player1_id = u1.id
          JOIN users u2 ON m.player2_id = u2.id
-         WHERE m.player1_id = ? OR m.player2_id = ?
+         WHERE (m.player1_id = ? OR m.player2_id = ?)
+           AND m.status = 'finished'               -- ⬅️ filtre
          ORDER BY m.created_at DESC
          LIMIT 20`,
         [userId, userId]
       );
 
       const history = rows.map(match => {
-		  const time = new Date(match.created_at);
-		  time.setHours(time.getHours());
+        const time = new Date(match.created_at);
+        time.setHours(time.getHours());
 
-		  const player = match.player1_id === userId ? match.player1 : match.player2;
+        const player = match.player1_id === userId ? match.player1 : match.player2;
         const opponent = match.player1_id === userId ? match.player2 : match.player1;
         const score = `${match.score_p1} - ${match.score_p2}`;
-        const result =
-          match.winner_id === userId ? 'win' :
-          (match.winner_id ? 'lose' : 'pending');
+        const result = match.winner_id === userId ? 'win' : 'lose';
 
         return { id: match.id, player, opponent, score, result, played_at: time.toISOString() };
       });
