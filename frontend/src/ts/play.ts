@@ -54,7 +54,8 @@ document.addEventListener("click", async (ev) => {
       alert("Impossible de créer le match contre l'IA.");
       return;
     }
-    window.location.href = "/pong?mode=ai";
+    history.pushState({}, "", "/pong?mode=ai");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   } catch (err) {
     console.error("Erreur /api/match/ai:", err);
     alert("Erreur réseau pendant la création du match IA.");

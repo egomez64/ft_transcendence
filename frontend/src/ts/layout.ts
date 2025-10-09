@@ -60,7 +60,7 @@ export function currentUser(): Me {
 export async function getMeOnce(force = false): Promise<Me> {
   const now = Date.now();
   if (!force) {
-    if (AUTH_CACHE && now - ME_LAST_AT < 10_000) return AUTH_CACHE;
+    if (AUTH_CACHE && now - ME_LAST_AT < 2_000) return AUTH_CACHE;
     if (ME_PROMISE) return ME_PROMISE;
   }
 
@@ -264,9 +264,9 @@ window.addEventListener("auth:changed", () => {
   setupAuthMenu();
 });
 
-setInterval(async () => {
+/*setInterval(async () => {
   try {
     await fetchWithAuth('/api/auth/ping', { method: 'POST' });
   } catch {
   }
-}, 60000);
+}, 60000);*/
