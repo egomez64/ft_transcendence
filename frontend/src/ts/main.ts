@@ -70,11 +70,11 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
   profils:    { file: "profile.html", mount: mountProfileHandlers, protected: true },
   friends:    { file: "friends.html", mount: initFriendsPage, protected: true },
   pong:       { file: "pong.html", mount: initPongPage, protected: true },
-  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true },
-  twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false },
-  tournament: { file: "tournament.html", mount: initTournamentPage, protected : true },
-  "tournament/bracket": { file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true },
-  'set-password': { file: "set-password.html", mount: mountSetPasswordPage, protected : false },
+  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true},
+  twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
+  tournament: { file: "tournament.html", mount: initTournamentPage, protected : true},
+  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true},
+  'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
 };
 
 // --------- ROUTER ---------

@@ -253,5 +253,9 @@
 		"result": "Résultat",
 		"winner": "Vainqueur",
 		"winner_prefix": "Vainqueur :"
+	},
+	"set-password": {
+		"saved": "Enregistrer",
+		"set": "Définir un mot de passe"
 	}
 }

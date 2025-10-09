@@ -253,5 +253,9 @@
 		"result": "Result",
 		"winner": "Winner",
 		"winner_prefix": "Winner :"
+	},
+	"set-password": {
+		"saved": "Save",
+		"set": "Define a new password"
 	}
 }
