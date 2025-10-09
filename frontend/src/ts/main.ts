@@ -1,4 +1,3 @@
-// src/ts/main.ts
 import "../style.css";
 import "../output.css";
 import { initFriendsPage } from "./friends";
@@ -30,6 +29,14 @@ function routeFromLocation(): string {
   return p.replace(/^\/+/, "");
 }
 
+// calcule la clé de page à partir d’un chemin arbitraire (gère aussi ?query)
+function keyFromPath(path: string): string {
+  const url = new URL(path, window.location.origin);
+  const p = url.pathname || "/";
+  if (p === "/" || p === "/home") return "home";
+  return p.replace(/^\/+/, "");
+}
+
 async function waitFor(sel: string, tries = 10): Promise<boolean> {
   return await new Promise((resolve) => {
     const check = () => {
@@ -41,11 +48,11 @@ async function waitFor(sel: string, tries = 10): Promise<boolean> {
   });
 }
 
-// Pages nécessitant login
+// Pages nécessitant login (inutile si tout est piloté par PAGE_MAP.protected, gardé pour compat)
 const protectedPages = new Set(["dashboard", "play"]);
 
 // Layout HTML initial (header/nav/app container)
-async function loadLayout() {
+async function loadLayout(): Promise<void> {
   if (document.getElementById("authMenu")) return; // déjà chargé
   const layoutResp = await fetch("./src/pages/layout.html");
   const layoutHtml = await layoutResp.text();
@@ -63,16 +70,11 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
   profils:    { file: "profile.html", mount: mountProfileHandlers, protected: true },
   friends:    { file: "friends.html", mount: initFriendsPage, protected: true },
   pong:       { file: "pong.html", mount: initPongPage, protected: true },
-  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true},
-  twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
-<<<<<<< HEAD
-  tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
-  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
-=======
-  tournament: { file: "tournament.html", mount: initTournamentPage, protected : true},
-  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true},
->>>>>>> refs/remotes/origin/main
-  'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
+  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true },
+  twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false },
+  tournament: { file: "tournament.html", mount: initTournamentPage, protected : true },
+  "tournament/bracket": { file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true },
+  'set-password': { file: "set-password.html", mount: mountSetPasswordPage, protected : false },
 };
 
 // --------- ROUTER ---------
@@ -80,7 +82,7 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
 let ROUTING = false; // anti-réentrance
 let CURRENT_UNMOUNT: (() => void) | null = null; // 🔹 unmount courant
 
-export async function loadPage() {
+export async function loadPage(): Promise<void> {
   // 🔹 cleanup de l’ancienne page avant d’afficher la nouvelle
   try { CURRENT_UNMOUNT?.(); } catch (e) { console.warn("[unmount error]", e); }
   CURRENT_UNMOUNT = null;
@@ -96,8 +98,7 @@ export async function loadPage() {
     let authed = !!currentUser();
     if (!authed) authed = await isAuthed();
     if (!authed) {
-      await navigate("/login", true);
-      return;
+      return await navigate("/login", true);
     }
   }
 
@@ -145,11 +146,33 @@ export async function loadPage() {
   setupAuthMenu();
 }
 
-export async function navigate(path: string, replace = false) {
+export async function navigate(path: string, replace = false): Promise<void> {
   const url = path.startsWith("/") ? path : `/${path}`;
+  const key = keyFromPath(url);
+  const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
-  // pas de “tourne en rond” : si on demande la même URL → juste recharger la page
-  if (url === window.location.pathname) {
+  // 🔒 si protected, vérifie l’auth AVANT de changer l’URL → évite le “1er clic” inutile
+  if (def.protected) {
+    await ensureFreshAcces();
+    await getMeOnce();
+    let authed = !!currentUser();
+    if (!authed) authed = await isAuthed();
+    if (!authed) {
+      if (ROUTING) return;
+      ROUTING = true;
+      try {
+        history.replaceState({}, "", "/login");
+        await loadPage();
+      } finally {
+        ROUTING = false;
+      }
+      return;
+    }
+  }
+
+  // pas de “tourne en rond” (garde la query-string)
+  const currentFull = window.location.pathname + window.location.search;
+  if (url === currentFull) {
     return loadPage();
   }
 
@@ -179,7 +202,7 @@ document.addEventListener("click", (e) => {
   navigate(href);
 });
 
-// Bouton logout (menu header) — on ne touche plus au localStorage
+// Bouton logout (menu header)
 document.addEventListener("click", async (e) => {
   const target = e.target as HTMLElement;
   const btn = target.closest("#logoutBtn");
@@ -207,7 +230,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   bindGlobalMenuOnce();
   await initI18n();
   await ensureFreshAcces();
-  await getMeOnce();   // précharge /me avant le premier mount
+  await getMeOnce(); // précharge /me avant le premier mount
   await loadPage();
 });
 

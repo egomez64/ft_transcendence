@@ -25,6 +25,30 @@ async function fetchMe(): Promise<Me> {
   }
 }
 
+async function fetchUserPublicName(userId: number): Promise<string | null> {
+  try {
+    const res = await fetchWithAuth(`/api/users/${userId}`);
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      const u = data?.user || data;
+      const name = u?.alias || u?.username || null;
+      if (name) return name;
+    }
+  } catch {}
+  
+  //fallback tenter via ranking
+  try{
+    const r = await fetchWithAuth("/api/users/ranking");
+    if (r.ok) {
+      const d = await r.json().catch(() => ({}));
+      const u = d?.ranking?.find((x: any) => x.id === userId);
+      if (u?.username) return u.username;
+    }
+  } catch {}
+
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 2) VUES (HTML bruts injectés dans le dashboard)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,6 +330,27 @@ export function mountDashboard() {
     const nameEl = document.getElementById("dashUsername");
     if (user && nameEl) nameEl.textContent = user.username ?? "Invité";
   });
+
+  //titre si friends dashboard
+  (async () => {
+    if (!userIdParam) return;
+
+    const titleEl = document.querySelector<HTMLHeadingElement>('h2[data-i18n="nav.dashboard"]');
+    if (!titleEl) return;
+
+    const friendName = await fetchUserPublicName(Number(userIdParam));
+    if (!friendName) return;
+
+    const lang = (document.documentElement.getAttribute("lang") || localStorage.getItem("lang") || "fr").toLowerCase();
+    const friendDash = 
+      lang.startsWith("fr") ? `Tableau de bord de ${friendName}` :
+      lang.startsWith("es") ? `Panel de ${friendName}` :
+      `${friendName}'s Dashboard`;
+
+    //evite les futur applyTranslations()
+    titleEl.removeAttribute("data-i18n");
+    titleEl.textContent = friendDash;
+  })();
 
   document.querySelectorAll<HTMLButtonElement>(".tab-button").forEach((btn) => {
     btn.addEventListener("click", () => {

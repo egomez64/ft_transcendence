@@ -186,10 +186,12 @@ function renderFriends(items: Friend[]) {
 
 	const btn_history = document.createElement('button');
    btn_history.className = 'px-3 py-1 rounded-md border border-pink-500/40 hover:bg-pink-500/10 transition';
-   btn_history.textContent = t('history');
-   btn_history.addEventListener('click', async () => {
-		window.location.href = `/dashboard?userId=${encodeURIComponent(f.id)}&tab=history`;
-   });
+   btn_history.textContent = t('dashboard.history');
+   btn_history.addEventListener('click', () => {
+    const url = `/dashboard?userId=${encodeURIComponent(f.id)}&tab=history`;
+    window.history.pushState({}, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
 
     li.append(btn, avatarWrapper, info, btn_history);
     ul.appendChild(li);
