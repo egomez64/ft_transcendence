@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import staticPlugin from '@fastify/static';
 import compress from '@fastify/compress';
 import cookie from '@fastify/cookie';
+import jwt from 'jsonwebtoken';
 
 const   ROOT = process.cwd();
 const   PAGES = path.join(ROOT, 'src', 'pages');
@@ -40,18 +41,33 @@ async function render(page: string, opts: { title?: string; desc?: string; user?
 //ex recuperer un utilisateur avec cookie
 
 function getUser(req: any): any | null {
-    const raw = req.cookies?.authUser;
-    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+    const raw = req.cookie?.access;
+    if (!raw) return null;
+    const ACCESS_JWT_SECRET = process.env.ACCESS_JWT_SECRET || 'dev-access';
+    try {
+        const payload: any = jwt.verify(raw, ACCESS_JWT_SECRET);
+        return { id: payload.uid };
+    } catch {
+        return null
+    }
 }
 
 const ROUTES: Record<string, { file: string; title: string; protected?: boolean }> = {
-    '/':            { file: 'home.html',        title: 'Acceuil - ft_transcendence' },
-    '/home':        { file: 'home.html',        title: 'Acceuil - ft_transcendence' },
-    '/login':       { file: 'login.html',       title: 'Connexion - ft_transcendence' },
-    '/register':    { file: 'register.html',    title: 'Inscription - ft_transcendence' },
-    '/dashboard':   { file: 'dashboard.html',   title: 'dashboard - ft_transcendence', protected: true },
-    '/profils':     { file: 'profile.html',     title: 'Profil - ft_transcendence', protected: true },
-    '/friends':     { file: 'friends.html',     title: 'Amis - ft_transcendence', protected: true },
+  '/':                      { file: 'home.html',                  title: 'Accueil - ft_transcendence' },
+  '/home':                  { file: 'home.html',                  title: 'Accueil - ft_transcendence' },
+  '/login':                 { file: 'login.html',                 title: 'Connexion - ft_transcendence' },
+  '/register':              { file: 'register.html',              title: 'Inscription - ft_transcendence' },
+  // tout le reste protégé :
+  '/dashboard':             { file: 'dashboard.html',             title: 'Dashboard - ft_transcendence', protected: true },
+  '/profils':               { file: 'profile.html',               title: 'Profil - ft_transcendence',     protected: true },
+  '/friends':               { file: 'friends.html',               title: 'Amis - ft_transcendence',       protected: true },
+  '/play':                  { file: 'play.html',                  title: 'Play - ft_transcendence',       protected: true },
+  '/pong':                  { file: 'pong.html',                  title: 'Pong - ft_transcendence',       protected: true },
+  '/1v1':                   { file: '1v1.html',                   title: '1v1 - ft_transcendence',        protected: true },
+  '/twofa':                 { file: 'twofa.html',                 title: '2FA - ft_transcendence',        protected: false },
+  '/tournament':            { file: 'tournament.html',            title: 'Tournament - ft_transcendence', protected: true },
+  '/tournament/bracket':    { file: 'tournament-bracket.html',    title: 'Bracket - ft_transcendence',    protected: true },
+  '/set-password':          { file: 'set-password.html',          title: 'Set password - ft_transcendence', protected: false },
 };
 
 const app = Fastify({ logger: false});

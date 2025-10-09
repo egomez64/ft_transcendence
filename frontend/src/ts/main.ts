@@ -59,19 +59,15 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
   login:      { file: "login.html", mount: mountLoginHandlers, protected: false },
   register:   { file: "register.html", mount: mountRegisterHandlers, protected: false },
   dashboard:  { file: "dashboard.html", mount: () => { mountDashboard(); paintDashboardUsername(); }, protected: true },
-  play:       { file: "play.html", mount: initPlayPage, protected: false },
+  play:       { file: "play.html", mount: initPlayPage, protected: true },
   profils:    { file: "profile.html", mount: mountProfileHandlers, protected: true },
-  friends:    { file: "friends.html", mount: initFriendsPage, protected: false },
-  pong:       { file: "pong.html", mount: initPongPage, protected: false },
-  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : false},
+  friends:    { file: "friends.html", mount: initFriendsPage, protected: true },
+  pong:       { file: "pong.html", mount: initPongPage, protected: true },
+  '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true},
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
-  tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
-<<<<<<< HEAD
-  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
+  tournament: { file: "tournament.html", mount: initTournamentPage, protected : true},
+  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true},
   'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
-=======
-  "tournament/bracket": { file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false },
->>>>>>> refs/remotes/origin/main
 };
 
 // --------- ROUTER ---------

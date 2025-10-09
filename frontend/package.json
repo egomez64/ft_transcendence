@@ -17,6 +17,7 @@
     "@babylonjs/core": "8.27.2",
     "@babylonjs/gui": "8.27.2",
     "@babylonjs/materials": "8.27.2",
+    "jsonwebtoken": "^9.0.2",
     "socket.io-client": "4.8.1"
   }
 }
