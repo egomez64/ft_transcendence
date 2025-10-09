@@ -65,13 +65,8 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
   pong:       { file: "pong.html", mount: initPongPage, protected: true },
   '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : true},
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
-<<<<<<< HEAD
-  tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
-  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
-=======
   tournament: { file: "tournament.html", mount: initTournamentPage, protected : true},
   "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: true},
->>>>>>> refs/remotes/origin/main
   'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
 };
 
