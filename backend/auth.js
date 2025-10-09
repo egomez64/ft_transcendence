@@ -307,7 +307,7 @@ async function authRoute(fastify) {
     return reply.send({
       ok: true,
       message: '2FA verified',
-      user: { id: user.id, username: user.username, email: user.email },
+      user: { id: user.id, username: user.username, email: user.email, needs_password: user.needs_password },
     });
   });
 
@@ -397,6 +397,28 @@ fastify.post('/token/refresh', async (req, reply) => {
     clearAuthCookies(reply);
     return reply.send({ ok: true });
   });
+
+  fastify.post('/set-password', async (req, reply) => {
+  const token = req.cookies?.access;
+  if (!token) return reply.code(401).send({ ok: false, error: 'NOT_AUTHENTICATED' });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, ACCESS_JWT_SECRET);
+  } catch {
+    return reply.code(401).send({ ok: false, error: 'INVALID_TOKEN' });
+  }
+
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 8) {
+    return reply.code(400).send({ ok: false, error: 'WEAK_PASSWORD' });
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await dbRun('UPDATE users SET password = ?, needs_password = 0 WHERE id = ?', [hash, payload.uid]);
+
+  return reply.send({ ok: true, message: 'Password set successfully' });
+});
 }
 
 // ---------- Upsert user depuis Google ----------
@@ -409,7 +431,7 @@ async function upsertUserFromGoogle({ googleEmail, googleName, googleId, googleA
     .slice(0, 20);
 
   await dbRun(
-    'INSERT INTO users (email, username, password, alias, avatar_url) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO users (email, username, password, alias, avatar_url, needs_password) VALUES (?, ?, ?, ?, ?, ?)',
     [googleEmail, username, '', username, googleAvatar || null]
   );
 

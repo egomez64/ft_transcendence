@@ -5,6 +5,7 @@ import { mountRegisterHandlers } from "./register";
 import { mountLoginHandlers } from "./login";
 import { mountDashboard, paintDashboardUsername } from "./dashboard";
 import { mountProfileHandlers } from "./profile";
+import { mountSetPasswordPage } from "./set-password";
 import { initPongPage } from "./pong";
 import {
   setupAuthMenu,
@@ -62,6 +63,7 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
   tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
   "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
+  'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
 };
 
 // --------- ROUTER ---------

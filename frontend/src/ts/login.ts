@@ -82,6 +82,16 @@ export function mountLoginHandlers() {
         return;
       }
 
+      const me = await meRes.json().catch(() => ({} as any));
+
+      // Vérifie si l'utilisateur doit définir un mot de passe
+      if (me?.user?.needs_password) {
+        // Redirige vers la page "Définir un mot de passe"
+        history.pushState({}, "", "/set-password");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+        return;
+      }
+
       // Émettre l’événement global pour que le header/menu se mette à jour
       window.dispatchEvent(new CustomEvent("auth:changed"));
 
