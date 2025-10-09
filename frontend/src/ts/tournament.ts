@@ -82,8 +82,8 @@ function mountSlotLogin(i: 2 | 3 | 4) {
       const body = (await res.json().catch(() => ({}))) as LoginResp;
 
       if (!res.ok || !body.ok) {
-        const msg = (body as any)?.error_key || (body as any)?.error || t("common.server_error");
-        if (m) m.textContent = String(msg);
+        const k = (body as any)?.error_key || (body as any)?.error || "common.server_error";
+        if (m) m.textContent = t(String(k));
         b.disabled = false;
         return;
       }

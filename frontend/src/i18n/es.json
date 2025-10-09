@@ -241,7 +241,8 @@
 		"start": "comenzar el torneo",
 		"errors": {
 			"missing_credentials": "Por favor, introduzca su nombre de usuario y contraseña.",
-			"already_joined": "Este jugador ya está inscrito."
+			"already_joined": "Este jugador ya está inscrito.",
+			"invalid_credentials": "Credenciales no válidas"
 		},
 		"bracket_title": "Árbol de torneos",
 		"semi_a": "Semifinal A",

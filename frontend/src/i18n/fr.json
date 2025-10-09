@@ -241,7 +241,8 @@
 		"start": "Lancer le tournoi",
 		"errors": {
 			"missing_credentials": "Veuillez saisir le nom d'utilisateur et le mot de passe.",
-			"already_joined": "Ce joueur est déjà inscrit."
+			"already_joined": "Ce joueur est déjà inscrit.",
+			"invalid_credentials": "Identifiants invalides"
 		},
 		"bracket_title": "Arbre du tournoi",
 		"semi_a": "Demi-final A",

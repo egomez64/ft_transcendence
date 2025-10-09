@@ -241,7 +241,8 @@
 		"start": "Start the tournament",
 		"errors": {
 			"missing_credentials": "Please enter username and password.",
-			"already_joined": "This player is already registered."
+			"already_joined": "This player is already registered.",
+			"invalid_credentials": "Invalid credentials"
 		},
 		"bracket_title": "Tournament tree",
 		"semi_a": "Semi-final A",

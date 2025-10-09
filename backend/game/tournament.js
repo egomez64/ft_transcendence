@@ -31,12 +31,12 @@ async function tournamentRoutes(fastify, opts) {
       );
 
       if (!user) {
-        return reply.code(400).send({ ok: false, error_key: 'login.invalid_credentials' });
+        return reply.code(400).send({ ok: false, error_key: 'tournament.errors.invalid_credentials' });
       }
 
       const ok = await bcrypt.compare(password, user.password || '');
       if (!ok) {
-        return reply.code(400).send({ ok: false, error_key: 'login.invalid_credentials' });
+        return reply.code(400).send({ ok: false, error_key: 'tournament.errors.invalid_credentials' });
       }
 
       // Pas de session/cookie ici : on renvoie juste un mini profil
