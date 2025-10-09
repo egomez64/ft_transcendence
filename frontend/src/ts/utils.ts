@@ -1,5 +1,8 @@
 import { t } from "../i18n";
 
+let REFRESH_PROMISE: Promise<Response> | null = null;
+let LAST_REFRESH_OK_AT = 0;
+
 export type MsgType = "ok" | "err" | "info";
 
 function resolveTarget(target?: string | HTMLElement | null): HTMLElement | null {
@@ -84,13 +87,35 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: any = {}) {
   if (res.status !== 401) return res;
 
   // --- refresh token ---
-  const refreshRes = await fetch("/api/auth/token/refresh", {
-    method: "POST",
-    credentials: "include",
-  });
+  const refreshRes = await ensureFreshAcces();
 
   if (refreshRes.ok) {
     res = await fetch(normalized as any, opts);
   }
+  return res;
+}
+
+
+/**
+ * Force (dé-dupliqué) un refresh d'access token AVANT d'appeler une route protégée,
+ * pour éviter le pattern 401 -> refresh -> retry (qui provoque plusiers entrées /me).
+ * - Dédoublonne via REFRESH_PROMISE quand plusieurs appels arrivent ensemble
+ * - decalage léger (10s) pour éviter de relancer trop souvent
+ */
+
+export async function ensureFreshAcces() {
+  const now = Date.now();
+  if (now - LAST_REFRESH_OK_AT < 10_000) {
+    return new Response(null, { status: 200});
+  }
+  if (REFRESH_PROMISE) return REFRESH_PROMISE;
+  REFRESH_PROMISE = fetch("/api/auth/token/refresh", {
+    method: "POST",
+    credentials : "include",
+  }).finally(() => {
+    setTimeout(() => (REFRESH_PROMISE = null), 0);
+  });
+  const res = await REFRESH_PROMISE;
+  if (res.ok) LAST_REFRESH_OK_AT = Date.now();
   return res;
 }

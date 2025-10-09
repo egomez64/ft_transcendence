@@ -35,10 +35,13 @@ type Me = {
   email?: string;
   alias?: string;
   avatar_url?: string;
+  preferred_lang?: string;
 } | null;
 
 /** Cache mémoire de l'utilisateur courant (pour éviter de refetch en boucle). */
 let AUTH_CACHE: Me = null;
+let ME_PROMISE: Promise<Me> | null = null;
+let ME_LAST_AT = 0;
 
 /* ============================================================================
  *  API publique minimaliste
@@ -52,49 +55,50 @@ export function currentUser(): Me {
 /**
  * Vérifie l'authentification en interrogeant /api/auth/me.
  * Renvoie true/false (jamais d'exception).
+ * getter centralise /api/auth/me
  */
-export async function isAuthed(): Promise<boolean> {
-  try {
-    const res = await fetchWithAuth("/api/auth/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!res.ok) return false;
-    const data = await res.json().catch(() => ({} as any));
-    return !!data?.ok;
-  } catch {
-    return false;
+export async function getMeOnce(force = false): Promise<Me> {
+  const now = Date.now();
+  if (!force) {
+    if (AUTH_CACHE && now - ME_LAST_AT < 10_000) return AUTH_CACHE;
+    if (ME_PROMISE) return ME_PROMISE;
   }
+
+  ME_PROMISE = (async () => {
+    try {
+      const res = await fetchWithAuth("/api/auth/me", {
+        method: "GET",
+        Credential: "include",
+        caches: "no-store",
+      });
+      if (!res.ok) {
+        AUTH_CACHE = null;
+        return null;
+      }
+      const data = await res.json().catch(() => null);
+      AUTH_CACHE = (data?.user ?? null) as Me;
+      ME_LAST_AT = Date.now();
+      return AUTH_CACHE;
+    } catch {
+      AUTH_CACHE = null;
+      return null;
+    } finally {
+      ME_PROMISE = null;
+    }
+  })();
+  return ME_PROMISE;
+}
+
+export async function isAuthed(): Promise<boolean> {
+    if (AUTH_CACHE) return true;
+    const me = await getMeOnce();
+    return !!me;
 }
 
 /* ============================================================================
  *  Auth — helpers privés
  * ==========================================================================*/
 
-/**
- * Recharge /api/auth/me et met à jour le cache AUTH_CACHE.
- * Ne jette pas d'exception — renvoie toujours Me | null.
- */
-async function refreshAuth(): Promise<Me> {
-  try {
-    const res = await fetchWithAuth("/api/auth/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      AUTH_CACHE = null;
-      return null;
-    }
-    const data = await res.json().catch(() => null);
-    AUTH_CACHE = data?.user || null;
-    return AUTH_CACHE;
-  } catch {
-    AUTH_CACHE = null;
-    return null;
-  }
-}
 
 /**
  * Met à jour les éléments du header (pseudo, avatar, href, état du dropdown)
@@ -239,7 +243,7 @@ export function bindGlobalMenuOnce() {
  * Idempotent et sûr à rappeler après chaque navigation / changement d'auth.
  */
 export async function setupAuthMenu() {
-  const me = await refreshAuth();
+  const me = await getMeOnce();
   renderAuthBadge();
 
   // 👉 si connecté et que le back renvoie preferred_lang, on force cette langue

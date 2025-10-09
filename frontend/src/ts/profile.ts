@@ -1,6 +1,7 @@
 // src/ts/profile.ts
 import { makeSetMsg, fetchWithAuth } from "./utils";
 import { setLang, applyTranslations } from "../i18n";
+import { getMeOnce } from "./layout";
 
 const AVATAR = { FALLBACK: "/assets/login.png" };
 
@@ -43,17 +44,13 @@ export async function mountProfileHandlers() {
   const newPw2In  = form.querySelector<HTMLInputElement>('input[name="new_password_confirm"]');
 
   // ---- /me
-  let user: any = null;
-  try {
-    const res = await fetchWithAuth("/api/auth/me");
-    if (!res.ok) throw new Error("Not authenticated");
-    const data = await res.json();
-    if (!data.ok || !data.user) throw new Error("No user");
-    user = data.user;
-  } catch {
-    history.replaceState({}, "", "/login");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-    return;
+  let user: any = await getMeOnce();
+  if (!user) {
+    if (!user) {
+      history.replaceState({}, "", "/login");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      return;
+    }
   }
 
   // ---- Hydrate

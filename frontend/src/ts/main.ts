@@ -1,3 +1,4 @@
+// src/ts/main.ts
 import "../style.css";
 import "../output.css";
 import { initFriendsPage } from "./friends";
@@ -11,6 +12,8 @@ import {
   closeAuthDropdown,
   isAuthed,
   bindGlobalMenuOnce,
+  currentUser,
+  getMeOnce,
 } from "./layout";
 import { applyTranslations, initI18n } from "../i18n";
 import { initPlayPage } from "./play";
@@ -18,7 +21,7 @@ import { initLocal1v1Page } from "./1vs1";
 import { initTwofaPage } from "./twofa";
 import { initTournamentPage } from "./tournament";
 import { initTournamentBracketPage } from "./tournament-bracket";
-import { fetchWithAuth } from "./utils";
+import { fetchWithAuth, ensureFreshAcces } from "./utils";
 
 function routeFromLocation(): string {
   const p = window.location.pathname || "/";
@@ -48,9 +51,8 @@ async function loadLayout() {
   document.body.innerHTML = layoutHtml;
 }
 
-// 🔹 mount peut désormais retourner une fonction d’unmount
+// 🔹 mount peut retourner une fonction d’unmount
 type MountFn = () => void | (() => void) | Promise<void | (() => void)>;
-
 const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: boolean }> = {
   home:       { file: "home.html" },
   login:      { file: "login.html", mount: mountLoginHandlers, protected: false },
@@ -69,22 +71,23 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
 // --------- ROUTER ---------
 
 let ROUTING = false; // anti-réentrance
-let CURRENT_UNMOUNT: (() => void) | null = null; // 🔹 gardons l’unmount courant
+let CURRENT_UNMOUNT: (() => void) | null = null; // 🔹 unmount courant
 
 export async function loadPage() {
-  // 🔹 avant d’afficher la nouvelle page : cleanup de l’ancienne
+  // 🔹 cleanup de l’ancienne page avant d’afficher la nouvelle
   try { CURRENT_UNMOUNT?.(); } catch (e) { console.warn("[unmount error]", e); }
   CURRENT_UNMOUNT = null;
 
   const key = routeFromLocation();
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
+  // 🔹 s’assurer d’un access token frais + hydratation /me (dédupliquée)
+  await ensureFreshAcces();
+  await getMeOnce();
+
   if (def.protected) {
-    let authed = await isAuthed();
-    if (!authed) {
-      await new Promise((r) => setTimeout(r, 25));
-      authed = await isAuthed();
-    }
+    let authed = !!currentUser();
+    if (!authed) authed = await isAuthed();
     if (!authed) {
       await navigate("/login", true);
       return;
@@ -124,7 +127,7 @@ export async function loadPage() {
   await new Promise(requestAnimationFrame);
 
   try {
-    const maybeUnmount = def.mount?.();
+    const maybeUnmount = await def.mount?.();
     if (typeof maybeUnmount === "function") {
       CURRENT_UNMOUNT = maybeUnmount;
     }
@@ -146,7 +149,7 @@ export async function navigate(path: string, replace = false) {
   if (ROUTING) return; // anti-spam et anti-réentrance
   ROUTING = true;
   try {
-    // 🔹 avertit les pages (pour purger touches, etc.)
+    // 🔹 avertit les pages (pour purger listeners, touches, etc.)
     window.dispatchEvent(new Event("page:leaving"));
 
     if (replace) history.replaceState({}, "", url);
@@ -196,6 +199,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   await loadLayout();
   bindGlobalMenuOnce();
   await initI18n();
+  await ensureFreshAcces();
+  await getMeOnce();   // précharge /me avant le premier mount
   await loadPage();
 });
 
