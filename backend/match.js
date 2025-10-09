@@ -7,6 +7,11 @@ function dbGet(sql, params = []) {
     db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
   });
 }
+function dbAll(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)));
+  });
+}
 function dbRun(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
@@ -19,7 +24,6 @@ function dbRun(sql, params = []) {
 /* --- Update stats helper --- */
 async function updateUserStats(winnerId, loserId) {
   try {
-    // Gagnant
     await dbRun(
       `UPDATE users
        SET wins = wins + 1,
@@ -29,8 +33,6 @@ async function updateUserStats(winnerId, loserId) {
        WHERE id = ?`,
       [winnerId]
     );
-
-    // Perdant
     await dbRun(
       `UPDATE users
        SET losses = losses + 1,
@@ -46,6 +48,32 @@ async function updateUserStats(winnerId, loserId) {
 }
 
 async function matchRoutes(fastify) {
+  /* =========================================================
+   * 0) Nettoyage “safe” des matchs orphelins (optionnel)
+   *    POST /api/match/cleanup-pending
+   *    Supprime les matchs du user encore 'pending', 0–0, plus vieux que 10 min.
+   * =======================================================*/
+  fastify.post("/cleanup-pending", { preHandler: fastify.verifySession }, async (req, reply) => {
+    try {
+      const uid = req.user?.id;
+      if (!uid) return reply.code(401).send({ ok: false, error: "UNAUTH" });
+
+      const res = await dbRun(
+        `DELETE FROM matches
+         WHERE (player1_id = ? OR player2_id = ?)
+           AND status = 'pending'
+           AND score_p1 = 0 AND score_p2 = 0
+           AND datetime(created_at) < datetime('now', '-10 minutes')`,
+        [uid, uid]
+      );
+
+      return reply.send({ ok: true, deleted: res?.changes || 0 });
+    } catch (err) {
+      req.log?.error?.({ at: "match/cleanup-pending", err: err?.message || err });
+      return reply.code(500).send({ ok: false, error: "CLEANUP_FAILED" });
+    }
+  });
+
   /* =========================================================
    * 1) Création d’un match local (1v1 humain)
    * =======================================================*/
@@ -91,8 +119,6 @@ async function matchRoutes(fastify) {
    * =======================================================*/
   fastify.post("/ai", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
-
-		console.log("POST /api/match/ai");
       const p1 = req.user;
       if (!p1?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
 
@@ -137,7 +163,6 @@ async function matchRoutes(fastify) {
       const match = await dbGet(`SELECT * FROM matches WHERE id = ?`, [id]);
       if (!match) return reply.code(404).send({ ok: false, error: "MATCH_NOT_FOUND" });
 
-      // Autorisation : seul player1 ou player2 peut finir ce match
       if (user.id !== match.player1_id && user.id !== match.player2_id) {
         return reply.code(403).send({ ok: false, error: "FORBIDDEN" });
       }
@@ -170,24 +195,67 @@ async function matchRoutes(fastify) {
     }
   });
 
-   fastify.get("/latest", { preHandler: fastify.verifySession }, async (req, reply) => {
-		try {	
-			const user = req.user;
-			if (!user?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
+  /* =========================================================
+   * 4) Marquer un match comme abandonné (pas de stats)
+   *    PATCH /api/match/:id/abandon
+   * =======================================================*/
+  fastify.patch("/:id/abandon", { preHandler: fastify.verifySession }, async (req, reply) => {
+    try {
+      const user = req.user;
+      const id = Number(req.params?.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return reply.code(400).send({ ok: false, error: "INVALID_MATCH_ID" });
+      }
 
-			const match = await dbGet(
-				`SELECT * FROM matches WHERE player1_id = ? OR player2_id = ? ORDER BY id DESC LIMIT 1`,
-				[user.id, user.id]
-			);
+      const match = await dbGet(`SELECT * FROM matches WHERE id = ?`, [id]);
+      if (!match) return reply.code(404).send({ ok: false, error: "MATCH_NOT_FOUND" });
 
-			if (!match) return reply.code(404).send({ ok: false, error: "NO_MATCH_FOUND" });
+      if (user.id !== match.player1_id && user.id !== match.player2_id) {
+        return reply.code(403).send({ ok: false, error: "FORBIDDEN" });
+      }
 
-			reply.send({ ok: true, match_id: match.id, match });
-		}	catch (err) {
-			req.log?.error?.({ at: "match/latest", err: err?.message || err });
-			return reply.code(500).send({ ok: false, error: "LATEST_MATCH_FETCH_FAILED" });
-		}
-	});
+      if (match.status === "finished") {
+        return reply.send({ ok: true, already: true, match });
+      }
+
+      await dbRun(
+        `UPDATE matches
+         SET status = 'abandoned', winner_id = NULL
+         WHERE id = ?`,
+        [id]
+      );
+
+      const updated = await dbGet(`SELECT * FROM matches WHERE id = ?`, [id]);
+      return reply.send({ ok: true, match: updated });
+    } catch (err) {
+      req.log?.error?.({ at: "match/abandon", err: err?.message || err });
+      return reply.code(500).send({ ok: false, error: "MATCH_ABANDON_FAILED" });
+    }
+  });
+
+  /* =========================================================
+   * 5) Dernier match du joueur (pour finish/abandon)
+   * =======================================================*/
+  fastify.get("/latest", { preHandler: fastify.verifySession }, async (req, reply) => {
+    try {
+      const user = req.user;
+      if (!user?.id) return reply.code(401).send({ ok: false, error: "PLAYER_NOT_AUTHENTICATED" });
+
+      const match = await dbGet(
+        `SELECT * FROM matches
+         WHERE player1_id = ? OR player2_id = ?
+         ORDER BY id DESC LIMIT 1`,
+        [user.id, user.id]
+      );
+
+      if (!match) return reply.code(404).send({ ok: false, error: "NO_MATCH_FOUND" });
+
+      reply.send({ ok: true, match_id: match.id, match });
+    } catch (err) {
+      req.log?.error?.({ at: "match/latest", err: err?.message || err });
+      return reply.code(500).send({ ok: false, error: "LATEST_MATCH_FETCH_FAILED" });
+    }
+  });
 }
 
 module.exports = matchRoutes;

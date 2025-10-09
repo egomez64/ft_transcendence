@@ -15,8 +15,7 @@ import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPi
 import { TrailMesh } from "@babylonjs/core/Meshes/trailMesh";
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
-import { io } from "socket.io-client";
-// ❌ import { currentUser } from "./layout";
+import { io, Socket } from "socket.io-client";
 import { t } from "../i18n";
 import { fetchWithAuth } from "./utils";
 
@@ -25,14 +24,10 @@ function notifyTournamentIfAny(winnerName: string, scoreL: number, scoreR: numbe
   sessionStorage.setItem("tournament:report", JSON.stringify({ winnerName, scoreL, scoreR }));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1) CONSTANTES & THEME
-// ─────────────────────────────────────────────────────────────────────────────
-
 const THEME = {
   bg: Color4.FromHexString("#0b022300"), // transparent
-  neonPrimary: Color3.FromHexString("#00e5ff"),     // côté gauche
-  neonSecondary: Color3.FromHexString("#ff3cac"),   // côté droit
+  neonPrimary: Color3.FromHexString("#00e5ff"),
+  neonSecondary: Color3.FromHexString("#ff3cac"),
   neonAccent: Color3.FromHexString("#eeff03"),
   white: Color3.White(),
 };
@@ -59,10 +54,6 @@ type LocalMatch = {
 let tournamentRedirectTimer: ReturnType<typeof setTimeout> | undefined;
 const COUNTDOWN_SECONDS = 3;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fetch user courant (remplace currentUser() synchrone)
-// ─────────────────────────────────────────────────────────────────────────────
-
 async function fetchMe(): Promise<{ id:number; username:string; email?:string } | null> {
   try {
     const res = await fetchWithAuth("/api/auth/me");
@@ -74,15 +65,23 @@ async function fetchMe(): Promise<{ id:number; username:string; email?:string } 
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2) ENTRY POINT
-// ─────────────────────────────────────────────────────────────────────────────
+async function abandonIfUnfinished() {
+  try {
+    const res = await fetchWithAuth("/api/match/latest");
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null);
+    const match = data?.match;
+    if (!match || match.status === "finished") return;
+    await fetchWithAuth(`/api/match/${match.id}/abandon`, { method: "PATCH" });
+  } catch {
+  }
+}
 
 export function initPongPage() {
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement | null;
   if (!canvas) return;
 
-  // Si on n’est pas en tournoi, on purge un éventuel report dormant
+  // purge éventuel report dormant (hors tournoi)
   try {
     const lm = readLocalMatch();
     if (!lm?.tournamentReturn) {
@@ -90,29 +89,31 @@ export function initPongPage() {
     }
   } catch {}
 
-  // Canvas/scene transparents
+  // refs pour cleanup
+  let engine: Engine | null = null;
+  let scene: Scene | null = null;
+  let networkCleanup: (() => void) | null = null;
+  const onResize = () => engine?.resize();
+
   canvas.style.backgroundColor = "transparent";
-  const engine = new Engine(canvas, true, {
+  engine = new Engine(canvas, true, {
     preserveDrawingBuffer: true,
     stencil: true,
     alpha: true,
     premultipliedAlpha: true,
   });
 
-  const scene = new Scene(engine);
+  scene = new Scene(engine);
   scene.clearColor = THEME.bg;
 
-  // Lumière douce + glow
   const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
   light.intensity = 0.35;
   const glow = new GlowLayer("glow", scene);
   glow.intensity = 0.55;
 
-  // Monde (paddles/ball/trail/ligne)
   const world = createWorld(scene);
-
-  // Caméras + pipeline (FXAA + bloom léger)
   const cams = createCameras(scene);
+
   const pipeline = new DefaultRenderingPipeline("drp", true, scene, [cams.main, cams.cine, cams.persp]);
   pipeline.fxaaEnabled = true;
   pipeline.bloomEnabled = true;
@@ -120,7 +121,6 @@ export function initPongPage() {
   pipeline.bloomWeight = 0.28;
   pipeline.bloomKernel = 48;
 
-  // HUD score (DOM overlay)
   const setScore = mountScoreHUD(canvas);
   setScore(0, 0);
 
@@ -129,32 +129,68 @@ export function initPongPage() {
 
   const lm = readLocalMatch();
   if (lm && !isVsAI) {
-    // local 1v1 : on a déjà les noms
     mountPlayerHUD(canvas, lm.p1.username, lm.p2.username);
-    // connexion réseau sans besoin du username courant
-    wireNetwork(scene, world, setScore, canvas, false, lm.p1.username);
+    networkCleanup = wireNetwork(scene, world, setScore, canvas, false, lm.p1.username);
   } else {
-    // IA ou “online” : il nous faut le nom du joueur courant via /me
     fetchMe().then((me) => {
       const meName = me?.username || "Joueur 1";
       if (isVsAI) {
         mountPlayerHUD(canvas, meName, "IA");
       }
-      wireNetwork(scene, world, setScore, canvas, isVsAI, meName);
+      networkCleanup = wireNetwork(scene!, world, setScore, canvas, isVsAI, meName);
     });
   }
 
-  // Render loop : petit amorti Z pour le “pop” de la balle
-  engine.runRenderLoop(() => {
+  // Render loop
+  const renderFn = () => {
+    if (!scene) return;
     const { ball } = world;
     if (Math.abs(ball.position.z) > 0.01) {
       ball.position.z *= 0.85;
       if (Math.abs(ball.position.z) < 0.01) ball.position.z = 0;
     }
     scene.render();
-  });
+  };
+  engine.runRenderLoop(renderFn);
 
-  window.addEventListener("resize", () => engine.resize());
+  window.addEventListener("resize", onResize);
+
+  // Ceinture & bretelles : si la page annonce qu’elle part, purge les commandes
+  const onLeaving = () => disableGameInput();
+  window.addEventListener("page:leaving", onLeaving);
+
+  // 🔹 retourner l’unmount pour le routeur
+  return async function unmountPong() {
+    // inputs & réseau
+    try { await abandonIfUnfinished(); } catch {}
+
+    try { disableGameInput(); } catch {}
+    try { networkCleanup?.(); } catch {}
+
+    // timers
+    if (tournamentRedirectTimer) {
+      clearTimeout(tournamentRedirectTimer);
+      tournamentRedirectTimer = undefined;
+    }
+
+    // listeners globaux
+    try { window.removeEventListener("resize", onResize); } catch {}
+    try { window.removeEventListener("page:leaving", onLeaving); } catch {}
+
+    // overlay (si affiché), on le cache
+    const wrap = document.getElementById("pong-win-overlay");
+    if (wrap) wrap.classList.add("hidden");
+
+    // babylon
+    try { engine?.stopRenderLoop(); } catch {}
+    try {
+      // order: dispose scene d'abord, puis engine
+      scene?.dispose();
+    } catch {}
+    try { engine?.dispose(); } catch {}
+    engine = null;
+    scene = null;
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,12 +198,10 @@ export function initPongPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createWorld(scene: Scene) {
-  // Matériaux néon
   const paddleMatL = makeNeonMaterial("paddleMatL", scene, THEME.neonPrimary);
   const paddleMatR = makeNeonMaterial("paddleMatR", scene, THEME.neonSecondary);
   const ballMat = makeNeonMaterial("ballMat", scene, THEME.neonAccent);
 
-  // Paddles
   const leftPaddle = MeshBuilder.CreateBox(
     "leftPaddle",
     { width: GAME.PADDLE_LEN, height: GAME.PADDLE_THICK, depth: 1 },
@@ -186,7 +220,6 @@ function createWorld(scene: Scene) {
   rightPaddle.position.x = GAME.WIDTH / 2 - GAME.PADDLE_THICK;
   rightPaddle.rotation.z = Math.PI / 2;
 
-  // Balle + trail
   const ball = MeshBuilder.CreateSphere(
     "ball",
     { diameter: GAME.BALL_SIZE, segments: GAME.BALL_SEGMENTS },
@@ -201,7 +234,6 @@ function createWorld(scene: Scene) {
   trailMat.alpha = 1;
   trail.material = trailMat;
 
-  // Ligne médiane + cadre
   createMiddleLine(scene);
 
   return { leftPaddle, rightPaddle, ball, trail };
@@ -210,11 +242,10 @@ function createWorld(scene: Scene) {
 function createMiddleLine(scene: Scene, segmentHeight = 10, gap = 10) {
   const lineMat = makeNeonMaterial("lineMat", scene, THEME.white);
   lineMat.backFaceCulling = false;
-  lineMat.disableDepthWrite = true; // toujours visible
+  lineMat.disableDepthWrite = true;
   const FRAME_Z = 0.25;
   const RG = 2;
 
-  // Pointillés centraux
   const segments = Math.floor(GAME.HEIGHT / (segmentHeight + gap));
   for (let i = 0; i < segments; i++) {
     const seg = MeshBuilder.CreateBox(
@@ -227,7 +258,6 @@ function createMiddleLine(scene: Scene, segmentHeight = 10, gap = 10) {
     seg.renderingGroupId = RG;
   }
 
-  // Cadre
   const up = MeshBuilder.CreateBox("hUp", { width: GAME.WIDTH, height: 2, depth: 0.5 }, scene);
   const down = MeshBuilder.CreateBox("hDown", { width: GAME.WIDTH, height: 2, depth: 0.5 }, scene);
   const left = MeshBuilder.CreateBox("vLeft", { width: 2, height: GAME.HEIGHT, depth: 0.5 }, scene);
@@ -247,17 +277,14 @@ function createMiddleLine(scene: Scene, segmentHeight = 10, gap = 10) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createCameras(scene: Scene) {
-  // Cam 1 : 3d
   const main = new FreeCamera("mainCam", new Vector3(0, -300, -500), scene);
   main.setTarget(Vector3.Zero());
   main.fov = 0.9;
 
-  // Cam 2 : ciné
   const cine = new FreeCamera("secondCam", new Vector3(0, -120, -750), scene);
   cine.setTarget(new Vector3(0, -40, 0));
   cine.fov = 0.8;
 
-  //cam 3  (plat)
   const persp = new FreeCamera("gameCam", new Vector3(0, 0, -1000), scene);
   persp.mode = Camera.ORTHOGRAPHIC_CAMERA;
   persp.orthoLeft = -GAME.WIDTH / 2;
@@ -271,12 +298,11 @@ function createCameras(scene: Scene) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5) RÉSEAU (WS) + TRIGGERS D'EFFETS
+// 5) RÉSEAU + CLEANUP
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function finishGame(scoreP1: number, scoreP2: number) {
   try {
-    // 1️⃣ Récupérer le dernier match du joueur
     const res = await fetchWithAuth("/api/match/latest");
     const data = await res.json();
 
@@ -287,7 +313,6 @@ async function finishGame(scoreP1: number, scoreP2: number) {
 
     const matchId = data.match_id;
 
-    // 2️⃣ Terminer le match
     const finishRes = await fetchWithAuth(`/api/match/${matchId}/finish`, {
       method: "PATCH",
       json: { score_p1: scoreP1, score_p2: scoreP2 },
@@ -316,10 +341,12 @@ function wireNetwork(
 ) {
   const { leftPaddle, rightPaddle, ball, trail } = world;
 
-  // ✅ même origine (nginx gère /ws → backend)
- const ws = io("https://localhost:8443", { path: "/ws", transports: ["websocket"], withCredentials: true });
+  const ws: Socket = io("https://localhost:8443", {
+    path: "/ws",
+    transports: ["websocket"],
+    withCredentials: true
+  });
 
-  // Gestion d’epoch (anti mélange d’états si le serveur redémarre/restart une partie)
   let expectedEpoch: number | null = null;
   let armed = false;
 
@@ -333,39 +360,33 @@ function wireNetwork(
     armed = true;
   });
 
-  // Mémoire du tick précédent pour détecter inversions et scores
   let prev = { vx: 0, vy: 0, bx: 0, by: 0, sl: 0, sr: 0 };
   let ballHiddenForWin = false;
   let gameEnded = false;
   let lastStatus: "init" | "idle" | "playing" | "finished" = "init";
 
-  ws.on("state", (s: any) => {
+  const onState = (s: any) => {
     if (!armed) return;
     if (expectedEpoch !== null && s.epoch !== undefined && expectedEpoch !== s.epoch) return;
     if (gameEnded) return;
 
-    // Sync transforms
     leftPaddle.position.y = s.left.y;
     rightPaddle.position.y = s.right.y;
     ball.position.x = s.ball.x;
     ball.position.y = s.ball.y;
 
-    // Score
     setScore(s.score.left, s.score.right);
 
-    // Rebond paddle (vx inverse)
     if (prev.vx !== 0 && s.ball.vx !== 0 && prev.vx * s.ball.vx < 0) {
       const col = s.ball.x >= 0 ? THEME.neonSecondary : THEME.neonPrimary;
       playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), col);
-      ball.position.z = 8; // pop
+      ball.position.z = 8;
     }
 
-    // Rebond mur (vy inverse)
     if (prev.vy !== 0 && s.ball.vy !== 0 && prev.vy * s.ball.vy < 0) {
       playHitParticles(scene, new Vector3(s.ball.x, s.ball.y, 0), THEME.white);
     }
 
-    // Buts → impacts
     const scoredLeft = s.score.left > prev.sl;
     const scoredRight = s.score.right > prev.sr;
     if (scoredLeft) {
@@ -377,7 +398,6 @@ function wireNetwork(
       playHitParticles(scene, impact, THEME.neonSecondary, 20);
     }
 
-    // Fin de partie
     const finishedNow = s.status === "finished" && lastStatus !== "finished";
     if (finishedNow) {
       const leftWins = s.score.left >= GAME.WIN_SCORE;
@@ -389,30 +409,24 @@ function wireNetwork(
         winnerName = lm ? (leftWins ? lm.p1.username : lm.p2.username) : (leftWins ? "Left" : "Right");
       }
 
-      // Informe le bracket si besoin
       const lm = readLocalMatch();
       if (lm && lm.tournamentReturn) {
         notifyTournamentIfAny(winnerName, s.score.left, s.score.right);
       }
 
-      // FX + disparition balle
       const winnerColor = leftWins ? THEME.neonPrimary : THEME.neonSecondary;
       ball.position.set(0, 0, 0);
       explodeBall(scene, ball, trail, winnerColor);
       ballHiddenForWin = true;
 
-      // Couper inputs
       disableGameInput();
 
       gameEnded = true;
-      // Async API call
       finishGame(s.score.left, s.score.right);
 
-      // Overlay + redirection
       showWinOverlay(canvas, winnerName, s.score.left, s.score.right, leftWins ? "#00e5ff" : "#ff3cac");
     }
 
-    // Nouvelle manche (scores remis à 0) → réaffiche balle/trail
     if (ballHiddenForWin && s.score.left === 0 && s.score.right === 0) {
       ball.isVisible = true;
       if (trail) trail.isVisible = true;
@@ -423,12 +437,12 @@ function wireNetwork(
       if (wrap) wrap.classList.add("hidden");
     }
 
-    // Save prev + status
     prev = { vx: s.ball.vx, vy: s.ball.vy, bx: s.ball.x, by: s.ball.y, sl: s.score.left, sr: s.score.right };
     lastStatus = (s.status as "idle" | "playing" | "finished") || "idle";
-  });
+  };
 
-  // Contrôles clavier
+  ws.on("state", onState);
+
   setupControls(
     ws,
     scene,
@@ -437,10 +451,19 @@ function wireNetwork(
     scene.getCameraByName("gameCam") as FreeCamera,
     isVsAI
   );
+
+  // 🔹 retourne une fonction de nettoyage réseau + input
+  return function cleanupNetwork() {
+    try { ws.off("state", onState); } catch {}
+    try { ws.disconnect(); } catch {}
+    try { ws.close(); } catch {}
+    disableGameInput();
+  };
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 6) HUD SCORE (DOM Overlay minimal)
+// 6) HUD / OVERLAYS
 // ─────────────────────────────────────────────────────────────────────────────
 
 function mountScoreHUD(canvas: HTMLCanvasElement) {
@@ -491,7 +514,6 @@ function mountPlayerHUD(canvas: HTMLCanvasElement, p1: string, p2: string) {
   }
   banner.textContent = `${p1} (W/S) vs ${p2} (↑/↓)`;
 
-  // labels bords
   let left = document.getElementById("pong-left-label") as HTMLDivElement | null;
   if (!left) {
     left = document.createElement("div");
@@ -537,8 +559,7 @@ function ensureWinOverlay(canvas: HTMLCanvasElement) {
   if (!wrap) {
     wrap = document.createElement("div");
     wrap.id = "pong-win-overlay";
-    wrap.className = "hidden"; // caché par défaut
-
+    wrap.className = "hidden";
     Object.assign(wrap.style, {
       position: "absolute",
       inset: "0",
@@ -561,7 +582,6 @@ function ensureWinOverlay(canvas: HTMLCanvasElement) {
       textAlign: "center",
     } as CSSStyleDeclaration);
 
-    // PAS DE BOUTON QUITTER — on affiche un compteur i18n
     card.innerHTML = `
       <h3 id="win-title" style="font-size:28px;font-weight:900;margin:0 0 6px"></h3>
       <p id="win-sub" style="opacity:.9;margin:0 0 16px"></p>
@@ -582,13 +602,11 @@ function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: n
   const sc = wrap.querySelector("#win-score") as HTMLDivElement;
   const cd = wrap.querySelector("#win-countdown") as HTMLDivElement | null;
 
-  // TRAD
   title.textContent = t("pong.win.title", { name: winnerName });
   title.style.textShadow = `0 0 14px ${winnerColor}`;
   sub.textContent = t("pong.win.subtitle");
   sc.textContent = `${scoreL} - ${scoreR}`;
 
-  // Redirection : /play ou retour bracket
   let redirectTo = "/play";
   let isTournament = false;
   try {
@@ -602,15 +620,14 @@ function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: n
     }
   } catch {}
 
-  // Compteur
   let seconds = COUNTDOWN_SECONDS;
-  const updateCountdown = () => {
+  const cdUpdate = () => {
     if (!cd) return;
     cd.textContent = isTournament
       ? t("pong.win.countdown_bracket", { s: seconds })
       : t("pong.win.countdown_play", { s: seconds });
   };
-  updateCountdown();
+  cdUpdate();
 
   wrap.classList.remove("hidden");
 
@@ -618,7 +635,7 @@ function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: n
 
   const tick = () => {
     seconds -= 1;
-    updateCountdown();
+    cdUpdate();
     if (seconds <= 0) {
       sessionStorage.removeItem("localMatch");
       history.pushState({}, "", redirectTo);
@@ -632,7 +649,7 @@ function showWinOverlay(canvas: HTMLCanvasElement, winnerName: string, scoreL: n
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7) EFFETS — matériaux, particules, “grosse explosion” de fin
+// 7) EFFETS
 // ─────────────────────────────────────────────────────────────────────────────
 
 function makeNeonMaterial(name: string, scene: Scene, color: Color3) {
@@ -691,19 +708,15 @@ function playHitParticles(scene: Scene, pos: Vector3, color: Color3, strength = 
 
 function explodeBall(scene: Scene, ball: any, trail: any, color: Color3) {
   const p = ball.position.clone();
-
-  // Gros burst multi-couches
   playHitParticles(scene, p, color, 90);
   setTimeout(() => playHitParticles(scene, p, THEME.white, 40), 80);
   setTimeout(() => playHitParticles(scene, p, color, 25), 160);
-
-  // Disparition immédiate (on simule l’explosion de la balle)
   ball.isVisible = false;
   if (trail) trail.isVisible = false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8) CONTROLES — version pote (AbortController + capture:true)
+// 8) CONTROLES — AbortController = easy cleanup
 // ─────────────────────────────────────────────────────────────────────────────
 
 const KEY_LIST = ['w', 's', 'ArrowUp', 'ArrowDown', ' '] as const;
@@ -767,7 +780,7 @@ function disableGameInput() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 9) UTILITAIRES (math & impact but)
+// 9) UTILITAIRES
 // ─────────────────────────────────────────────────────────────────────────────
 
 function clamp(v: number, a: number, b: number) {

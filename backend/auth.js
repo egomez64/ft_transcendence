@@ -347,21 +347,16 @@ fastify.post('/token/refresh', async (req, reply) => {
 
   // ---------- Me ----------
   fastify.get('/me', async (req, reply) => {
-    // Ici on lit le cookie access directement (pour rester auto-suffisant),
-    // ou idéalement tu utilises le preHandler verifySession
     const raw = req.cookies?.access;
     if (!raw) return reply.code(401).send({ error: 'Not authenticated' });
     try {
       const { uid } = jwt.verify(raw, ACCESS_JWT_SECRET);
 
-      await dbRun(`
-        DELETE FROM matches
-        WHERE (player1_id = ? OR player2_id = ?)
-          AND (status = 'pending' OR winner_id IS NULL)
-      `, [uid, uid]);
+      // ❌ NE SUPPRIME PLUS LES MATCHS ICI
+      // ✅ On se contente de mettre à jour l'activité
       const now = Math.floor(Date.now() / 1000);
       await dbRun(`UPDATE users SET last_seen = ? WHERE id = ?`, [now, uid]);
-      
+
       const me = await dbGet(
         'SELECT id, email, username, alias, avatar_url, wins, losses, preferred_lang FROM users WHERE id = ?',
         [uid]

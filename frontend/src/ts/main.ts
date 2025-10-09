@@ -48,8 +48,10 @@ async function loadLayout() {
   document.body.innerHTML = layoutHtml;
 }
 
-// Carte des pages
-const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: boolean }> = {
+// 🔹 mount peut désormais retourner une fonction d’unmount
+type MountFn = () => void | (() => void) | Promise<void | (() => void)>;
+
+const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: boolean }> = {
   home:       { file: "home.html" },
   login:      { file: "login.html", mount: mountLoginHandlers, protected: false },
   register:   { file: "register.html", mount: mountRegisterHandlers, protected: false },
@@ -61,14 +63,19 @@ const PAGE_MAP: Record<string, { file: string; mount?: () => void; protected?: b
   '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : false},
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
   tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
-  "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
+  "tournament/bracket": { file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false },
 };
 
 // --------- ROUTER ---------
 
 let ROUTING = false; // anti-réentrance
+let CURRENT_UNMOUNT: (() => void) | null = null; // 🔹 gardons l’unmount courant
 
 export async function loadPage() {
+  // 🔹 avant d’afficher la nouvelle page : cleanup de l’ancienne
+  try { CURRENT_UNMOUNT?.(); } catch (e) { console.warn("[unmount error]", e); }
+  CURRENT_UNMOUNT = null;
+
   const key = routeFromLocation();
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
@@ -117,7 +124,10 @@ export async function loadPage() {
   await new Promise(requestAnimationFrame);
 
   try {
-    def.mount?.();
+    const maybeUnmount = def.mount?.();
+    if (typeof maybeUnmount === "function") {
+      CURRENT_UNMOUNT = maybeUnmount;
+    }
   } catch (e) {
     console.error("[mount]", key, e);
   }
@@ -136,6 +146,9 @@ export async function navigate(path: string, replace = false) {
   if (ROUTING) return; // anti-spam et anti-réentrance
   ROUTING = true;
   try {
+    // 🔹 avertit les pages (pour purger touches, etc.)
+    window.dispatchEvent(new Event("page:leaving"));
+
     if (replace) history.replaceState({}, "", url);
     else history.pushState({}, "", url);
     await loadPage();
