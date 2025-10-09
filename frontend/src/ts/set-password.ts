@@ -1,11 +1,13 @@
 import { fetchWithAuth, makeSetMsg } from "./utils";
 import { navigate } from "./main";
+import { t } from "../i18n";
 
 export async function mountSetPasswordPage() {
   const form = document.getElementById("setPasswordForm") as HTMLFormElement | null;
   const newPwd = document.getElementById("newPassword") as HTMLInputElement | null;
   const confirmPwd = document.getElementById("confirmPassword") as HTMLInputElement | null;
   const msg = makeSetMsg("#setPwdMsg");
+  const msgEl = document.querySelector<HTMLElement>("#setPwdMsg"); // pour afficher les détails
 
   if (!form || !newPwd || !confirmPwd) return;
 
@@ -16,15 +18,17 @@ export async function mountSetPasswordPage() {
     const p2 = confirmPwd.value.trim();
 
     if (!p1 || !p2) {
-      msg("Veuillez remplir tous les champs.", "err");
+      msg("auth.missing_fields", "err");
       return;
     }
     if (p1 !== p2) {
-      msg("Les mots de passe ne correspondent pas.", "err");
+      msg("auth.password_mismatch", "err");
       return;
     }
+    // Garde le check rapide côté client si tu veux un feedback instantané,
+    // sinon laisse tout au backend. Ici on mappe sur la même clé que la policy.
     if (p1.length < 8) {
-      msg("Le mot de passe doit contenir au moins 8 caractères.", "err");
+      msg("password.min", "err");
       return;
     }
 
@@ -36,11 +40,20 @@ export async function mountSetPasswordPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok) {
-        msg("Erreur lors de l’enregistrement du mot de passe.", "err");
+        // Affiche la clé principale
+        msg(data?.error_key || data?.error || "common.server_error", "err");
+
+        // + DÉTAILS (liste des règles) si fournis par le backend
+        if (Array.isArray(data?.details) && data.details.length && msgEl) {
+          const details = data.details.map((k: string) => `• ${t(k)}`).join("\n");
+          // on concatène proprement sous le message
+          msgEl.textContent = (msgEl.textContent ? msgEl.textContent + "\n" : "") + details;
+          msgEl.classList.add("whitespace-pre-line");
+        }
         return;
       }
 
-      msg("Mot de passe enregistré avec succès !", "ok");
+      msg("auth.password_set_ok", "ok");
 
       // Attends un peu avant de rediriger
       setTimeout(async () => {
@@ -49,7 +62,7 @@ export async function mountSetPasswordPage() {
         await navigate("/dashboard");
       }, 1000);
     } catch {
-      msg("Erreur réseau. Veuillez réessayer.", "err");
+      msg("common.network_error", "err");
     }
   });
 }

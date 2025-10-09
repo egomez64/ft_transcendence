@@ -132,7 +132,8 @@
 		"user_exists": "Username or Email already exists.",
 		"email_used": "Email already used.",
 		"register_succes": "User registered successfully!",
-		"missing_credentials": "Username and password are required."
+		"missing_credentials": "Username and password are required.",
+		"password_set_ok": "Password set."	
 	},
 	"password": {
 		"type": "Password must be a string.",

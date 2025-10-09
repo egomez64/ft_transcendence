@@ -279,7 +279,7 @@ async function authRoute(fastify) {
     if (!/^\d{6}$/.test(code)) return reply.code(400).send({ ok: false, error: 'CODE_FORMAT' });
 
     const user = await dbGet(
-      'SELECT id, username, email, twofa_code_hash, twofa_code_expires FROM users WHERE id = ?',
+      'SELECT id, username, email, twofa_code_hash, twofa_code_expires, needs_password FROM users WHERE id = ?',
       [payload.uid]
     );
     if (!user || !user.twofa_code_hash || !user.twofa_code_expires) {
@@ -307,7 +307,7 @@ async function authRoute(fastify) {
     return reply.send({
       ok: true,
       message: '2FA verified',
-      user: { id: user.id, username: user.username, email: user.email, needs_password: user.needs_password },
+      user: { id: user.id, username: user.username, email: user.email, needs_password: user.needs_password, needs_password: user.needs_password },
     });
   });
 
@@ -394,39 +394,65 @@ fastify.post('/token/refresh', async (req, reply) => {
   });
 
   fastify.post('/set-password', async (req, reply) => {
-  const token = req.cookies?.access;
-  if (!token) return reply.code(401).send({ ok: false, error: 'NOT_AUTHENTICATED' });
+    const token = req.cookies?.access;
+    if (!token) {
+      return reply.code(401).send({ ok: false, error_key: 'auth.not_authenticated' });
+    }
 
-  let payload;
-  try {
-    payload = jwt.verify(token, ACCESS_JWT_SECRET);
-  } catch {
-    return reply.code(401).send({ ok: false, error: 'INVALID_TOKEN' });
-  }
+    let payload;
+    try {
+      payload = jwt.verify(token, ACCESS_JWT_SECRET);
+    } catch {
+      return reply.code(401).send({ ok: false, error_key: 'auth.invalid_token' });
+    }
 
-  const { newPassword } = req.body || {};
-  if (!newPassword || newPassword.length < 8) {
-    return reply.code(400).send({ ok: false, error: 'WEAK_PASSWORD' });
-  }
+    const { newPassword } = req.body || {};
+    if (!newPassword) {
+      return reply.code(400).send({ ok: false, error_key: 'auth.password_required' });
+    }
 
-  const hash = await bcrypt.hash(newPassword, 10);
-  await dbRun('UPDATE users SET password = ?, needs_password = 0 WHERE id = ?', [hash, payload.uid]);
+    // Récupère les infos du user pour la politique
+    const user = await dbGet('SELECT username, email FROM users WHERE id = ?', [payload.uid]);
+    if (!user) {
+      return reply.code(404).send({ ok: false, error_key: 'users.not_found' });
+    }
 
-  return reply.send({ ok: true, message: 'Password set successfully' });
-});
+    // Politique mot de passe (même module que /register)
+    const policyErrors = passwordPolicyErrors(newPassword, user);
+    if (policyErrors.length) {
+      return reply.code(400).send({
+        ok: false,
+        error_key: 'auth.weak_password',
+        details: policyErrors, // tableau de clés i18n ex: ["password.min","password.upper",...]
+      });
+    }
+
+    // Hash + mise à jour
+    const hash = await bcrypt.hash(newPassword, 10);
+    await dbRun('UPDATE users SET password = ?, needs_password = 0 WHERE id = ?', [hash, payload.uid]);
+
+    // Réponse OK (tu peux garder "message" si tu veux, sinon juste { ok: true })
+    return reply.send({ ok: true, message_key: 'auth.password_set_ok' });
+  });
 }
 
 // ---------- Upsert user depuis Google ----------
 async function upsertUserFromGoogle({ googleEmail, googleName, googleId, googleAvatar }) {
   const existing = await dbGet('SELECT * FROM users WHERE email = ?', [googleEmail]);
-  if (existing) return existing;
+  if (existing) {
+    // S’il a un mot de passe vide, on force le flag needs_password à 1
+    if (!existing.password || existing.password.trim() === '') {
+      await dbRun('UPDATE users SET needs_password = 1 WHERE id = ?', [existing.id]);
+    }
+    return existing;
+  }
 
   const username = (googleName || googleEmail.split('@')[0] || 'user')
     .replace(/\s+/g, '')
     .slice(0, 20);
 
   await dbRun(
-    'INSERT INTO users (email, username, password, alias, avatar_url, needs_password) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO users (email, username, password, alias, avatar_url, needs_password) VALUES (?, ?, ?, ?, ?, 1)',
     [googleEmail, username, '', username, googleAvatar || null]
   );
 

@@ -66,12 +66,8 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
   '1v1':      { file: "1v1.html", mount: initLocal1v1Page, protected : false},
   twofa:      { file: "twofa.html", mount: initTwofaPage, protected : false},
   tournament: { file: "tournament.html", mount: initTournamentPage, protected : false},
-<<<<<<< HEAD
   "tournament/bracket": {file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false},
   'set-password': {file: "set-password.html", mount: mountSetPasswordPage, protected : false},
-=======
-  "tournament/bracket": { file: "tournament-bracket.html", mount: initTournamentBracketPage, protected: false },
->>>>>>> refs/remotes/origin/main
 };
 
 // --------- ROUTER ---------

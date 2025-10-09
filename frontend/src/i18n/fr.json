@@ -132,7 +132,8 @@
 		"user_exists": "Ce nom d'utilisateur ou l'Email est déjà pris.",
 		"email_used": "Cet email est déjà utilisé.",
 		"register_succes": "Compte créé avec succès !",
-		"missing_credentials": "Nom d'utilisateur et mot de passe requis."
+		"missing_credentials": "Nom d'utilisateur et mot de passe requis.",
+		"password_set_ok": "Mot de passe cree."
 	},
 	"password": {
 		"type": "Le mot de passe doit être une chaîne de caractères.",
