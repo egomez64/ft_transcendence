@@ -2,10 +2,6 @@ import { t } from "../i18n";
 import { fetchWithAuth } from "./utils";
 import { navigate } from "./main";
 
-const API_BASE =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    ? "https://localhost:8443"
-    : "";
 
 export function initTwofaPage() {
   const form = document.getElementById("twofaForm") as HTMLFormElement | null;
@@ -33,7 +29,10 @@ export function initTwofaPage() {
       const body = await res.json().catch(() => ({} as any));
 
       if (!res.ok || !body?.ok) {
-        if (msg) msg.textContent = body?.error || t("common.server_error");
+        if (msg) {
+          const key = mapTwofaErrorToKey(body?.error);
+          msg.textContent = t(key);
+        }
         return;
       }
 
@@ -70,8 +69,12 @@ export function initTwofaPage() {
       });
       const body = await res.json().catch(() => ({} as any));
       if (msg) {
-        msg.textContent =
-          res.ok && body?.ok ? t("twofa.resent") : (body?.error || t("common.server_error"));
+        if (res.ok && body?.ok) {
+          msg.textContent = t("twofa.resent");
+        } else {
+          const key = mapTwofaErrorToKey(body?.error);
+          msg.textContent = t(key, { s: body?.retry_after ?? ""});
+        }
       }
     } finally {
       setTimeout(() => (resend.disabled = false), 15000);
@@ -82,4 +85,21 @@ export function initTwofaPage() {
     sessionStorage.removeItem("2fa:pending");
     navigate("/login");
   });
+  
+  codeEl?.addEventListener("input", () => {if (msg) msg.textContent = ""; });
+}
+
+
+function mapTwofaErrorToKey(code?: string): string {
+  switch (code) {
+    case "CODE_FORMAT":      return "mfa.code_invalid_format";
+    case "CODE_INVALID":     return "mfa.invalid_or_expired";
+    case "CODE_EXPIRED":     return "mfa.invalid_or_expired";
+    case "NO_CODE":          return "mfa.setup_required";
+    case "NO_PRE2FA":        return "mfa.invalid";
+    case "INVALID_PRE2FA":   return "mfa.invalid";
+    case "USER_NOT_FOUND":   return "users.not_found";
+    case "TOO_SOON":         return "mfa.too_soon";
+    default:                 return "common.server_error";
+  }
 }

@@ -165,7 +165,8 @@
 		"invalid": "Invalid MFA session.",
 		"not_enabled": "2FA is not enabled.",
 		"invalid_or_expired": "Invalid or expired code.",
-    	"code_resent": "Code resent."
+    	"code_resent": "Code resent.",
+		"too_soon": "Wait {s}s before returning a code."
 	},
 	"oauth": {
 	    "callback_failed": "OAuth callback failed."

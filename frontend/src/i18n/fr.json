@@ -165,7 +165,8 @@
 		"code_resent": "Code renvoyé.",
 		"expired": "La session MFA a expiré.",
 		"invalid": "Session MFA invalide.",
-		"not_enabled": "La 2FA n'est pas activée."
+		"not_enabled": "La 2FA n'est pas activée.",
+		"too_soon": "Attends {s}s avant de renvoyer un code."
 	},
 	"oauth": {
 	    "callback_failed": "La connexion OAuth a échoué."

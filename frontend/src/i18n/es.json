@@ -165,7 +165,8 @@
 		"invalid": "Sesión MFA inválida.",
 		"not_enabled": "2FA no está habilitado.",
 		"invalid_or_expired": "Código inválido o caducado.",
-    	"code_resent": "Código reenviado."
+    	"code_resent": "Código reenviado.",
+		"too_soon": "Espere {s}s antes de devolver un código."
 	},
 	"oauth": {
 	    "callback_failed": "Falló el callback de OAuth."

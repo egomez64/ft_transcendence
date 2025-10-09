@@ -39,7 +39,7 @@ const GAME = {
   PADDLE_THICK: 10,
   BALL_SIZE: 20,
   BALL_SEGMENTS: 32,
-  WIN_SCORE: 10,
+  WIN_SCORE: 5,
 };
 
 type LocalMatch = {

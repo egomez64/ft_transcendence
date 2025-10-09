@@ -67,7 +67,7 @@ function startGameServer(server, cors) {
   const LEFT_PADDLE_X = -GAME_WIDTH / 2 + PADDLE_HEIGHT;
   const RIGHT_PADDLE_X = GAME_WIDTH / 2 - PADDLE_HEIGHT;
   const BALL_RADIUS = 10;
-  const WIN_SCORE = 10;
+  const WIN_SCORE = 5;
 
   let lastAIUpdate = Date.now() - 1000;
   const AI = {
