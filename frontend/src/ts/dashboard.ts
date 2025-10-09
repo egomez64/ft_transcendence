@@ -209,33 +209,41 @@ async function loadStats(userId: number) {
 }
 
 /** Charge et affiche le classement complet */
-async function loadRanking() {
+async function loadRanking(userId: number) {
   const state = document.getElementById("ranking-state")!;
   const list = document.getElementById("ranking-list")!;
 
-  // Id courant (pour surligner la ligne)
-  let currentUserId: number | null = null;
-  try {
-    const me = await fetchMe();
-    currentUserId = me?.id ?? null;
-  } catch {}
+  const showRetry = (msgKey: string) => {
+    state.innerHTML = `${t(msgKey)} <button id="retry-ranking" class="underline" data-i18n="common.retry">Reessayer</button>`;
+    applyTranslations(state);
+    list.innerHTML = "";
+    document.getElementById("retry-ranking")?.addEventListener("click", () => loadRanking(userId));
+  };
 
   try {
     state.textContent = t("common.loading");
     list.innerHTML = "";
 
+    // 1️⃣ Validation de l’ID
+    if (!Number.isFinite(Number(userId))) {
+      showRetry("dashboard.invalid_user_id");
+      return;
+    }
+
+    // 2️⃣ Requête principale
     const res = await fetchWithAuth("/api/users/ranking");
     if (!res.ok) {
-      state.textContent = t("common.server_error");
+      showRetry("common.server_error");
       return;
     }
 
     const data = await res.json();
     state.textContent = "";
 
+    // 3️⃣ Construction du DOM
     list.innerHTML = data.ranking
       .map((u: any) => {
-        const isMe = currentUserId && u.id === currentUserId;
+        const isMe = u.id === userId;
         return `
           <div class="flex items-center justify-between rounded-xl px-6 py-4 shadow-lg
             ${isMe ? "bg-[#2a004f]/90 border-2 border-cyan-400" : "bg-[#1a1a2e]/70"}">
@@ -257,7 +265,7 @@ async function loadRanking() {
       .join("");
   } catch (err) {
     console.error("Erreur chargement ranking :", err);
-    state.textContent = t("common.network_error");
+    showRetry("common.network_error");
   }
 }
 
@@ -284,7 +292,7 @@ function setActiveTab(name: "stats" | "history" | "ranking", userIdOverride?: nu
 
     if (name === "stats") loadStats(userId);
     if (name === "history") loadHistory(userId);
-    if (name === "ranking") loadRanking();
+    if (name === "ranking") loadRanking(userId);
   });
 }
 
