@@ -57,6 +57,47 @@
                 </div>
             </fieldset>
 
+            <div class="grid gap-2">
+                <label class="text-pink-200/90 text-sm" data-i18n="profile.lang_label">Langue par défaut</label>
+
+                <div id="profileLangDropdown" class="relative inline-block text-left">
+                    <!-- bouton -->
+                    <button
+                    id="preferredLangBtn"
+                    type="button"
+                    class="w-full inline-flex items-center justify-between px-4 py-3 rounded bg-[#1a1a2eb3] border border-pink-500/40 text-pink-100 hover:bg-[#1f1f30] focus:outline-none"
+                    aria-haspopup="menu" aria-expanded="false"
+                    >
+                    <span class="flex items-center gap-2">
+                        <span aria-hidden="true">🌐</span>
+                        <span id="preferredLangLabel">Français</span>
+                    </span>
+                    <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
+                    </svg>
+                    </button>
+
+                    <!-- menu -->
+                    <div
+                    id="preferredLangMenu"
+                    class="hidden absolute right-0 top-full mt-2 w-44 z-50 rounded-xl overflow-hidden
+                            bg-black/80 backdrop-blur border border-pink-500/30 shadow-[0_0_20px_#ff00c8]"
+                    role="menu" aria-labelledby="preferredLangBtn"
+                    >
+                    <button class="hover:bg-pink-600 py-2 w-full text-left px-3 transition-all" data-lang="fr">🇫🇷 Français</button>
+                    <button class="hover:bg-pink-600 py-2 w-full text-left px-3 transition-all" data-lang="en">🇬🇧 English</button>
+                    <button class="hover:bg-pink-600 py-2 w-full text-left px-3 transition-all" data-lang="es">🇪🇸 Español</button>
+                    </div>
+                </div>
+
+                <!-- champ envoyé au backend au submit -->
+                <input id="preferredLangHidden" name="preferred_lang" type="hidden" value="fr" />
+
+                <p class="text-sm text-pink-200/70" data-i18n="profile.lang_helper">
+                    Cette langue s’appliquera à l’interface par défaut.
+                </p>
+            </div>
+
             <div class="flex items-center gap-3 pt-2">
                 <button id="profileSave" type="submit"
                 class="rounded-full px-6 py-3 font-semibold shadow-[0_0_15px_theme(colors.pink.500)] transition

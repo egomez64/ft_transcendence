@@ -239,8 +239,14 @@ export function bindGlobalMenuOnce() {
  * Idempotent et sûr à rappeler après chaque navigation / changement d'auth.
  */
 export async function setupAuthMenu() {
-  await refreshAuth();
+  const me = await refreshAuth();
   renderAuthBadge();
+
+  // 👉 si connecté et que le back renvoie preferred_lang, on force cette langue
+  if (me?.id && (me as any).preferred_lang) {
+    await setLang((me as any).preferred_lang);
+    applyTranslations(document.body);
+  }
 }
 
 /** Ferme explicitement le dropdown utilisateur (utilisé par d'autres modules). */

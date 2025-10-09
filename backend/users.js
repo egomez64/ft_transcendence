@@ -7,7 +7,6 @@ const { pipeline } = require('node:stream/promises');
 const bcrypt = require('bcrypt');
 const { passwordPolicyErrors } = require('./password-policy');
 
-
 function dbGet(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)));
@@ -82,7 +81,18 @@ async function usersRoutes(fastify) {
     const username = fields.username || '';
     const alias = fields.alias || '';
 
-    // validations
+    // --- preferred_lang: normaliser et valider (fr|en|es)
+    const rawLang = String(fields.preferred_lang || '').trim().toLowerCase();
+    let preferredLang = null;
+    if (rawLang) {
+      preferredLang = rawLang.split(/[-_]/)[0]; // ex: fr-FR -> fr
+      const ALLOWED_LANGS = new Set(['fr', 'en', 'es']);
+      if (!ALLOWED_LANGS.has(preferredLang)) {
+        return reply.code(400).send({ ok:false, error_key:'users.invalid_lang' });
+      }
+    }
+
+    // validations username/alias
     const user = validateUsername(username);
     if (!user.ok)
       return reply.code(400).send({ ok: false, error_key: 'auth.invalid_username', details: user.errors });
@@ -97,7 +107,7 @@ async function usersRoutes(fastify) {
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
     if (!existing) return replyError(reply, 'USER_NOT_FOUND');
 
-    //password change
+    // --- Changement de mot de passe (optionnel)
     const oldPw = String(fields.old_password || '');
     const newPw = String(fields.new_password || '');
 
@@ -118,7 +128,7 @@ async function usersRoutes(fastify) {
         return reply.code(400).send({ ok: false, error_key: 'password.invalid_current'});
       }
 
-      //policy check
+      // policy check
       const policy = passwordPolicyErrors(newPw, { username: userRow.username, email: userRow.email });
       if (policy.length) {
         return reply.code(400).send({ ok: false, error_key: 'auth.weak_password', details: policy});
@@ -130,12 +140,17 @@ async function usersRoutes(fastify) {
 
     try {
       await dbRun(
-        `UPDATE users SET username = ?, alias = ?, avatar_url = COALESCE(?, avatar_url) WHERE id = ?`,
-        [newUsername, newAlias, newAvatar, id]
+        `UPDATE users
+         SET username = ?,
+             alias = ?,
+             avatar_url = COALESCE(?, avatar_url),
+             preferred_lang = COALESCE(?, preferred_lang)
+         WHERE id = ?`,
+        [newUsername, newAlias, newAvatar, preferredLang, id]
       );
 
       const updated = await dbGet(
-        'SELECT id, email, username, alias, avatar_url, wins, losses FROM users WHERE id = ?',
+        'SELECT id, email, username, alias, avatar_url, wins, losses, preferred_lang FROM users WHERE id = ?',
         [id]
       );
 

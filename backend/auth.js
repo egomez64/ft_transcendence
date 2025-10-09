@@ -363,7 +363,7 @@ fastify.post('/token/refresh', async (req, reply) => {
       await dbRun(`UPDATE users SET last_seen = ? WHERE id = ?`, [now, uid]);
       
       const me = await dbGet(
-        'SELECT id, email, username, alias, avatar_url, wins, losses FROM users WHERE id = ?',
+        'SELECT id, email, username, alias, avatar_url, wins, losses, preferred_lang FROM users WHERE id = ?',
         [uid]
       );
       if (!me) return reply.code(401).send({ error: 'Not authenticated' });

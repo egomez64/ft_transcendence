@@ -35,7 +35,8 @@ db.run(`
     twofa_code_hash TEXT,
     twofa_code_expires INTEGER,
     twofa_last_sent INTEGER,
-    last_seen INTEGER DEFAULT 0
+    last_seen INTEGER DEFAULT 0,
+    preferred_lang TEXT DEFAULT 'fr'
   )
 `, (err) => {
   if (err) {

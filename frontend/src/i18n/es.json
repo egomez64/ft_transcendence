@@ -98,6 +98,8 @@
 		"email_label": "Correo electrónico (solo lectura)",
 		"username_label": "nombre de usuario",
 		"alias_label": "Alias  (público)",
+		"lang_label": "Selección de idioma por defecto",
+		"lang_helper": "Este idioma se aplicará a la interfaz predeterminada.",
 		"avatar_file_label": "Subir avatar",
 		"MdpChange": "Cambiar la contraseña",
 		"actualMDP": "Contraseña actual",
