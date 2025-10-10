@@ -1,4 +1,4 @@
-import { initI18n, t } from "../i18n";
+import { t } from "../i18n";
 import { fetchWithAuth } from './utils';
 
 type MatchApiResponse =
@@ -64,7 +64,7 @@ export function initLocal1v1Page() {
         return;
       }
 
-      // ✅ clé correcte : localMatch
+      //  clé correcte : localMatch
       sessionStorage.setItem(
         "localMatch",
         JSON.stringify({

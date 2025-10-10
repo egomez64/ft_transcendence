@@ -29,7 +29,7 @@ function routeFromLocation(): string {
   return p.replace(/^\/+/, "");
 }
 
-// calcule la clé de page à partir d’un chemin arbitraire (gère aussi ?query)
+// calcule la clé de page à partir d’un chemin arbitraire
 function keyFromPath(path: string): string {
   const url = new URL(path, window.location.origin);
   const p = url.pathname || "/";
@@ -48,8 +48,6 @@ async function waitFor(sel: string, tries = 10): Promise<boolean> {
   });
 }
 
-// Pages nécessitant login (inutile si tout est piloté par PAGE_MAP.protected, gardé pour compat)
-const protectedPages = new Set(["dashboard", "play"]);
 
 // Layout HTML initial (header/nav/app container)
 async function loadLayout(): Promise<void> {
@@ -59,7 +57,7 @@ async function loadLayout(): Promise<void> {
   document.body.innerHTML = layoutHtml;
 }
 
-// 🔹 mount peut retourner une fonction d’unmount
+// mount peut retourner une fonction d’unmount
 type MountFn = () => void | (() => void) | Promise<void | (() => void)>;
 const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: boolean }> = {
   home:       { file: "home.html" },
@@ -80,17 +78,17 @@ const PAGE_MAP: Record<string, { file: string; mount?: MountFn; protected?: bool
 // --------- ROUTER ---------
 
 let ROUTING = false; // anti-réentrance
-let CURRENT_UNMOUNT: (() => void) | null = null; // 🔹 unmount courant
+let CURRENT_UNMOUNT: (() => void) | null = null; // unmount courant
 
 export async function loadPage(): Promise<void> {
-  // 🔹 cleanup de l’ancienne page avant d’afficher la nouvelle
+  // cleanup de l’ancienne page avant d’afficher la nouvelle
   try { CURRENT_UNMOUNT?.(); } catch (e) { console.warn("[unmount error]", e); }
   CURRENT_UNMOUNT = null;
 
   const key = routeFromLocation();
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
-  // 🔹 s’assurer d’un access token frais + hydratation /me (dédupliquée)
+  // s’assurer d’un access token frais + hydratation /me 
   await ensureFreshAcces();
   await getMeOnce();
 
@@ -151,7 +149,7 @@ export async function navigate(path: string, replace = false): Promise<void> {
   const key = keyFromPath(url);
   const def = PAGE_MAP[key] ?? PAGE_MAP.home;
 
-  // 🔒 si protected, vérifie l’auth AVANT de changer l’URL → évite le “1er clic” inutile
+  // si protected, vérifie l’auth AVANT de changer l’URL
   if (def.protected) {
     await ensureFreshAcces();
     await getMeOnce();
@@ -170,7 +168,7 @@ export async function navigate(path: string, replace = false): Promise<void> {
     }
   }
 
-  // pas de “tourne en rond” (garde la query-string)
+  // pas de “tourne en rond”
   const currentFull = window.location.pathname + window.location.search;
   if (url === currentFull) {
     return loadPage();
@@ -179,7 +177,7 @@ export async function navigate(path: string, replace = false): Promise<void> {
   if (ROUTING) return; // anti-spam et anti-réentrance
   ROUTING = true;
   try {
-    // 🔹 avertit les pages (pour purger listeners, touches, etc.)
+    // avertit les pages (pour purger listeners, touches, etc..)
     window.dispatchEvent(new Event("page:leaving"));
 
     if (replace) history.replaceState({}, "", url);
@@ -238,7 +236,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 window.addEventListener("auth:changed", () => {
   setupAuthMenu();
   loadPage();
-  // si on est sur dashboard, (re)peindre les infos
   if (routeFromLocation() === "dashboard") {
     paintDashboardUsername();
     mountDashboard();

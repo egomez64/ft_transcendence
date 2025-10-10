@@ -13,7 +13,7 @@ import { fetchWithAuth } from "./utils";
 type Stats = { wins: number; losses: number; played: number; winRate: number };
 type Me = { id: number; username: string; email?: string } | null;
 
-/** Récupère l'utilisateur courant depuis le backend (cookies httpOnly) */
+/** Récupère l'utilisateur courant depuis le backend  */
 async function fetchMe(): Promise<Me> {
   try {
     const res = await fetchWithAuth("/api/auth/me");
