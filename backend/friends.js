@@ -82,15 +82,12 @@ async function friendsRoutes(fastify) {
       if (!target) return reply.code(404).send({ ok:false, error:'USER_NOT_FOUND', params:{ handle } });
       if (target.id === me.id) return reply.code(400).send({ ok:false, error:'CANNOT_ADD_SELF' });
 
-      
-      // 🚫 Bloque l'IA par nom ou alias (insensible à la casse)
       const uname = String(target.username || '').trim().toLowerCase();
       const alias = String(target.alias || '').trim().toLowerCase();
       if (uname === 'ai' || alias === 'ai') {
         return reply.code(400).send({ ok:false, error_key:'friends.cannot_add_ai' });
       }
 
-      // ⚠️ stocker UNE SEULE ligne par paire: (minId, maxId)
       const a = Math.min(me.id, target.id);
       const b = Math.max(me.id, target.id);
 
@@ -113,7 +110,7 @@ async function friendsRoutes(fastify) {
         return reply.code(409).send({ ok:false, error:'ALREADY_FRIENDS' });
       }
       req.log?.error?.({ at:'friends:add', err: e });
-      return replyError(reply, 'UNKNOWN'); // 500 uniquement si vraiment inattendu
+      return replyError(reply, 'UNKNOWN');
     }
   });
 
@@ -137,7 +134,6 @@ async function friendsRoutes(fastify) {
     }
   });
 
-  // Est-ce qu'on est amis ? (bool) — symétrique
   fastify.get('/me/friends/:id', { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const me = req.user;

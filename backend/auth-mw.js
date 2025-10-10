@@ -27,7 +27,7 @@ module.exports = fp(async function authPlugin(fastify) {
       return reply.code(401).send({ ok: false, error: 'Not authenticated' });
 
     try {
-      const payload = jwt.verify(token, ACCESS_JWT_SECRET); // exp ~15 min
+      const payload = jwt.verify(token, ACCESS_JWT_SECRET);
       const user = await dbGet(
         'SELECT id, username, email FROM users WHERE id = ?',
         [payload.uid]
@@ -37,7 +37,6 @@ module.exports = fp(async function authPlugin(fastify) {
 
       req.user = user;
 
-      // ✅ Mise à jour last_seen à chaque requête authentifiée
       await dbRun('UPDATE users SET last_seen = ? WHERE id = ?', [
         Math.floor(Date.now() / 1000),
         user.id,

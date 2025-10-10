@@ -47,12 +47,12 @@ function dbRun(sql, params = []) {
 }
 
 // ---------- 2FA e-mail ----------
-const TWOFA_TTL_SEC = Number(process.env.TWOFA_TTL_SEC || 300);           // validité du code (5 min)
-const TWOFA_RESEND_MIN_SEC = Number(process.env.TWOFA_RESEND_MIN_SEC || 60); // délai mini entre 2 envois
+const TWOFA_TTL_SEC = Number(process.env.TWOFA_TTL_SEC || 300);
+const TWOFA_RESEND_MIN_SEC = Number(process.env.TWOFA_RESEND_MIN_SEC || 60);
 const nowSec = () => Math.floor(Date.now() / 1000);
 function generateCode6() {
   const n = crypto.randomInt(0, 1_000_000);
-  return String(n).padStart(6, '0'); // exactement 6 chiffres
+  return String(n).padStart(6, '0');
 }
 
 async function createAndSend2fa(user) {
@@ -124,7 +124,6 @@ function validateUsername(username) {
 
 // ---------- Plugin de routes ----------
 async function authRoute(fastify) {
-  // Google OAuth: on garde le flux, mais on NE pose PAS l’auth finale ici (2FA obligatoire ensuite)
   fastify.register(oauth2, {
     name: 'googleOAuth2',
     scope: ['openid', 'email', 'profile'],
@@ -135,7 +134,7 @@ async function authRoute(fastify) {
       },
       auth: oauth2.GOOGLE_CONFIGURATION,
     },
-    startRedirectPath: '/google', // /api/auth/google
+    startRedirectPath: '/google',
     callbackUri: GOOGLE_REDIRECT_URI,
     cookie: { secure: false, sameSite: 'lax' },
   });
@@ -210,7 +209,6 @@ async function authRoute(fastify) {
   // ---------- Google OAuth callback -> envoi code 2FA puis redirection ----------
   fastify.get('/google/callback', async (req, reply) => {
     try {
-      // 1) Échange code ↔ token
       const tok = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
       const accessToken = tok?.access_token || tok?.token?.access_token;
       if (!accessToken) {
@@ -218,7 +216,6 @@ async function authRoute(fastify) {
         return reply.code(400).send({ ok: false, error_key: 'oauth.callback_failed' });
       }
 
-      // 2) Userinfo OpenID
       const resp = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -234,15 +231,12 @@ async function authRoute(fastify) {
       const googleAvatar = String(p.picture || '').trim();
       if (!googleEmail) return reply.code(400).send({ ok: false, error: 'NO_EMAIL_FROM_GOOGLE' });
 
-      // 3) Upsert user depuis Google
       const user = await upsertUserFromGoogle({ googleEmail, googleName, googleId, googleAvatar });
 
-      // 4) 2FA obligatoire : envoi code + cookie pre2fa (PAS d’auth finale ici)
       await createAndSend2fa(user);
       const pre = jwt.sign({ uid: user.id, stage: 'pre2fa' }, JWT_SECRET, { expiresIn: '10m' });
       reply.setCookie('pre2fa', pre, { ...COOKIE_OPTS, maxAge: 600 });
 
-      // 5) Redirection front stable
       const FRONT_REDIRECT_URI = process.env.FRONT_REDIRECT_URI || 'http://localhost:5173/login';
       const PUBLIC_FRONT_BASE  = process.env.PUBLIC_FRONT_BASE  || 'http://localhost:5173';
 
@@ -364,8 +358,6 @@ fastify.post('/token/refresh', async (req, reply) => {
   }
   if (!rec) return reply.code(401).send({ ok: false, error: 'INVALID_REFRESH' });
 
-  // ✅ Ne pas régénérer un refresh — il reste valable jusqu'à son expiration
-  // Juste régénérer le token d'accès (15 min)
   const newAccess = issueAccessToken(rec.user_id);
   reply.setCookie('access', newAccess, {
     ...COOKIE_OPTS,
@@ -382,8 +374,6 @@ fastify.post('/token/refresh', async (req, reply) => {
     try {
       const { uid } = jwt.verify(raw, ACCESS_JWT_SECRET);
 
-      // ❌ NE SUPPRIME PLUS LES MATCHS ICI
-      // ✅ On se contente de mettre à jour l'activité
       const now = Math.floor(Date.now() / 1000);
       await dbRun(`UPDATE users SET last_seen = ? WHERE id = ?`, [now, uid]);
 
@@ -453,7 +443,7 @@ fastify.post('/token/refresh', async (req, reply) => {
       return reply.code(400).send({
         ok: false,
         error_key: 'auth.weak_password',
-        details: policyErrors, // tableau de clés i18n ex: ["password.min","password.upper",...]
+        details: policyErrors,
       });
     }
 
@@ -461,7 +451,6 @@ fastify.post('/token/refresh', async (req, reply) => {
     const hash = await bcrypt.hash(newPassword, 10);
     await dbRun('UPDATE users SET password = ?, needs_password = 0 WHERE id = ?', [hash, payload.uid]);
 
-    // Réponse OK (tu peux garder "message" si tu veux, sinon juste { ok: true })
     return reply.send({ ok: true, message_key: 'auth.password_set_ok' });
   });
 }
@@ -470,7 +459,6 @@ fastify.post('/token/refresh', async (req, reply) => {
 async function upsertUserFromGoogle({ googleEmail, googleName, googleId, googleAvatar }) {
   const existing = await dbGet('SELECT * FROM users WHERE email = ?', [googleEmail]);
   if (existing) {
-    // S’il a un mot de passe vide, on force le flag needs_password à 1
     if (!existing.password || existing.password.trim() === '') {
       await dbRun('UPDATE users SET needs_password = 1 WHERE id = ?', [existing.id]);
     }

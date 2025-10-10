@@ -64,7 +64,6 @@ async function usersRoutes(fastify) {
         try {
           await fsp.mkdir(path.dirname(dest), { recursive: true });
 
-          // ✅ Consommer le stream immédiatement
           await pipeline(part.file, fs.createWriteStream(dest));
 
           newAvatar = `/uploads/avatars/${filename}`;
@@ -81,7 +80,6 @@ async function usersRoutes(fastify) {
     const username = fields.username || '';
     const alias = fields.alias || '';
 
-    // --- preferred_lang: normaliser et valider (fr|en|es)
     const rawLang = String(fields.preferred_lang || '').trim().toLowerCase();
     let preferredLang = null;
     if (rawLang) {
@@ -107,7 +105,6 @@ async function usersRoutes(fastify) {
     const existing = await dbGet('SELECT id FROM users WHERE id = ?', [id]);
     if (!existing) return replyError(reply, 'USER_NOT_FOUND');
 
-    // --- Changement de mot de passe (optionnel)
     const oldPw = String(fields.old_password || '');
     const newPw = String(fields.new_password || '');
 

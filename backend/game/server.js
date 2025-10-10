@@ -4,10 +4,9 @@ let clients = [];
 let wss = null;
 let state = null;
 
-// ===== Ajouts anti-ghost / sync =====
-let epoch = 0;          // incrémenté à chaque resetGame()
-// ===== Direction du service après un but =====
-let serveDir = 0;       // 0 => sert vers la droite (+vx), 1 => sert vers la gauche (-vx)
+
+let epoch = 0;
+let serveDir = 0;
 
 function startGameServer(server, cors) {
   wss = new io.Server(server, { cors: {origin: ["https://localhost:8443"], credentials: true }, path: "/ws" });
@@ -22,7 +21,7 @@ function startGameServer(server, cors) {
 	  state.right.down = false;
 	  if (enabled && state.status == "idle") {
 		state.status = "playing";
-		resetBall(state); // tiendra compte de serveDir
+		resetBall(state);
 	  }
 	});
 
@@ -99,18 +98,17 @@ function startGameServer(server, cors) {
 	  score: { left: 0, right: 0 },
 	  winner: null,
 	  aiEnabled: false,
-	  epoch: epoch, // exposé dans l'état envoyé aux clients
+	  epoch: epoch,
 	};
   }
 
   function resetGame(state) {
-	epoch += 1;               // => nouvelle partie
+	epoch += 1;
 	state.status = "idle";
 	state.score.left = 0;
 	state.score.right = 0;
 	state.winner = null;
-	state.epoch = epoch;      // synchro côté client
-	// on ne change PAS serveDir ici ; il restera celle définie par le dernier but si besoin
+	state.epoch = epoch; 
 	resetBall(state);
   }
 
@@ -124,8 +122,6 @@ function startGameServer(server, cors) {
 	if (state.status === "playing") {
 	  setTimeout(() => {
 		state.ball.speed = 5;
-		// ====== Ajout pote : direction contrôlée par serveDir ======
-		// 0 => +vx (vers la droite), 1 => -vx (vers la gauche)
 		state.ball.vx = state.ball.speed * (serveDir === 0 ? 1 : -1);
 		state.ball.vy = (Math.random() - 0.5) * 4;
 	  }, 1000);
@@ -190,18 +186,16 @@ function startGameServer(server, cors) {
   function handleScore(state) {
 	if (state.status !== "playing") return;
 
-	// Balle sort côté gauche → point à droite
 	if (state.ball.x < -GAME_WIDTH / 2) {
 	  state.score.right++;
-	  serveDir = 1; // prochain service part vers la gauche (-vx)
+	  serveDir = 1;
 	  checkWin(state);
 	  resetBall(state);
 	}
 
-	// Balle sort côté droit → point à gauche
 	if (state.ball.x > GAME_WIDTH / 2) {
 	  state.score.left++;
-	  serveDir = 0; // prochain service part vers la droite (+vx)
+	  serveDir = 0;
 	  checkWin(state);
 	  resetBall(state);
 	}
@@ -220,7 +214,7 @@ function startGameServer(server, cors) {
 
   function broadcastState(wss, state) {
 	clients.forEach((client) => {
-	  client.emit("state", state); // contient status, score, epoch, etc.
+	  client.emit("state", state);
 	});
   }
 
@@ -234,7 +228,6 @@ function startGameServer(server, cors) {
 	const minY = -H / 2 + ballRadius;
 	const maxY =  H / 2 - ballRadius;
 
-	// Position X où la balle "touche" le paddle (face gauche du paddle droit)
 	const hitX = targetX - ballRadius;
 
 	// 1) Pré-avance = délai IA

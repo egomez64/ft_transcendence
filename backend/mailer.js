@@ -1,6 +1,5 @@
 const nodemailer = require('nodemailer');
 
-// Transport SMTP si dispo, sinon transport "console" (affiche l’email dans les logs)
 function buildTransport() {
     const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS } = process.env;
     if (SMTP_HOST && SMTP_PORT) {
@@ -11,7 +10,6 @@ function buildTransport() {
             auth: (SMTP_USER && SMTP_PASS) ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
         });
     }
-  // Fallback: n’envoie pas vraiment d’emails, mais imprime le contenu (pratique en dev)
     return nodemailer.createTransport({
         streamTransport: true,
         newline: 'unix',

@@ -48,11 +48,6 @@ async function updateUserStats(winnerId, loserId) {
 }
 
 async function matchRoutes(fastify) {
-  /* =========================================================
-   * 0) Nettoyage “safe” des matchs orphelins (optionnel)
-   *    POST /api/match/cleanup-pending
-   *    Supprime les matchs du user encore 'pending', 0–0, plus vieux que 10 min.
-   * =======================================================*/
   fastify.post("/cleanup-pending", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const uid = req.user?.id;
@@ -74,9 +69,7 @@ async function matchRoutes(fastify) {
     }
   });
 
-  /* =========================================================
-   * 1) Création d’un match local (1v1 humain)
-   * =======================================================*/
+   // 1) Création d’un match local (1v1 humain)
   fastify.post("/local", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const p1 = req.user;
@@ -114,9 +107,7 @@ async function matchRoutes(fastify) {
     }
   });
 
-  /* =========================================================
-   * 2) Création d’un match vs IA
-   * =======================================================*/
+  // 2) Création d’un match vs IA
   fastify.post("/ai", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const p1 = req.user;
@@ -142,9 +133,7 @@ async function matchRoutes(fastify) {
     }
   });
 
-  /* =========================================================
-   * 3) Terminer un match : PATCH /api/match/:id/finish
-   * =======================================================*/
+  // 3) Terminer un match : PATCH /api/match/:id/finish
   fastify.patch("/:id/finish", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const user = req.user;
@@ -195,10 +184,6 @@ async function matchRoutes(fastify) {
     }
   });
 
-  /* =========================================================
-   * 4) Marquer un match comme abandonné (pas de stats)
-   *    PATCH /api/match/:id/abandon
-   * =======================================================*/
   fastify.patch("/:id/abandon", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const user = req.user;
@@ -233,9 +218,6 @@ async function matchRoutes(fastify) {
     }
   });
 
-  /* =========================================================
-   * 5) Dernier match du joueur (pour finish/abandon)
-   * =======================================================*/
   fastify.get("/latest", { preHandler: fastify.verifySession }, async (req, reply) => {
     try {
       const user = req.user;

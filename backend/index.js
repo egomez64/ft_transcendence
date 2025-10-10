@@ -38,7 +38,7 @@ function dbGet(sql, params = []) {
 }
 
 const corsObj = {
-    origin: [ "http://localhost:5173" ], // accepte toutes les origines (à restreindre en prod)
+    origin: [ "http://localhost:5173" ],
     credentials: true,
 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -53,8 +53,6 @@ fastify.register(cors, corsObj);
 
 
 fastify.register(cookie, {
-  // secret optionnel si tu veux des cookies signés
-  // secret: process.env.COOKIE_SECRET
 });
 
 fastify.register(require('./auth-mw'));
